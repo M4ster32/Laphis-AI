@@ -1,93 +1,65 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from pathlib import Path
-import re
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
+from datetime import datetime
+from ..core.db import get_db
+from ..core.models import Profile, ChatMessage
+from ..core.schemas import AskIn, AskOut, ProfileOut
+from ..core.recommender import recommend
 
-router = APIRouter()
+router = APIRouter(prefix="/ask", tags=["ask"])
 
-UPLOAD_DIR = Path("src/uploads")
 
-class AskRequest(BaseModel):
-    question: str
+def _load_profile(profile_id: int, db: Session) -> Profile:
+    """Carregar perfil da base de dados"""
+    profile = db.query(Profile).filter(Profile.id == profile_id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
 
-def tokenize(text: str) -> list[str]:
-    return re.findall(r"[a-zA-ZÀ-ÿ0-9]+", text.lower())
 
-def score_chunk(chunk: str, q_tokens: set[str]) -> int:
-    c = chunk.lower()
-    return sum(1 for t in q_tokens if t in c)
+@router.post("", response_model=AskOut)
+def ask(payload: AskIn, db: Session = Depends(get_db)):
+    """Fazer pergunta e obter recomendação da IA — guarda histórico na BD"""
+    profile = _load_profile(payload.profile_id, db)
+    
+    # Converter para ProfileOut para passar ao recommender
+    profile_out = ProfileOut(
+        id=profile.id,
+        name=profile.name,
+        age=profile.age,
+        sex=profile.sex,
+        height_cm=profile.height_cm,
+        weight_kg=profile.weight_kg,
+        goal=profile.goal,
+        level=profile.level,
+        days_per_week=profile.days_per_week,
+    )
+    
+    title, bullets = recommend(profile_out, payload.question)
 
-def chunk_text(text: str, max_chars: int = 1200, overlap: int = 200) -> list[str]:
-    chunks = []
-    i = 0
-    while i < len(text):
-        chunk = text[i:i+max_chars]
-        chunks.append(chunk)
-        i += (max_chars - overlap)
-    return chunks
+    ai_text = f"{title}\n\n" + "\n".join(f"• {b}" if b and not b.startswith("•") else b for b in bullets)
 
-def format_bullets(text: str, max_points: int = 6) -> list[str]:
-    # tenta apanhar linhas “boas”
-    lines = [l.strip() for l in text.splitlines() if l.strip()]
-    bullets = []
-    for l in lines:
-        if len(l) < 20:
-            continue
-        bullets.append(l)
-        if len(bullets) >= max_points:
-            break
+    # Guardar mensagem do utilizador
+    user_msg = ChatMessage(
+        user_id=profile.user_id,
+        role="user",
+        content=payload.question,
+        created_at=datetime.utcnow(),
+    )
+    db.add(user_msg)
 
-    # fallback: se não houver linhas úteis, corta em frases
-    if not bullets:
-        sentences = re.split(r"(?<=[.!?])\s+", " ".join(lines))
-        for s in sentences:
-            s = s.strip()
-            if len(s) < 25:
-                continue
-            bullets.append(s)
-            if len(bullets) >= max_points:
-                break
+    # Guardar resposta da IA
+    ai_msg = ChatMessage(
+        user_id=profile.user_id,
+        role="assistant",
+        content=ai_text,
+        created_at=datetime.utcnow(),
+    )
+    db.add(ai_msg)
+    db.commit()
 
-    return bullets[:max_points]
-
-@router.post("/ask")
-def ask(req: AskRequest):
-    question = req.question.strip()
-    if not question:
-        return {"answer": "Faz uma pergunta primeiro.", "source": None}
-
-    txt_files = list(UPLOAD_DIR.glob("*.txt"))
-    if not txt_files:
-        return {"answer": "Ainda não há documentos carregados.", "source": None}
-
-    q_tokens = set(tokenize(question))
-    best = None  # (score, filename, chunk)
-
-    for txt_file in txt_files:
-        content = txt_file.read_text(encoding="utf-8", errors="ignore")
-        chunks = chunk_text(content)
-
-        for ch in chunks:
-            s = score_chunk(ch, q_tokens)
-            if best is None or s > best[0]:
-                best = (s, txt_file.name, ch)
-
-    if best is None or best[0] == 0:
-        return {
-            "answer": "Não encontrei nada relevante nos teus documentos para essa pergunta.",
-            "source": None
-        }
-
-    _, filename, best_chunk = best
-    bullets = format_bullets(best_chunk)
-
-    # resposta curta e legível
-    answer_lines = ["Resumo baseado nos teus apontamentos:"]
-    for b in bullets:
-        answer_lines.append(f"- {b}")
-
-    return {
-        "answer": "\n".join(answer_lines),
-        "source": filename,
-        "evidence_excerpt": best_chunk[:500].replace("\n", " ")
-    }
+    return AskOut(
+        title=title,
+        bullets=bullets,
+        disclaimer="Isto é uma sugestão geral e não substitui aconselhamento médico/nutricional."
+    )
