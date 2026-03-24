@@ -10,14 +10,21 @@ DATA_DIR = PROJECT_ROOT / "ai-service" / "src" / "data"
 UPLOADS_DIR = PROJECT_ROOT / "ai-service" / "src" / "uploads"
 
 # Configuração da base de dados
-DATABASE_URL = str(DATA_DIR / "laphis.db")
+# Suporta PostgreSQL (Supabase) ou SQLite local
+if os.getenv("DATABASE_URL"):
+    # Production: PostgreSQL
+    DATABASE_URL = os.getenv("DATABASE_URL")
+else:
+    # Development: SQLite
+    DATABASE_URL = f"sqlite:///{DATA_DIR / 'laphis.db'}"
 
 # Frontend (CORS)
-FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 FRONTEND_URLS = [
     "http://localhost:5173",
-    "http://localhost:3000",  # Para desenvolvimento alternativo
+    "http://localhost:3000",
     "http://127.0.0.1:5173",
+    "https://seu-frontend-vercel.app",  # Adiciona teu domain
 ]
 
 # Ambiente

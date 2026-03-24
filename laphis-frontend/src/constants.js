@@ -2,8 +2,11 @@
  * Constantes globais do frontend
  */
 
-// Usar o hostname dinâmico para funcionar tanto em localhost como em rede LAN
-export const API_BASE_URL = `http://${window.location.hostname}:8000`;
+// API URL: suporta production e development
+const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+export const API_BASE_URL = isDev 
+  ? `http://${window.location.hostname}:8000`
+  : import.meta.env.VITE_API_URL || 'https://seu-backend-railway.app';
 
 export const ROUTES = {
   HOME: "/",
