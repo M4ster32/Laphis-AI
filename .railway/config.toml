@@ -2,4 +2,4 @@
 dockerfile = "Dockerfile"
 
 [deploy]
-startCommand = "python -m uvicorn ai-service.src.main:app --host 0.0.0.0 --port 8000"
+startCommand = "python -m uvicorn ai-service.src.main:app --host 0.0.0.0 --port $PORT"
