@@ -16,5 +16,5 @@ COPY ai-service ./ai-service
 EXPOSE 8000
 
 # Start
-CMD ["python", "-m", "uvicorn", "ai-service.src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "ai-service.src.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
 
