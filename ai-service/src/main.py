@@ -30,11 +30,17 @@ app = FastAPI(
     description="AI backend for training and nutrition recommendations"
 )
 
-# ✅ CORS (para o frontend React conseguir chamar a API - qualquer origem para LAN)
+# ✅ CORS - Allow frontend to access API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "https://laphis.vercel.app",
+        "*",  # Also allow all origins as fallback
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
