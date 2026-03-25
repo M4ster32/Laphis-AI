@@ -8,6 +8,7 @@ from pathlib import Path
 from .core import models  # Importa Profile, WorkoutLog, MealLog, User, ChatMessage
 from .core.db import init_db, engine, Base
 
+# VERSION: 1.0.1 - Force redeploy
 from .api.health import router as health_router
 from .api.ask import router as ask_router
 from .api.profile import router as profile_router
