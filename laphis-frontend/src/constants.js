@@ -6,7 +6,7 @@
 const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 export const API_BASE_URL = isDev 
   ? `http://${window.location.hostname}:8000`
-  : import.meta.env.VITE_API_URL || 'https://laphis-production.up.railway.app';
+  : 'https://laphis-backend.onrender.com';
 
 export const ROUTES = {
   HOME: "/",
