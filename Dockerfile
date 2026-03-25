@@ -15,6 +15,6 @@ COPY ai-service ai-service
 # Expõe porta
 EXPOSE 8000
 
-# Start - Simples e direto
-CMD ["python", "-m", "uvicorn", "ai-service.src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start - Usa PORT do ambiente ou 8000 por default
+CMD ["sh", "-c", "python -m uvicorn ai-service.src.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
 
