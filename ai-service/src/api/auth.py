@@ -21,8 +21,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 24  # 30 dias
 # Expiração dos códigos
 CODE_EXPIRE_MINUTES = 15
 
-# Hash de passwords com argon2
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+# Hash de passwords com bcrypt
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

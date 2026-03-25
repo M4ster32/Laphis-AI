@@ -93,7 +93,7 @@ class ApiService {
       });
     } catch (networkErr) {
       console.error("Network error creating profile:", networkErr);
-      throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr na porta 8000.");
+      throw new Error("Sem ligação ao servidor. Tenta novamente.");
     }
 
     const responseData = await response.json();
@@ -209,7 +209,8 @@ class ApiService {
         body: JSON.stringify({ email, password, goal }),
       });
     } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr na porta 8000.");
+      console.error("Register network error:", networkErr, "URL:", API_BASE_URL);
+      throw new Error("Sem ligação ao servidor. Tenta novamente.");
     }
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
@@ -230,7 +231,8 @@ class ApiService {
         body: JSON.stringify({ email, password }),
       });
     } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr na porta 8000.");
+      console.error("Login network error:", networkErr, "URL:", API_BASE_URL);
+      throw new Error("Sem ligação ao servidor. Tenta novamente.");
     }
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
