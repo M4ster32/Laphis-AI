@@ -76,6 +76,7 @@ const s = {
     backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
     display: "flex", alignItems: "flex-end", justifyContent: "center",
     animation: "fadeIn 0.2s ease",
+    padding: 0,
   },
   modal: {
     background: "var(--bg-surface)", borderRadius: "24px 24px 0 0",
@@ -85,10 +86,13 @@ const s = {
     boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.4)",
     border: "1px solid var(--border)",
     borderBottom: "none",
+    position: "relative",
+    zIndex: 1001,
   },
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "20px 20px 14px", borderBottom: "1px solid var(--border-light)",
+    flexShrink: 0,
   },
   title: {
     fontSize: 17, fontWeight: 700, color: "var(--text)", margin: 0,
@@ -104,8 +108,11 @@ const s = {
   },
   footer: {
     display: "flex", gap: 10, justifyContent: "flex-end",
-    padding: "14px 20px 20px",
+    padding: "14px 20px",
+    paddingBottom: 40,
     borderTop: "1px solid var(--border-light)",
+    background: "var(--bg-surface)",
+    flexShrink: 0,
   },
   cancelBtn: {
     background: "var(--card-bg)", border: "1px solid var(--border)",

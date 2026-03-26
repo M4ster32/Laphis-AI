@@ -107,7 +107,7 @@
 /* ---------- MAIN CONTENT ---------- */
 .layout-main {
   flex: 1;
-  padding: 16px 16px 140px;
+  padding: 16px 16px 160px;
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
   position: relative;
@@ -124,18 +124,29 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  background: var(--nav-bg);
+  z-index: 200;
+  background-color: var(--nav-bg);
   border-top: 1px solid var(--nav-border);
-  padding: 8px 12px;
-  padding-bottom: max(8px, env(safe-area-inset-bottom));
-  padding-left: max(12px, env(safe-area-inset-left));
-  padding-right: max(12px, env(safe-area-inset-right));
+  padding: 8px 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-around;
   width: 100%;
   box-sizing: border-box;
+  /* Fallback: Samsung ignores env() sometimes */
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+}
+
+/* Extend nav background below into safe-area / gesture bar */
+.bottom-nav::after {
+  content: '';
+  position: absolute;
+  bottom: -50px;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background-color: inherit;
+  z-index: -1;
 }
 
 .nav-tab {
@@ -638,7 +649,7 @@
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 380px) {
-  .layout-main { padding: 12px 12px 140px; }
+  .layout-main { padding: 12px 12px 160px; }
   .layout-header { padding: 10px 14px; }
   .nav-tab { padding: 6px 8px; font-size: 18px; }
   .nav-tab-label { font-size: 9px; }
@@ -647,15 +658,15 @@
 }
 
 @media (max-width: 340px) {
-  .layout-main { padding: 10px 10px 140px; }
+  .layout-main { padding: 10px 10px 160px; }
   .nav-tab { padding: 4px 6px; font-size: 16px; }
   .header-brand { font-size: 12px; }
 }
 
 @media (min-width: 768px) {
-  .layout-main { padding: 24px 20px 140px; }
+  .layout-main { padding: 24px 20px 160px; }
 }
 
 @media (min-width: 1200px) {
-  .layout-main { max-width: 700px; padding: 32px 24px 150px; }
+  .layout-main { max-width: 700px; padding: 32px 24px 160px; }
 }
