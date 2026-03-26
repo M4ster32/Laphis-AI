@@ -316,7 +316,7 @@ export default function Zen() {
                     style={{
                       ...s.patternCard,
                       borderColor: selectedPattern.name === p.name ? "var(--primary)" : "var(--border)",
-                      background: selectedPattern.name === p.name ? "rgba(181, 113, 77, 0.08)" : "var(--card-bg)",
+                      background: selectedPattern.name === p.name ? "rgba(217, 117, 30, 0.08)" : "var(--card-bg)",
                     }}
                   >
                     <span style={s.patternName}>{p.name}</span>
@@ -413,7 +413,7 @@ export default function Zen() {
                         background: timerMinutes === t ? "var(--primary)" : "var(--bg-card)",
                         color: timerMinutes === t ? "white" : "var(--text-secondary)",
                         fontWeight: timerMinutes === t ? 700 : 500,
-                        boxShadow: timerMinutes === t ? "0 4px 12px rgba(181, 113, 77, 0.25)" : "var(--shadow)",
+                        boxShadow: timerMinutes === t ? "0 4px 12px rgba(217, 117, 30, 0.25)" : "var(--shadow)",
                       }}
                     >
                       {t}min
@@ -431,7 +431,7 @@ export default function Zen() {
                       style={{
                         ...s.soundBtn,
                         borderColor: selectedSound === snd.key ? "var(--primary)" : "var(--border)",
-                        background: selectedSound === snd.key ? "rgba(181, 113, 77, 0.08)" : "var(--card-bg)",
+                        background: selectedSound === snd.key ? "rgba(217, 117, 30, 0.08)" : "var(--card-bg)",
                       }}
                     >
                       <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>{snd.label}</span>
@@ -520,7 +520,7 @@ export default function Zen() {
       <h3 style={s.sectionTitle}>Atividades</h3>
       <div style={s.activitiesGrid}>
         <button style={s.activityCard} onClick={() => { setMoodBefore(null); setActiveView("breathing"); }}>
-          <div style={{ ...s.activityIconCircle, background: "rgba(181, 113, 77, 0.08)" }}>
+          <div style={{ ...s.activityIconCircle, background: "rgba(217, 117, 30, 0.08)" }}>
             <Wind size={24} color="var(--primary)" strokeWidth={1.5} />
           </div>
           <h4 style={s.activityTitle}>Respiração</h4>
@@ -528,7 +528,7 @@ export default function Zen() {
         </button>
 
         <button style={s.activityCard} onClick={() => { setMoodBefore(null); setActiveView("meditation"); }}>
-          <div style={{ ...s.activityIconCircle, background: "rgba(139, 125, 181, 0.08)" }}>
+          <div style={{ ...s.activityIconCircle, background: "rgba(140, 68, 27, 0.08)" }}>
             <Zap size={24} color="var(--accent)" strokeWidth={1.5} />
           </div>
           <h4 style={s.activityTitle}>Meditação</h4>
@@ -587,7 +587,7 @@ const s = {
     textAlign: "center",
     position: "relative",
     overflow: "hidden",
-    boxShadow: "0 4px 16px rgba(139, 125, 181, 0.15)",
+    boxShadow: "0 4px 16px rgba(140, 68, 27, 0.15)",
   },
   zenHeroEmoji: { fontSize: 48, display: "block", marginBottom: 8, animation: "float 3s ease-in-out infinite" },
   zenTitle: { fontSize: 24, fontWeight: 700, color: "white", margin: "0 0 4px" },

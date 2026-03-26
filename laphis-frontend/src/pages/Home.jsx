@@ -69,7 +69,7 @@ const s = {
     background: "var(--gradient-primary)", color: "#FFFFFF",
     fontSize: 28, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 16px rgba(181, 113, 77, 0.2)",
+    boxShadow: "0 4px 16px rgba(217, 117, 30, 0.2)",
   },
   brandName: {
     fontSize: 36, fontWeight: 800, letterSpacing: 3,
@@ -89,7 +89,7 @@ const s = {
     border: "1px solid var(--border)",
   },
   featureIcon: { fontSize: 14, fontWeight: 700, color: "var(--primary)", flexShrink: 0,
-    width: 40, height: 40, borderRadius: 12, background: "rgba(181, 113, 77, 0.08)",
+    width: 40, height: 40, borderRadius: 12, background: "rgba(217, 117, 30, 0.08)",
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   featureTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },

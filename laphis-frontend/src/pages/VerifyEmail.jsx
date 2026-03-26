@@ -122,7 +122,7 @@ export default function VerifyEmail() {
           </div>
         )}
         {success && (
-          <div className="alert alert-success" style={{ background: "var(--primary-bg)", border: "1px solid rgba(181, 113, 77, 0.2)", color: "var(--alert-success-text)" }}>
+          <div className="alert alert-success" style={{ background: "var(--primary-bg)", border: "1px solid rgba(217, 117, 30, 0.2)", color: "var(--alert-success-text)" }}>
             <span>{success}</span>
           </div>
         )}
@@ -144,7 +144,7 @@ export default function VerifyEmail() {
                 style={{
                   ...s.codeInput,
                   borderColor: digit ? "var(--primary)" : "var(--border)",
-                  background: digit ? "rgba(181, 113, 77, 0.1)" : "var(--card-bg)",
+                  background: digit ? "rgba(217, 117, 30, 0.1)" : "var(--card-bg)",
                 }}
                 autoFocus={i === 0}
               />
@@ -210,7 +210,7 @@ const s = {
     fontSize: 22, fontWeight: 700, marginBottom: 16,
     width: 48, height: 48, borderRadius: 14, background: "var(--gradient-primary)", color: "white",
     display: "inline-flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 12px rgba(181, 113, 77, 0.15)",
+    boxShadow: "0 4px 12px rgba(217, 117, 30, 0.15)",
   },
   title: { fontSize: 20, fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },
   subtitle: { fontSize: 14, color: "var(--text-secondary)", margin: "0 0 4px", fontWeight: 500 },

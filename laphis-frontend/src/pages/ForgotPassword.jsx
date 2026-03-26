@@ -106,16 +106,16 @@ const s = {
   logo: { fontSize: 22, fontWeight: 700, color: "var(--primary)", marginBottom: 16, display: "block",
     width: 48, height: 48, borderRadius: 14, background: "var(--gradient-primary)", color: "white",
     display: "inline-flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 12px rgba(181, 113, 77, 0.15)",
+    boxShadow: "0 4px 12px rgba(217, 117, 30, 0.15)",
   },
   title: { fontSize: 20, fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },
   subtitle: { fontSize: 14, color: "var(--text-secondary)", margin: 0, fontWeight: 500 },
 
   sentBox: {
     textAlign: "center", padding: "24px",
-    background: "rgba(181, 113, 77, 0.1)", borderRadius: "var(--radius-sm)",
+    background: "rgba(217, 117, 30, 0.1)", borderRadius: "var(--radius-sm)",
     boxShadow: "var(--shadow)",
-    border: "1px solid rgba(181, 113, 77, 0.15)",
+    border: "1px solid rgba(217, 117, 30, 0.15)",
   },
 
   link: {

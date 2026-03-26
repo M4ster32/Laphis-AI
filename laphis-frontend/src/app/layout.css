@@ -237,7 +237,7 @@ body[style*="overflow: hidden"] .bottom-nav {
   position: relative;
   top: -10px;
   box-shadow:
-    0 2px 8px rgba(181, 113, 77, 0.2),
+    0 2px 8px rgba(217, 117, 30, 0.2),
     0 0 0 3px var(--nav-bg);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 2;
@@ -247,7 +247,7 @@ body[style*="overflow: hidden"] .bottom-nav {
 .nav-chat-fab:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 4px 16px rgba(181, 113, 77, 0.25),
+    0 4px 16px rgba(217, 117, 30, 0.25),
     0 0 0 3px var(--nav-bg);
 }
 
@@ -258,7 +258,7 @@ body[style*="overflow: hidden"] .bottom-nav {
 
 .nav-chat-fab.active {
   box-shadow:
-    0 4px 16px rgba(181, 113, 77, 0.3),
+    0 4px 16px rgba(217, 117, 30, 0.3),
     0 0 0 3px var(--nav-bg);
 }
 
@@ -497,9 +497,9 @@ body[style*="overflow: hidden"] .bottom-nav {
 .form-input:focus,
 .form-textarea:focus,
 .form-select:focus {
-  border-color: rgba(181, 113, 77, 0.5);
-  background: rgba(181, 113, 77, 0.03);
-  box-shadow: 0 0 0 3px rgba(181, 113, 77, 0.08);
+  border-color: rgba(217, 117, 30, 0.5);
+  background: rgba(217, 117, 30, 0.03);
+  box-shadow: 0 0 0 3px rgba(217, 117, 30, 0.08);
   outline: none;
 }
 

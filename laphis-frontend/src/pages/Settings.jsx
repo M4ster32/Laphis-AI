@@ -192,7 +192,7 @@ export default function Settings() {
                   style={{
                     ...s.presetBtn,
                     borderColor: newType === p.type ? "var(--primary)" : "var(--border)",
-                    background: newType === p.type ? "rgba(181, 113, 77, 0.1)" : "var(--bg)",
+                    background: newType === p.type ? "rgba(217, 117, 30, 0.1)" : "var(--bg)",
                   }}
                 >
                   <span style={{
@@ -431,7 +431,7 @@ const s = {
     color: "white", fontSize: 20, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
     margin: "0 auto 12px",
-    boxShadow: "0 4px 16px rgba(181, 113, 77, 0.25)",
+    boxShadow: "0 4px 16px rgba(217, 117, 30, 0.25)",
   },
   aboutName: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
   aboutDesc: { fontSize: 13, color: "var(--text-muted)", margin: 0 },

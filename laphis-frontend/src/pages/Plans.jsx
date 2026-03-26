@@ -198,7 +198,7 @@ export default function Plans() {
               ...s.chip,
               background: selectedCategory === null ? "var(--primary)" : "var(--card-bg)",
               color: selectedCategory === null ? "white" : "var(--text-secondary)",
-              boxShadow: selectedCategory === null ? "0 2px 8px rgba(181, 113, 77, 0.2)" : "var(--shadow)",
+              boxShadow: selectedCategory === null ? "0 2px 8px rgba(217, 117, 30, 0.2)" : "var(--shadow)",
             }}
           >
             Todas
@@ -211,7 +211,7 @@ export default function Plans() {
                 ...s.chip,
                 background: selectedCategory === cat.id ? "var(--primary)" : "var(--card-bg)",
                 color: selectedCategory === cat.id ? "white" : "var(--text-secondary)",
-                boxShadow: selectedCategory === cat.id ? "0 2px 8px rgba(181, 113, 77, 0.2)" : "var(--shadow)",
+                boxShadow: selectedCategory === cat.id ? "0 2px 8px rgba(217, 117, 30, 0.2)" : "var(--shadow)",
               }}
             >
               {cat.name}
@@ -231,7 +231,7 @@ export default function Plans() {
               background: tab === t.key ? "var(--primary)" : "transparent",
               color: tab === t.key ? "white" : "var(--text-secondary)",
               fontWeight: tab === t.key ? 600 : 500,
-              boxShadow: tab === t.key ? "0 2px 8px rgba(181, 113, 77, 0.15)" : "none",
+              boxShadow: tab === t.key ? "0 2px 8px rgba(217, 117, 30, 0.15)" : "none",
             }}
           >
             {t.label}
@@ -261,7 +261,7 @@ export default function Plans() {
             const typeColors = {
               training: "var(--primary)",
               nutrition: "var(--accent)",
-              combined: "#C49B3A",
+              combined: "#BF6734",
             };
             return (
             <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
@@ -283,7 +283,7 @@ export default function Plans() {
                 </div>
                 <span style={{
                   ...s.statusBadge,
-                  background: plan.status === "active" ? "rgba(181, 113, 77, 0.1)" : "var(--bg)",
+                  background: plan.status === "active" ? "rgba(217, 117, 30, 0.1)" : "var(--bg)",
                   color: plan.status === "active" ? "#2E7D32" : "var(--text-muted)",
                 }}>
                   {plan.status === "active" ? "Ativo" : "Arquivado"}
@@ -339,7 +339,7 @@ export default function Plans() {
                 style={{
                   ...s.typeBtn,
                   borderColor: genType === t.value ? "var(--primary)" : "var(--border)",
-                  background: genType === t.value ? "rgba(181, 113, 77, 0.1)" : "var(--card-bg)",
+                  background: genType === t.value ? "rgba(217, 117, 30, 0.1)" : "var(--card-bg)",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -405,7 +405,7 @@ export default function Plans() {
                 onClick={() => setCatIcon(ic)}
                 style={{
                   ...s.catIconBtn,
-                  background: catIcon === ic ? "rgba(181, 113, 77, 0.1)" : "var(--bg)",
+                  background: catIcon === ic ? "rgba(217, 117, 30, 0.1)" : "var(--bg)",
                   borderColor: catIcon === ic ? "var(--primary)" : "transparent",
                 }}
               >
@@ -522,7 +522,7 @@ const s = {
   planMeta: { fontSize: 12, color: "var(--text-muted)", margin: 0 },
   planCatBadge: {
     marginLeft: 6, padding: "2px 8px", borderRadius: 10,
-    background: "rgba(181, 113, 77, 0.1)", fontSize: 11, fontWeight: 600,
+    background: "rgba(217, 117, 30, 0.1)", fontSize: 11, fontWeight: 600,
     color: "var(--primary)",
   },
   statusBadge: {

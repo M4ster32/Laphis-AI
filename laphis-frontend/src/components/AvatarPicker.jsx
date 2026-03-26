@@ -7,10 +7,10 @@ import {
  * 10 preset avatars — each has a unique icon + gradient
  */
 const PRESETS = [
-  { id: "preset_1",  icon: User,     bg: "linear-gradient(135deg, #B5714D, #D4956B)", label: "Classic" },
-  { id: "preset_2",  icon: Smile,    bg: "linear-gradient(135deg, #8B7DB5, #A999D4)", label: "Happy" },
+  { id: "preset_1",  icon: User,     bg: "linear-gradient(135deg, #D9751E, #D4956B)", label: "Classic" },
+  { id: "preset_2",  icon: Smile,    bg: "linear-gradient(135deg, #8C441B, #A999D4)", label: "Happy" },
   { id: "preset_3",  icon: Heart,    bg: "linear-gradient(135deg, #E0607E, #F08DA0)", label: "Heart" },
-  { id: "preset_4",  icon: Star,     bg: "linear-gradient(135deg, #C49B3A, #E0BD5F)", label: "Star" },
+  { id: "preset_4",  icon: Star,     bg: "linear-gradient(135deg, #BF6734, #E0BD5F)", label: "Star" },
   { id: "preset_5",  icon: Flame,    bg: "linear-gradient(135deg, #EF4444, #F87171)", label: "Fire" },
   { id: "preset_6",  icon: Mountain, bg: "linear-gradient(135deg, #2E7D32, #4CAF50)", label: "Nature" },
   { id: "preset_7",  icon: Music,    bg: "linear-gradient(135deg, #1976D2, #42A5F5)", label: "Music" },
@@ -88,7 +88,7 @@ export function AvatarDisplay({ avatar, name, size = 48, style = {} }) {
         background: "var(--gradient-primary)", color: "#fff",
         fontSize: Math.round(size * 0.42), fontWeight: 700,
         display: "flex", alignItems: "center", justifyContent: "center",
-        boxShadow: "0 2px 8px rgba(181, 113, 77, 0.2)", flexShrink: 0,
+        boxShadow: "0 2px 8px rgba(217, 117, 30, 0.2)", flexShrink: 0,
         ...style,
       }}
     >
@@ -143,7 +143,7 @@ export default function AvatarPicker({ value, onChange }) {
                 border: isSelected ? "3px solid var(--primary)" : "3px solid transparent",
                 transform: isSelected ? "scale(1.08)" : "scale(1)",
                 boxShadow: isSelected
-                  ? "0 4px 16px rgba(181, 113, 77, 0.35)"
+                  ? "0 4px 16px rgba(217, 117, 30, 0.35)"
                   : "0 2px 6px rgba(0,0,0,0.08)",
               }}
               title={preset.label}

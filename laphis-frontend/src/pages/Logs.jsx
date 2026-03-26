@@ -173,7 +173,7 @@ export default function Logs() {
               background: tab === t.key ? "var(--primary)" : "transparent",
               color: tab === t.key ? "white" : "var(--text-secondary)",
               fontWeight: tab === t.key ? 600 : 500,
-              boxShadow: tab === t.key ? "0 2px 8px rgba(181, 113, 77, 0.15)" : "none",
+              boxShadow: tab === t.key ? "0 2px 8px rgba(217, 117, 30, 0.15)" : "none",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -255,7 +255,7 @@ export default function Logs() {
                           background: form.meal_type === val ? "var(--primary)" : "var(--card-bg)",
                           color: form.meal_type === val ? "white" : "var(--text-secondary)",
                           borderColor: form.meal_type === val ? "var(--primary)" : "var(--border)",
-                          boxShadow: form.meal_type === val ? "0 2px 8px rgba(181, 113, 77, 0.15)" : "var(--shadow)",
+                          boxShadow: form.meal_type === val ? "0 2px 8px rgba(217, 117, 30, 0.15)" : "var(--shadow)",
                         }}
                         disabled={saving}
                       >
@@ -409,8 +409,8 @@ const s = {
   addBtn: { padding: "8px 18px", fontSize: 14 },
   aiBtn: {
     width: 38, height: 38, borderRadius: "var(--radius-sm)",
-    background: "rgba(196, 155, 58, 0.1)", border: "1px solid rgba(196, 155, 58, 0.3)",
-    color: "var(--cta, #C49B3A)", cursor: "pointer",
+    background: "rgba(217, 117, 30, 0.1)", border: "1px solid rgba(217, 117, 30, 0.3)",
+    color: "var(--cta, #BF6734)", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
     transition: "background 0.15s, transform 0.15s",
     boxShadow: "var(--shadow)",

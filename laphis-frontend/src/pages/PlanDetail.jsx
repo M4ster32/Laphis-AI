@@ -435,7 +435,7 @@ export default function PlanDetail() {
             )}
             <span style={{
               ...s.statusBadge,
-              background: plan?.status === "active" ? "rgba(181, 113, 77, 0.1)" : "var(--bg)",
+              background: plan?.status === "active" ? "rgba(217, 117, 30, 0.1)" : "var(--bg)",
               color: plan?.status === "active" ? "#2E7D32" : "var(--text-muted)",
             }}>
               {plan?.status === "active" ? "Ativo" : "Arquivado"}
@@ -560,8 +560,8 @@ export default function PlanDetail() {
                   <button key={i} onClick={() => setFbRating(i)}
                     style={{ ...s.starBtn, transform: i <= fbRating ? "scale(1.1)" : "scale(1)" }}>
                     <Star size={24} strokeWidth={1.5}
-                      fill={i <= fbRating ? "#C49B3A" : "none"}
-                      color={i <= fbRating ? "#C49B3A" : "var(--border)"}
+                      fill={i <= fbRating ? "#BF6734" : "none"}
+                      color={i <= fbRating ? "#BF6734" : "var(--border)"}
                     />
                   </button>
                 ))}
@@ -694,7 +694,7 @@ const s = {
   headerIcon: { fontSize: 32 },
   catBadge: {
     padding: "4px 10px", borderRadius: 12,
-    background: "rgba(181, 113, 77, 0.1)", fontSize: 11,
+    background: "rgba(217, 117, 30, 0.1)", fontSize: 11,
     fontWeight: 600, color: "var(--primary)",
   },
   statusBadge: {
@@ -738,7 +738,7 @@ const s = {
   noContent: { fontSize: 14, color: "var(--text-muted)", fontStyle: "italic" },
 
   summaryCard: {
-    background: "rgba(181, 113, 77, 0.1)", borderRadius: "var(--radius)",
+    background: "rgba(217, 117, 30, 0.1)", borderRadius: "var(--radius)",
     padding: "18px 20px", borderLeft: "4px solid var(--primary)", marginTop: 20,
   },
   summaryTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },

@@ -279,7 +279,7 @@ const s = {
     background: "var(--primary)", color: "white",
     borderRadius: "18px 18px 4px 18px", padding: "12px 16px",
     maxWidth: "80%", fontSize: 14, lineHeight: 1.55, fontWeight: 500,
-    boxShadow: "0 1px 4px rgba(181, 113, 77, 0.2)",
+    boxShadow: "0 1px 4px rgba(217, 117, 30, 0.2)",
   },
   assistantBubble: {
     background: "var(--card-bg)", color: "var(--text)",
@@ -345,7 +345,7 @@ const s = {
     border: "none", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
     transition: "opacity 0.15s",
-    boxShadow: "0 2px 8px rgba(181, 113, 77, 0.2)",
+    boxShadow: "0 2px 8px rgba(217, 117, 30, 0.2)",
   },
 
   emptyState: {

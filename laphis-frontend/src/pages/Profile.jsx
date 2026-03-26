@@ -230,7 +230,7 @@ export default function Profile() {
                     style={{
                       ...s.optionCard,
                       borderColor: formData.goal === opt.value ? "var(--primary)" : "var(--border)",
-                      background: formData.goal === opt.value ? "rgba(181, 113, 77, 0.08)" : "var(--card-bg)",
+                      background: formData.goal === opt.value ? "rgba(217, 117, 30, 0.08)" : "var(--card-bg)",
                     }}
                     disabled={loading}
                   >
@@ -258,7 +258,7 @@ export default function Profile() {
                     style={{
                       ...s.optionCard,
                       borderColor: formData.level === opt.value ? "var(--primary)" : "var(--border)",
-                      background: formData.level === opt.value ? "rgba(181, 113, 77, 0.08)" : "var(--card-bg)",
+                      background: formData.level === opt.value ? "rgba(217, 117, 30, 0.08)" : "var(--card-bg)",
                     }}
                     disabled={loading}
                   >
@@ -441,7 +441,7 @@ const s = {
     background: "var(--gradient-primary)", color: "white",
     fontSize: 32, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 12px rgba(181, 113, 77, 0.2)",
+    boxShadow: "0 4px 12px rgba(217, 117, 30, 0.2)",
   },
   profileName: {
     fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 4px",

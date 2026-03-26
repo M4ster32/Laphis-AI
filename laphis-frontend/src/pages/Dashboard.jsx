@@ -25,11 +25,11 @@ const motivationalQuotes = [
 ];
 
 const CHART_COLORS = {
- primary: "#B5714D",
- primaryLight: "rgba(181, 113, 77, 0.08)",
- accent: "#8B7DB5",
- accentLight: "rgba(139, 125, 181, 0.08)",
- warning: "#C49B3A",
+ primary: "#D9751E",
+ primaryLight: "rgba(217, 117, 30, 0.08)",
+ accent: "#8C441B",
+ accentLight: "rgba(140, 68, 27, 0.08)",
+ warning: "#BF6734",
 };
 
 export default function Dashboard() {
@@ -541,7 +541,7 @@ export default function Dashboard() {
  style={{
  ...s.typeBtn,
  borderColor: genType === t.value ? "var(--primary)" : "var(--border)",
- background: genType === t.value ? "rgba(181, 113, 77, 0.1)" : "var(--card-bg)",
+ background: genType === t.value ? "rgba(217, 117, 30, 0.1)" : "var(--card-bg)",
  }}
  >
  <t.icon size={22} color={genType === t.value ? "var(--primary)" : "var(--text-muted)"} strokeWidth={1.5} />
@@ -601,7 +601,7 @@ const s = {
  background: "var(--gradient-primary)", color: "#fff",
  fontSize: 20, fontWeight: 700,
  display: "flex", alignItems: "center", justifyContent: "center",
- boxShadow: "0 2px 8px rgba(181, 113, 77, 0.2)", flexShrink: 0,
+ boxShadow: "0 2px 8px rgba(217, 117, 30, 0.2)", flexShrink: 0,
  },
 
  /* AI Coach Hero */
@@ -628,7 +628,7 @@ const s = {
   padding: "14px 16px", borderRadius: "var(--radius)",
   background: "var(--card-bg)", border: "2px solid var(--cta)",
   cursor: "pointer", textAlign: "left", marginBottom: 20,
-  boxShadow: "0 2px 12px rgba(196, 155, 58, 0.12)",
+  boxShadow: "0 2px 12px rgba(217, 117, 30, 0.12)",
   transition: "transform 0.15s ease, box-shadow 0.15s ease",
   boxSizing: "border-box",
  },
@@ -637,7 +637,7 @@ const s = {
   background: "var(--gradient-cta)", color: "#fff",
   display: "flex", alignItems: "center", justifyContent: "center",
   flexShrink: 0,
-  boxShadow: "0 2px 8px rgba(196, 155, 58, 0.25)",
+  boxShadow: "0 2px 8px rgba(217, 117, 30, 0.25)",
  },
  generateCtaContent: { flex: 1, minWidth: 0 },
  generateCtaTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
