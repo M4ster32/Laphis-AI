@@ -409,17 +409,17 @@ export default function Dashboard() {
  ))}
  </div>
  )}
- <button style={s.snapshotBtn} onClick={handleCreateSnapshot} disabled={insightsLoading}>
- {insightsLoading ? "A registar..." : "Registar progresso semanal"}
+ <button style={s.snapshotBtn} onClick={handleCreateSnapshot} disabled={insightsLoading} title="Gera uma análise do teu progresso semanal">
+ {insightsLoading ? "A registar..." : "📊 Analisar Progresso Semanal"}
  </button>
  </div>
  )}
 
  {/* No insights yet — show snapshot button */}
  {(!insights || (!insights.highlights?.length && !insights.suggestions?.length)) && (
- <button style={s.snapshotBtnStandalone} onClick={handleCreateSnapshot} disabled={insightsLoading}>
+ <button style={s.snapshotBtnStandalone} onClick={handleCreateSnapshot} disabled={insightsLoading} title="Gera uma análise do teu progresso semanal baseada nos teus treinos e refeições">
  <Sparkles size={16} strokeWidth={1.5} />
- {insightsLoading ? "A registar..." : "Registar progresso semanal"}
+ {insightsLoading ? "A registar..." : "📊 Analisar Progresso Semanal"}
  </button>
  )}
 
