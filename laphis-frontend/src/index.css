@@ -86,8 +86,8 @@
   --gradient-surface: linear-gradient(135deg, rgba(255, 251, 247, 0.6), transparent);
 
   /* Layout-specific */
-  --header-bg: rgba(255, 251, 247, 0.98);
-  --nav-bg: rgba(255, 251, 247, 1);
+  --header-bg: #FFFBF7;
+  --nav-bg: #FFFBF7;
   --nav-border: rgba(139, 109, 78, 0.08);
   --hover-overlay: rgba(139, 109, 78, 0.05);
   --hover-overlay-strong: rgba(139, 109, 78, 0.08);
@@ -184,8 +184,8 @@
   --gradient-surface: linear-gradient(135deg, rgba(245, 225, 200, 0.04), transparent);
 
   /* Layout-specific */
-  --header-bg: rgba(23, 18, 13, 0.98);
-  --nav-bg: rgba(23, 18, 13, 1);
+  --header-bg: #17120D;
+  --nav-bg: #17120D;
   --nav-border: rgba(245, 225, 200, 0.06);
   --hover-overlay: rgba(245, 225, 200, 0.04);
   --hover-overlay-strong: rgba(245, 225, 200, 0.08);
@@ -245,7 +245,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   width: 100%;
+  max-width: 100vw;
   overflow-x: hidden;
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -254,11 +257,21 @@ body {
   color: var(--text);
   line-height: 1.5;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   position: relative;
   width: 100%;
+  max-width: 100vw;
   margin: 0;
   padding: 0;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 h1, h2, h3, h4, h5, h6 {

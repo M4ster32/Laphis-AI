@@ -606,13 +606,13 @@ const s = {
 
  /* AI Coach Hero */
  aiCard: {
- display: "block", width: "100%", padding: "16px 18px",
- borderRadius: "var(--radius)", background: "var(--card-bg)",
- border: "1px solid var(--border)", cursor: "pointer",
- boxShadow: "var(--shadow)", transition: "transform 0.15s ease, box-shadow 0.15s ease",
- marginBottom: 12, textAlign: "left",
+  display: "block", width: "100%", padding: "14px 16px",
+  borderRadius: "var(--radius)", background: "var(--card-bg)",
+  border: "1px solid var(--border)", cursor: "pointer",
+  boxShadow: "var(--shadow)", transition: "transform 0.15s ease, box-shadow 0.15s ease",
+  marginBottom: 12, textAlign: "left", boxSizing: "border-box",
  },
- aiCardInner: { display: "flex", alignItems: "center", gap: 14, color: "var(--text)" },
+ aiCardInner: { display: "flex", alignItems: "center", gap: 12, color: "var(--text)", minWidth: 0 },
  aiIcon: {
  width: 42, height: 42, borderRadius: 12,
  background: "var(--gradient-primary)", color: "#fff",
@@ -624,21 +624,22 @@ const s = {
 
  /* Generate CTA */
  generateCta: {
- display: "flex", alignItems: "center", gap: 14, width: "100%",
- padding: "16px 18px", borderRadius: "var(--radius)",
- background: "var(--card-bg)", border: "2px solid var(--cta)",
- cursor: "pointer", textAlign: "left", marginBottom: 20,
- boxShadow: "0 2px 12px rgba(196, 155, 58, 0.12)",
- transition: "transform 0.15s ease, box-shadow 0.15s ease",
+  display: "flex", alignItems: "center", gap: 12, width: "100%",
+  padding: "14px 16px", borderRadius: "var(--radius)",
+  background: "var(--card-bg)", border: "2px solid var(--cta)",
+  cursor: "pointer", textAlign: "left", marginBottom: 20,
+  boxShadow: "0 2px 12px rgba(196, 155, 58, 0.12)",
+  transition: "transform 0.15s ease, box-shadow 0.15s ease",
+  boxSizing: "border-box",
  },
  generateCtaIcon: {
- width: 46, height: 46, borderRadius: 14,
- background: "var(--gradient-cta)", color: "#fff",
- display: "flex", alignItems: "center", justifyContent: "center",
- flexShrink: 0,
- boxShadow: "0 2px 8px rgba(196, 155, 58, 0.25)",
+  width: 44, height: 44, borderRadius: 14,
+  background: "var(--gradient-cta)", color: "#fff",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  flexShrink: 0,
+  boxShadow: "0 2px 8px rgba(196, 155, 58, 0.25)",
  },
- generateCtaContent: { flex: 1 },
+ generateCtaContent: { flex: 1, minWidth: 0 },
  generateCtaTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
  generateCtaDesc: { fontSize: 12, color: "var(--text-muted)", fontWeight: 400, lineHeight: 1.4 },
 
@@ -646,18 +647,20 @@ const s = {
  statsRow: {
  display: "flex", alignItems: "center", gap: 0,
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "14px 4px", boxShadow: "var(--shadow)",
- border: "1px solid var(--border)", marginBottom: 16,
+  padding: "14px 2px", boxShadow: "var(--shadow)",
+  border: "1px solid var(--border)", marginBottom: 16,
+  width: "100%", boxSizing: "border-box", overflow: "hidden",
  },
  statItem: {
- flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+  minWidth: 0, overflow: "hidden",
  },
- statValue: { fontSize: 18, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
+ statValue: { fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap" },
  statLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
  statDivider: { width: 1, height: 28, background: "var(--border)" },
 
  /* Two Column */
- twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 },
+ twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16, width: "100%", boxSizing: "border-box" },
 
  /* Water */
  waterCard: {
@@ -703,20 +706,22 @@ const s = {
  },
 
  /* Quick Actions */
- actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 },
+ actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 20, width: "100%", boxSizing: "border-box" },
  actionBtn: {
- padding: "14px 6px", borderRadius: "var(--radius-sm)",
- background: "var(--card-bg)", border: "1px solid var(--border)",
- boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 11,
- fontWeight: 600, color: "var(--text-secondary)", textAlign: "center",
- transition: "background 0.15s",
- display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+  padding: "12px 4px", borderRadius: "var(--radius-sm)",
+  background: "var(--card-bg)", border: "1px solid var(--border)",
+  boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 10,
+  fontWeight: 600, color: "var(--text-secondary)", textAlign: "center",
+  transition: "background 0.15s",
+  display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+  minWidth: 0, overflow: "hidden",
  },
 
  /* Chart */
  chartCard: {
- background: "var(--card-bg)", borderRadius: "var(--radius)", padding: "16px",
- marginBottom: 16, boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+  background: "var(--card-bg)", borderRadius: "var(--radius)", padding: "14px",
+  marginBottom: 16, boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+  width: "100%", boxSizing: "border-box", overflow: "hidden",
  },
  chartTitle: { fontSize: 13, fontWeight: 600, color: "var(--text)", margin: "0 0 12px" },
 
@@ -730,11 +735,12 @@ const s = {
  sectionTitle: { fontSize: 14, fontWeight: 600, color: "var(--text)", margin: "0 0 12px" },
 
  /* Activity */
- activityList: { display: "flex", flexDirection: "column", gap: 8 },
+ activityList: { display: "flex", flexDirection: "column", gap: 8, width: "100%" },
  activityItem: {
- display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
- background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
- boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+  display: "flex", alignItems: "center", gap: 10, padding: "12px 12px",
+  background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
+  boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+  boxSizing: "border-box", width: "100%", minWidth: 0,
  },
  activityDot: {
  width: 36, height: 36, borderRadius: 10,

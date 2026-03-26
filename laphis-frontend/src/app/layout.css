@@ -20,12 +20,13 @@
   top: 0;
   z-index: 100;
   padding: 12px 20px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: var(--header-bg);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -106,7 +107,9 @@
 /* ---------- MAIN CONTENT ---------- */
 .layout-main {
   flex: 1;
-  padding: 16px 16px 130px;
+  padding: 16px 16px 140px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
   position: relative;
   z-index: 1;
   max-width: 600px;
@@ -124,11 +127,15 @@
   z-index: 100;
   background: var(--nav-bg);
   border-top: 1px solid var(--nav-border);
-  padding: 6px 16px;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
+  padding: 8px 12px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
   display: flex;
   align-items: center;
   justify-content: space-around;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .nav-tab {
@@ -631,14 +638,24 @@
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 380px) {
-  .layout-main { padding: 14px 14px 130px; }
-  .nav-tab { padding: 6px 10px; font-size: 18px; }
+  .layout-main { padding: 12px 12px 140px; }
+  .layout-header { padding: 10px 14px; }
+  .nav-tab { padding: 6px 8px; font-size: 18px; }
+  .nav-tab-label { font-size: 9px; }
+  .nav-chat-fab { width: 48px; height: 48px; border-radius: 14px; }
+  .nav-chat-fab-icon { font-size: 20px; }
+}
+
+@media (max-width: 340px) {
+  .layout-main { padding: 10px 10px 140px; }
+  .nav-tab { padding: 4px 6px; font-size: 16px; }
+  .header-brand { font-size: 12px; }
 }
 
 @media (min-width: 768px) {
-  .layout-main { padding: 24px 20px 130px; }
+  .layout-main { padding: 24px 20px 140px; }
 }
 
 @media (min-width: 1200px) {
-  .layout-main { max-width: 700px; padding: 32px 24px 140px; }
+  .layout-main { max-width: 700px; padding: 32px 24px 150px; }
 }
