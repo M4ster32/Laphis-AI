@@ -57,7 +57,7 @@ const s = {
   page: {
     minHeight: "100vh", display: "flex", flexDirection: "column",
     justifyContent: "center", padding: "40px 24px",
-    background: "var(--bg)",
+    background: "#FF00FF",
     animation: "fadeUp 0.4s ease",
   },
   hero: { textAlign: "center", marginBottom: 40 },
