@@ -1,14 +1,8 @@
 {
-  "builds": [
-    {
-      "src": ".",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/ai-service/src/main.py"
-    }
+  "framework": "vite",
+  "buildCommand": "cd laphis-frontend && npm install && npm run build",
+  "outputDirectory": "laphis-frontend/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
