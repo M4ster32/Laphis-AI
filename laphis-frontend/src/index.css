@@ -86,8 +86,8 @@
   --gradient-surface: linear-gradient(135deg, rgba(255, 251, 247, 0.6), transparent);
 
   /* Layout-specific */
-  --header-bg: rgba(255, 251, 247, 0.90);
-  --nav-bg: rgba(255, 251, 247, 0.93);
+  --header-bg: rgba(255, 251, 247, 0.98);
+  --nav-bg: rgba(255, 251, 247, 1);
   --nav-border: rgba(139, 109, 78, 0.08);
   --hover-overlay: rgba(139, 109, 78, 0.05);
   --hover-overlay-strong: rgba(139, 109, 78, 0.08);
@@ -184,8 +184,8 @@
   --gradient-surface: linear-gradient(135deg, rgba(245, 225, 200, 0.04), transparent);
 
   /* Layout-specific */
-  --header-bg: rgba(23, 18, 13, 0.93);
-  --nav-bg: rgba(23, 18, 13, 0.95);
+  --header-bg: rgba(23, 18, 13, 0.98);
+  --nav-bg: rgba(23, 18, 13, 1);
   --nav-border: rgba(245, 225, 200, 0.06);
   --hover-overlay: rgba(245, 225, 200, 0.04);
   --hover-overlay-strong: rgba(245, 225, 200, 0.08);
