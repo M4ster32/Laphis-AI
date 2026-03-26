@@ -5,7 +5,8 @@ import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
-import { Wind, Zap, Droplets, TrendingUp, TrendingDown, Bot, ClipboardList, BarChart3, ChevronRight, Activity, Sparkles, ArrowRight, Lightbulb } from "lucide-react";
+import Modal from "../components/Modal";
+import { Wind, Zap, Droplets, TrendingUp, TrendingDown, Bot, ClipboardList, BarChart3, ChevronRight, Activity, Sparkles, ArrowRight, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame } from "lucide-react";
 import {
  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
  Tooltip, ResponsiveContainer,
@@ -42,6 +43,13 @@ export default function Dashboard() {
  const [zenStats, setZenStats] = useState({});
  const [insights, setInsights] = useState(null);
  const [insightsLoading, setInsightsLoading] = useState(false);
+
+ // Generate plan modal state
+ const [showGenerate, setShowGenerate] = useState(false);
+ const [genPrompt, setGenPrompt] = useState("");
+ const [genType, setGenType] = useState("training");
+ const [generating, setGenerating] = useState(false);
+ const [genError, setGenError] = useState(null);
 
  useEffect(() => {
  if (profile) loadData();
@@ -102,6 +110,23 @@ export default function Dashboard() {
  toast.error("Erro ao registar progresso");
  } finally {
  setInsightsLoading(false);
+ }
+ };
+
+ const handleGenerate = async () => {
+ if (!genPrompt.trim()) return;
+ try {
+ setGenerating(true);
+ setGenError(null);
+ await ApiService.generatePlan(profile.id, genType, genPrompt.trim(), null);
+ setShowGenerate(false);
+ setGenPrompt("");
+ toast.success("Plano gerado com sucesso! 🎉");
+ navigate("/plans");
+ } catch (err) {
+ setGenError(err.message || "Erro ao gerar plano");
+ } finally {
+ setGenerating(false);
  }
  };
 
@@ -233,6 +258,18 @@ export default function Dashboard() {
  </div>
  </button>
 
+ {/* Generate Workout — Primary CTA */}
+ <button style={s.generateCta} onClick={() => setShowGenerate(true)}>
+ <div style={s.generateCtaIcon}>
+ <Zap size={22} strokeWidth={2} color="#fff" />
+ </div>
+ <div style={s.generateCtaContent}>
+ <div style={s.generateCtaTitle}>Gerar Plano com AI</div>
+ <div style={s.generateCtaDesc}>Treino, nutrição ou combinado — personalizado para ti</div>
+ </div>
+ <ArrowRight size={18} color="var(--cta)" strokeWidth={2} />
+ </button>
+
  {/* Stats Row — compact inline */}
  <div style={s.statsRow}>
  <div style={s.statItem}>
@@ -314,10 +351,11 @@ export default function Dashboard() {
  </div>
  </div>
 
- {/* Quick Actions — 3 items */}
+ {/* Quick Actions — 4 items */}
  <div style={s.actionsRow}>
  {[
  { label: "Registar", to: "/logs", icon: ClipboardList },
+ { label: "Planos", to: "/plans", icon: Dumbbell },
  { label: "Relatórios", to: "/reports", icon: BarChart3 },
  { label: "Zen", to: "/zen", icon: Wind },
  ].map((a, i) => (
@@ -455,6 +493,84 @@ export default function Dashboard() {
  </div>
  </>
  )}
+
+ {/* Empty state when no logs */}
+ {!loading && logs.length === 0 && (
+ <div style={s.emptyCard}>
+ <Flame size={32} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.5, marginBottom: 8 }} />
+ <h4 style={s.emptyCardTitle}>Começa a tua jornada!</h4>
+ <p style={s.emptyCardText}>Regista o teu primeiro treino ou refeição para acompanhar o progresso.</p>
+ <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+ <button className="btn btn-primary btn-sm" onClick={() => navigate("/logs")}>
+ <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />Registar
+ </button>
+ <button className="btn btn-secondary btn-sm" onClick={() => setShowGenerate(true)}>
+ <Zap size={14} strokeWidth={2} style={{ marginRight: 4 }} />Gerar Plano
+ </button>
+ </div>
+ </div>
+ )}
+
+ {/* ====== GENERATE PLAN MODAL ====== */}
+ <Modal
+ isOpen={showGenerate}
+ onClose={() => { setShowGenerate(false); setGenError(null); setGenPrompt(""); }}
+ title="Gerar Plano com AI"
+ confirmText="Gerar Plano"
+ onConfirm={handleGenerate}
+ loading={generating}
+ >
+ {genError && (
+ <div className="alert alert-error" style={{ marginBottom: 12 }}>
+ <span className="alert-icon">⚠️</span><span>{genError}</span>
+ </div>
+ )}
+
+ {/* Plan Type */}
+ <div className="form-group">
+ <label className="form-label">Tipo de plano</label>
+ <div style={s.typeGrid}>
+ {[
+ { value: "training", label: "Treino", icon: Dumbbell },
+ { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed },
+ { value: "combined", label: "Combinado", icon: Zap },
+ ].map((t) => (
+ <button
+ key={t.value} type="button"
+ onClick={() => setGenType(t.value)}
+ style={{
+ ...s.typeBtn,
+ borderColor: genType === t.value ? "var(--primary)" : "var(--border)",
+ background: genType === t.value ? "rgba(181, 113, 77, 0.1)" : "var(--card-bg)",
+ }}
+ >
+ <t.icon size={22} color={genType === t.value ? "var(--primary)" : "var(--text-muted)"} strokeWidth={1.5} />
+ <span style={{
+ fontSize: 12, fontWeight: genType === t.value ? 700 : 500,
+ color: genType === t.value ? "var(--primary)" : "var(--text-secondary)",
+ }}>{t.label}</span>
+ </button>
+ ))}
+ </div>
+ </div>
+
+ <div className="form-group">
+ <label className="form-label">Descreve o que queres</label>
+ <textarea
+ className="form-input"
+ placeholder="Ex: Plano semanal de treino para ganhar massa, 4 dias"
+ value={genPrompt} onChange={(e) => setGenPrompt(e.target.value)}
+ rows={3} style={{ resize: "vertical" }} disabled={generating}
+ />
+ </div>
+
+ {/* Quick prompt chips */}
+ <div style={s.quickPrompts}>
+ {["Plano semanal de treino", "Nutrição para emagrecer", "Treino corpo inteiro", "Treino em casa"].map((p, i) => (
+ <button key={i} style={s.quickPromptBtn} onClick={() => setGenPrompt(p)} type="button">{p}</button>
+ ))}
+ </div>
+ </Modal>
  </div>
  );
 }
@@ -494,7 +610,7 @@ const s = {
  borderRadius: "var(--radius)", background: "var(--card-bg)",
  border: "1px solid var(--border)", cursor: "pointer",
  boxShadow: "var(--shadow)", transition: "transform 0.15s ease, box-shadow 0.15s ease",
- marginBottom: 20, textAlign: "left",
+ marginBottom: 12, textAlign: "left",
  },
  aiCardInner: { display: "flex", alignItems: "center", gap: 14, color: "var(--text)" },
  aiIcon: {
@@ -505,6 +621,26 @@ const s = {
  },
  aiTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
  aiDesc: { fontSize: 13, color: "var(--text-muted)", fontWeight: 400 },
+
+ /* Generate CTA */
+ generateCta: {
+ display: "flex", alignItems: "center", gap: 14, width: "100%",
+ padding: "16px 18px", borderRadius: "var(--radius)",
+ background: "var(--card-bg)", border: "2px solid var(--cta)",
+ cursor: "pointer", textAlign: "left", marginBottom: 20,
+ boxShadow: "0 2px 12px rgba(196, 155, 58, 0.12)",
+ transition: "transform 0.15s ease, box-shadow 0.15s ease",
+ },
+ generateCtaIcon: {
+ width: 46, height: 46, borderRadius: 14,
+ background: "var(--gradient-cta)", color: "#fff",
+ display: "flex", alignItems: "center", justifyContent: "center",
+ flexShrink: 0,
+ boxShadow: "0 2px 8px rgba(196, 155, 58, 0.25)",
+ },
+ generateCtaContent: { flex: 1 },
+ generateCtaTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
+ generateCtaDesc: { fontSize: 12, color: "var(--text-muted)", fontWeight: 400, lineHeight: 1.4 },
 
  /* Stats Row */
  statsRow: {
@@ -567,11 +703,11 @@ const s = {
  },
 
  /* Quick Actions */
- actionsRow: { display: "flex", gap: 10, marginBottom: 20 },
+ actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20 },
  actionBtn: {
- flex: 1, padding: "14px 8px", borderRadius: "var(--radius-sm)",
+ padding: "14px 6px", borderRadius: "var(--radius-sm)",
  background: "var(--card-bg)", border: "1px solid var(--border)",
- boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 12,
+ boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 11,
  fontWeight: 600, color: "var(--text-secondary)", textAlign: "center",
  transition: "background 0.15s",
  display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
@@ -642,5 +778,33 @@ const s = {
  width: "100%", marginBottom: 16, padding: "12px", border: "1px dashed var(--border)",
  borderRadius: "var(--radius)", background: "var(--card-bg)", color: "var(--text-secondary)",
  fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "var(--shadow)",
+ },
+
+ /* Empty State */
+ emptyCard: {
+ background: "var(--card-bg)", borderRadius: "var(--radius)",
+ padding: "36px 24px", boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center",
+ marginBottom: 20,
+ },
+ emptyCardTitle: { fontSize: 17, fontWeight: 700, color: "var(--text)", margin: "0 0 6px" },
+ emptyCardText: { fontSize: 13, color: "var(--text-muted)", margin: 0, maxWidth: 260, lineHeight: 1.5 },
+
+ /* Generate Modal */
+ typeGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 },
+ typeBtn: {
+ display: "flex", flexDirection: "column", alignItems: "center",
+ justifyContent: "center", gap: 6, padding: "14px 8px",
+ borderRadius: "var(--radius-sm)", border: "2px solid var(--border)",
+ cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
+ boxShadow: "var(--shadow)", background: "var(--card-bg)",
+ },
+ quickPrompts: { display: "flex", flexWrap: "wrap", gap: 8 },
+ quickPromptBtn: {
+ padding: "7px 12px", borderRadius: 20,
+ background: "var(--card-bg)", border: "1px solid var(--border)",
+ fontSize: 12, color: "var(--text-secondary)", cursor: "pointer",
+ fontWeight: 500, transition: "background 0.15s",
+ boxShadow: "var(--shadow)",
  },
 };

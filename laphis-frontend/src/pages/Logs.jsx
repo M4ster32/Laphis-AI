@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
-import { Dumbbell, UtensilsCrossed, Trash2, Plus } from "lucide-react";
+import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame } from "lucide-react";
 
 const TABS = [
   { key: "treino", label: "Treino", icon: Dumbbell },
@@ -10,6 +11,7 @@ const TABS = [
 
 export default function Logs() {
   const { profile } = useApp();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("treino");
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -121,14 +123,23 @@ export default function Logs() {
           <h2 style={s.title}>Registos</h2>
           <p style={s.subtitle}>{logs.length} registos no total</p>
         </div>
-        <button
-          className="btn btn-primary"
-          style={s.addBtn}
-          onClick={() => { setShowForm(!showForm); resetForm(); }}
-          title={showForm ? "Cancelar" : "Novo registo"}
-        >
-          {showForm ? "✕" : <Plus size={20} strokeWidth={1.5} />}
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            style={s.aiBtn}
+            onClick={() => navigate("/plans?generate=true")}
+            title="Gerar treino com AI"
+          >
+            <Zap size={16} strokeWidth={2} />
+          </button>
+          <button
+            className="btn btn-primary"
+            style={s.addBtn}
+            onClick={() => { setShowForm(!showForm); resetForm(); }}
+            title={showForm ? "Cancelar" : "Novo registo"}
+          >
+            {showForm ? "✕" : <Plus size={20} strokeWidth={1.5} />}
+          </button>
+        </div>
       </div>
 
       {/* Quick Stats */}
@@ -302,26 +313,47 @@ export default function Logs() {
         </div>
       ) : filtered.length === 0 ? (
         <div style={s.emptyState}>
+          {tab === "treino" ? (
+            <Dumbbell size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
+          ) : (
+            <UtensilsCrossed size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
+          )}
           <h3 style={s.emptyTitle}>Sem registos</h3>
           <p style={s.emptyText}>
             {tab === "treino" ? "Regista o teu primeiro treino!" : "Regista a tua primeira refeição!"}
           </p>
-          <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setShowForm(true)}>
-            + Adicionar {tab === "treino" ? "Treino" : "Refeição"}
-          </button>
+          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+              <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />
+              Adicionar {tab === "treino" ? "Treino" : "Refeição"}
+            </button>
+            {tab === "treino" && (
+              <button className="btn btn-secondary btn-sm" onClick={() => navigate("/plans?generate=true")}>
+                <Zap size={14} strokeWidth={2} style={{ marginRight: 4 }} />
+                Gerar com AI
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div style={s.logsList}>
           {filtered.map((log) => (
             <div key={`${log.log_type}-${log.id}`} style={s.logCard}>
               <div style={s.logTop}>
-                <div style={{ flex: 1 }}>
+                <div style={s.logIconWrap}>
+                  {tab === "treino"
+                    ? <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />
+                    : <UtensilsCrossed size={16} color="var(--accent-nutrition, var(--primary))" strokeWidth={1.5} />
+                  }
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <h4 style={s.logTitle}>
                     {tab === "treino"
                       ? (log.description || "Treino")
                       : (mealLabels[log.meal_type] || log.meal_type || "Refeição")}
                   </h4>
                   <p style={s.logDate}>
+                    <Calendar size={11} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -1 }} />
                     {log.date || (log.created_at ? new Date(log.created_at).toLocaleDateString("pt-PT") : "—")}
                   </p>
                 </div>
@@ -332,10 +364,16 @@ export default function Logs() {
 
               <div style={s.logMeta}>
                 {log.calories != null && log.calories > 0 && (
-                  <span style={s.logTag}> {log.calories} kcal</span>
+                  <span style={s.logTag}>
+                    <Flame size={12} strokeWidth={1.5} style={{ marginRight: 3, verticalAlign: -1 }} />
+                    {log.calories} kcal
+                  </span>
                 )}
                 {log.duration_min != null && log.duration_min > 0 && (
-                  <span style={s.logTag}>⏱ {log.duration_min} min</span>
+                  <span style={s.logTag}>
+                    <Clock size={12} strokeWidth={1.5} style={{ marginRight: 3, verticalAlign: -1 }} />
+                    {log.duration_min} min
+                  </span>
                 )}
               </div>
 
@@ -369,6 +407,14 @@ const s = {
   title: { fontSize: 20, fontWeight: 700, color: "var(--text)", margin: 0 },
   subtitle: { fontSize: 13, color: "var(--text-muted)", margin: "2px 0 0", fontWeight: 500 },
   addBtn: { padding: "8px 18px", fontSize: 14 },
+  aiBtn: {
+    width: 38, height: 38, borderRadius: "var(--radius-sm)",
+    background: "rgba(196, 155, 58, 0.1)", border: "1px solid rgba(196, 155, 58, 0.3)",
+    color: "var(--cta, #C49B3A)", cursor: "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    transition: "background 0.15s, transform 0.15s",
+    boxShadow: "var(--shadow)",
+  },
 
   /* Stats */
   statsRow: {
@@ -420,7 +466,13 @@ const s = {
     transition: "transform 0.2s, box-shadow 0.2s",
   },
   logTop: {
-    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+    display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10,
+  },
+  logIconWrap: {
+    width: 34, height: 34, borderRadius: 10,
+    background: "var(--bg-subtle, rgba(139, 109, 78, 0.04))",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    flexShrink: 0,
   },
   logTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
   logDate: { fontSize: 12, color: "var(--text-muted)", margin: 0 },

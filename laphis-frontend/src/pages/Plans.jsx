@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
@@ -15,6 +15,7 @@ const CATEGORY_ICONS = ["T", "F", "N", "Z", "C", "M", "O", "R", "S", "P", "H", "
 
 export default function Plans() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useApp();
   const [plans, setPlans] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -41,6 +42,14 @@ export default function Plans() {
       loadCategories();
     }
   }, [profile]);
+
+  // Auto-open generate modal from URL param (e.g. /plans?generate=true)
+  useEffect(() => {
+    if (profile && searchParams.get("generate") === "true") {
+      setShowGenerate(true);
+      setSearchParams({}, { replace: true }); // Clean URL
+    }
+  }, [profile, searchParams]);
 
   const loadPlans = async () => {
     try {
