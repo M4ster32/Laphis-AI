@@ -133,8 +133,12 @@
   justify-content: space-around;
   width: 100%;
   box-sizing: border-box;
-  /* Fallback: Samsung ignores env() sometimes */
   padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+}
+
+/* When a modal overlay is open, hide the nav so it can't block anything */
+body[style*="overflow: hidden"] .bottom-nav {
+  display: none;
 }
 
 /* Extend nav background below into safe-area / gesture bar */

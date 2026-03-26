@@ -71,7 +71,7 @@ export default function Modal({
 
 const s = {
   overlay: {
-    position: "fixed", inset: 0, zIndex: 1000,
+    position: "fixed", inset: 0, zIndex: 9999,
     background: "rgba(0, 0, 0, 0.6)",
     backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
     display: "flex", alignItems: "flex-end", justifyContent: "center",
@@ -80,14 +80,13 @@ const s = {
   },
   modal: {
     background: "var(--bg-surface)", borderRadius: "24px 24px 0 0",
-    width: "100%", maxWidth: 500, maxHeight: "85vh",
+    width: "100%", maxWidth: 500, maxHeight: "90vh",
     display: "flex", flexDirection: "column",
     animation: "slideUp 0.3s ease",
     boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.4)",
     border: "1px solid var(--border)",
     borderBottom: "none",
     position: "relative",
-    zIndex: 1001,
   },
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -101,18 +100,20 @@ const s = {
     width: 32, height: 32, borderRadius: "50%", background: "var(--card-bg)",
     border: "1px solid var(--border)", fontSize: 15, color: "var(--text-muted)",
     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-    transition: "all 0.2s",
+    transition: "all 0.2s", flexShrink: 0,
   },
   body: {
-    padding: 20, flex: 1, overflowY: "auto",
+    padding: "16px 20px", flex: 1, overflowY: "auto",
+    WebkitOverflowScrolling: "touch",
   },
   footer: {
     display: "flex", gap: 10, justifyContent: "flex-end",
     padding: "14px 20px",
-    paddingBottom: 40,
+    paddingBottom: "max(24px, env(safe-area-inset-bottom, 24px))",
     borderTop: "1px solid var(--border-light)",
     background: "var(--bg-surface)",
     flexShrink: 0,
+    borderRadius: "0 0 0 0",
   },
   cancelBtn: {
     background: "var(--card-bg)", border: "1px solid var(--border)",
