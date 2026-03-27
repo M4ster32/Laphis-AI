@@ -254,7 +254,7 @@ const s = {
   coachRow: { display: "flex", alignItems: "center", gap: 12 },
   coachAvatar: {
     width: 42, height: 42, borderRadius: 12,
-    background: "linear-gradient(135deg, #06B6D4, #0891B2)", color: "#fff",
+    background: "var(--gradient-primary)", color: "#fff",
     display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 14, fontWeight: 800, letterSpacing: -0.5,
   },
@@ -276,10 +276,10 @@ const s = {
   userBubbleWrap: { display: "flex", justifyContent: "flex-end" },
   assistantBubbleWrap: { display: "flex", justifyContent: "flex-start" },
   userBubble: {
-    background: "linear-gradient(135deg, #06B6D4, #0891B2)", color: "white",
+    background: "var(--gradient-primary)", color: "white",
     borderRadius: "18px 18px 4px 18px", padding: "12px 16px",
     maxWidth: "80%", fontSize: 14, lineHeight: 1.55, fontWeight: 500,
-    boxShadow: "0 1px 4px rgba(6, 182, 212, 0.25)",
+    boxShadow: "0 1px 4px var(--btn-primary-shadow)",
   },
   assistantBubble: {
     background: "var(--card-bg)", color: "var(--text)",
@@ -312,7 +312,7 @@ const s = {
   },
   welcomeAvatar: {
     width: 56, height: 56, borderRadius: 16,
-    background: "linear-gradient(135deg, #06B6D4, #0891B2)", color: "#fff",
+    background: "var(--gradient-primary)", color: "#fff",
     display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 18, fontWeight: 800, marginBottom: 4,
   },
@@ -341,11 +341,11 @@ const s = {
   },
   sendBtn: {
     width: 44, height: 44, borderRadius: "50%",
-    background: "linear-gradient(135deg, #06B6D4, #0891B2)", color: "white",
+    background: "var(--gradient-primary)", color: "white",
     border: "none", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
     transition: "opacity 0.15s",
-    boxShadow: "0 2px 8px rgba(6, 182, 212, 0.25)",
+    boxShadow: "0 2px 8px var(--btn-primary-shadow)",
   },
 
   emptyState: {

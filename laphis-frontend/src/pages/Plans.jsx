@@ -198,7 +198,7 @@ export default function Plans() {
               ...s.chip,
               background: selectedCategory === null ? "var(--primary)" : "var(--card-bg)",
               color: selectedCategory === null ? "white" : "var(--text-secondary)",
-              boxShadow: selectedCategory === null ? "0 2px 8px rgba(217, 117, 30, 0.2)" : "var(--shadow)",
+              boxShadow: selectedCategory === null ? "0 2px 8px var(--btn-primary-shadow)" : "var(--shadow)",
             }}
           >
             Todas
@@ -211,7 +211,7 @@ export default function Plans() {
                 ...s.chip,
                 background: selectedCategory === cat.id ? "var(--primary)" : "var(--card-bg)",
                 color: selectedCategory === cat.id ? "white" : "var(--text-secondary)",
-                boxShadow: selectedCategory === cat.id ? "0 2px 8px rgba(217, 117, 30, 0.2)" : "var(--shadow)",
+                boxShadow: selectedCategory === cat.id ? "0 2px 8px var(--btn-primary-shadow)" : "var(--shadow)",
               }}
             >
               {cat.name}
@@ -231,7 +231,7 @@ export default function Plans() {
               background: tab === t.key ? "var(--primary)" : "transparent",
               color: tab === t.key ? "white" : "var(--text-secondary)",
               fontWeight: tab === t.key ? 600 : 500,
-              boxShadow: tab === t.key ? "0 2px 8px rgba(217, 117, 30, 0.15)" : "none",
+              boxShadow: tab === t.key ? "0 2px 8px var(--btn-primary-shadow)" : "none",
             }}
           >
             {t.label}
@@ -252,16 +252,16 @@ export default function Plans() {
           {plans.map((plan) => {
             const getTypeIcon = (type) => {
               switch (type) {
-                case "training": return <Dumbbell size={16} color="#FF6B35" strokeWidth={1.5} />;
-                case "nutrition": return <UtensilsCrossed size={16} color="#10B981" strokeWidth={1.5} />;
-                case "combined": return <Zap size={16} color="#F59E0B" strokeWidth={1.5} />;
+                case "training": return <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />;
+                case "nutrition": return <UtensilsCrossed size={16} color="var(--p2)" strokeWidth={1.5} />;
+                case "combined": return <Zap size={16} color="var(--p3)" strokeWidth={1.5} />;
                 default: return null;
               }
             };
             const typeColors = {
-              training: "#FF6B35",
-              nutrition: "#10B981",
-              combined: "#F59E0B",
+              training: "var(--primary)",
+              nutrition: "var(--p2)",
+              combined: "var(--p3)",
             };
             return (
             <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
@@ -283,8 +283,8 @@ export default function Plans() {
                 </div>
                 <span style={{
                   ...s.statusBadge,
-                  background: plan.status === "active" ? "rgba(16, 185, 129, 0.1)" : "var(--bg)",
-                  color: plan.status === "active" ? "#10B981" : "var(--text-muted)",
+                  background: plan.status === "active" ? "var(--primary-bg)" : "var(--bg)",
+                  color: plan.status === "active" ? "var(--primary)" : "var(--text-muted)",
                 }}>
                   {plan.status === "active" ? "Ativo" : "Arquivado"}
                 </span>
@@ -329,9 +329,9 @@ export default function Plans() {
           <label className="form-label">Tipo de plano</label>
           <div style={s.typeGrid}>
             {[
-              { value: "training", label: "Treino", icon: Dumbbell, color: "#FF6B35", bg: "rgba(255, 107, 53, 0.1)" },
-              { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "#10B981", bg: "rgba(16, 185, 129, 0.1)" },
-              { value: "combined", label: "Combinado", icon: Zap, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)" },
+              { value: "training", label: "Treino", icon: Dumbbell, color: "var(--primary)", bg: "var(--primary-bg)" },
+              { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "var(--p2)", bg: "var(--cta-bg)" },
+              { value: "combined", label: "Combinado", icon: Zap, color: "var(--p3)", bg: "var(--primary-bg)" },
             ].map((t) => (
               <button
                 key={t.value} type="button"
@@ -405,7 +405,7 @@ export default function Plans() {
                 onClick={() => setCatIcon(ic)}
                 style={{
                   ...s.catIconBtn,
-                  background: catIcon === ic ? "rgba(217, 117, 30, 0.1)" : "var(--bg)",
+                  background: catIcon === ic ? "var(--primary-bg)" : "var(--bg)",
                   borderColor: catIcon === ic ? "var(--primary)" : "transparent",
                 }}
               >
@@ -522,7 +522,7 @@ const s = {
   planMeta: { fontSize: 12, color: "var(--text-muted)", margin: 0 },
   planCatBadge: {
     marginLeft: 6, padding: "2px 8px", borderRadius: 10,
-    background: "rgba(217, 117, 30, 0.1)", fontSize: 11, fontWeight: 600,
+    background: "var(--primary-bg)", fontSize: 11, fontWeight: 600,
     color: "var(--primary)",
   },
   statusBadge: {

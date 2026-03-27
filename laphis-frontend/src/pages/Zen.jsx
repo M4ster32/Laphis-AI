@@ -20,13 +20,13 @@ const AMBIENT_SOUNDS = [
 ];
 
 const MOODS = [
-  { value: "calm", label: "Calmo", color: "#3B82F6" },
-  { value: "happy", label: "Feliz", color: "#F59E0B" },
-  { value: "stressed", label: "Stressado", color: "#EF4444" },
-  { value: "anxious", label: "Ansioso", color: "#EC4899" },
-  { value: "tired", label: "Cansado", color: "#8B5CF6" },
-  { value: "energetic", label: "Energético", color: "#10B981" },
-  { value: "neutral", label: "Neutro", color: "#94A3B8" },
+  { value: "calm", label: "Calmo", color: "var(--p1)" },
+  { value: "happy", label: "Feliz", color: "var(--p2)" },
+  { value: "stressed", label: "Stressado", color: "var(--danger)" },
+  { value: "anxious", label: "Ansioso", color: "var(--p3)" },
+  { value: "tired", label: "Cansado", color: "var(--p4)" },
+  { value: "energetic", label: "Energético", color: "var(--primary)" },
+  { value: "neutral", label: "Neutro", color: "var(--text-muted)" },
 ];
 
 const TIMER_PRESETS = [3, 5, 10, 15, 20];
@@ -316,7 +316,7 @@ export default function Zen() {
                     style={{
                       ...s.patternCard,
                       borderColor: selectedPattern.name === p.name ? "var(--primary)" : "var(--border)",
-                      background: selectedPattern.name === p.name ? "rgba(217, 117, 30, 0.08)" : "var(--card-bg)",
+                      background: selectedPattern.name === p.name ? "var(--primary-bg)" : "var(--card-bg)",
                     }}
                   >
                     <span style={s.patternName}>{p.name}</span>
@@ -413,7 +413,7 @@ export default function Zen() {
                         background: timerMinutes === t ? "var(--primary)" : "var(--bg-card)",
                         color: timerMinutes === t ? "white" : "var(--text-secondary)",
                         fontWeight: timerMinutes === t ? 700 : 500,
-                        boxShadow: timerMinutes === t ? "0 4px 12px rgba(217, 117, 30, 0.25)" : "var(--shadow)",
+                        boxShadow: timerMinutes === t ? "0 4px 12px var(--btn-primary-hover-shadow)" : "var(--shadow)",
                       }}
                     >
                       {t}min
@@ -431,7 +431,7 @@ export default function Zen() {
                       style={{
                         ...s.soundBtn,
                         borderColor: selectedSound === snd.key ? "var(--primary)" : "var(--border)",
-                        background: selectedSound === snd.key ? "rgba(217, 117, 30, 0.08)" : "var(--card-bg)",
+                        background: selectedSound === snd.key ? "var(--primary-bg)" : "var(--card-bg)",
                       }}
                     >
                       <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>{snd.label}</span>
@@ -520,7 +520,7 @@ export default function Zen() {
       <h3 style={s.sectionTitle}>Atividades</h3>
       <div style={s.activitiesGrid}>
         <button style={s.activityCard} onClick={() => { setMoodBefore(null); setActiveView("breathing"); }}>
-          <div style={{ ...s.activityIconCircle, background: "rgba(217, 117, 30, 0.08)" }}>
+          <div style={{ ...s.activityIconCircle, background: "var(--primary-bg)" }}>
             <Wind size={24} color="var(--primary)" strokeWidth={1.5} />
           </div>
           <h4 style={s.activityTitle}>Respiração</h4>

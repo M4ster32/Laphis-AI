@@ -39,7 +39,7 @@ const ICONS = {
 
 /**
  * Icon component — renders SVG icons with customizable size and color
- * Usage: <Icon name="dashboard" size={24} color="#D9751E" />
+ * Usage: <Icon name="dashboard" size={24} color="var(--primary)" />
  */
 export function Icon({ name, size = 24, color = "currentColor", className = "" }) {
   const src = ICONS[name];

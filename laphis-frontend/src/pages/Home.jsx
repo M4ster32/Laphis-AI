@@ -18,9 +18,9 @@ export default function Home() {
       {/* Features */}
       <div style={s.features}>
         {[
-          { icon: Bot, title: "Coach AI", desc: "Planos e conselhos personalizados com IA", color: "var(--color-ai)", bg: "var(--color-ai-light)" },
-          { icon: Dumbbell, title: "Tracking", desc: "Regista treinos, refeições e vê o progresso", color: "var(--color-training)", bg: "var(--color-training-light)" },
-          { icon: Wind, title: "Bem-estar", desc: "Meditação, respiração e equilíbrio zen", color: "var(--color-zen)", bg: "var(--color-zen-light)" },
+          { icon: Bot, title: "Coach AI", desc: "Planos e conselhos personalizados com IA", color: "var(--primary)", bg: "var(--primary-bg)" },
+          { icon: Dumbbell, title: "Tracking", desc: "Regista treinos, refeições e vê o progresso", color: "var(--p2)", bg: "var(--cta-bg)" },
+          { icon: Wind, title: "Bem-estar", desc: "Meditação, respiração e equilíbrio zen", color: "var(--p3)", bg: "var(--primary-bg)" },
         ].map((f, i) => {
           const IconComponent = f.icon;
           return (
@@ -71,7 +71,7 @@ const s = {
     background: "var(--gradient-primary)", color: "#FFFFFF",
     fontSize: 28, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
-    boxShadow: "0 4px 16px rgba(217, 117, 30, 0.2)",
+    boxShadow: "var(--btn-primary-shadow)",
   },
   brandName: {
     fontSize: 36, fontWeight: 800, letterSpacing: 3,
@@ -95,7 +95,7 @@ const s = {
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   featureIcon: { fontSize: 14, fontWeight: 700, color: "var(--primary)", flexShrink: 0,
-    width: 40, height: 40, borderRadius: 12, background: "rgba(217, 117, 30, 0.08)",
+    width: 40, height: 40, borderRadius: 12, background: "var(--primary-bg)",
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   featureTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },

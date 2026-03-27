@@ -25,15 +25,15 @@ const motivationalQuotes = [
 ];
 
 const CHART_COLORS = {
- training: "#FF6B35",
- trainingLight: "rgba(255, 107, 53, 0.10)",
- nutrition: "#10B981",
- nutritionLight: "rgba(16, 185, 129, 0.10)",
- water: "#3B82F6",
- zen: "#8B5CF6",
- ai: "#06B6D4",
- progress: "#F59E0B",
- streak: "#EF4444",
+ training: "var(--primary)",
+ trainingLight: "var(--primary-bg)",
+ nutrition: "var(--p2)",
+ nutritionLight: "var(--cta-bg)",
+ water: "var(--p3)",
+ zen: "var(--accent)",
+ ai: "var(--primary)",
+ progress: "var(--p2)",
+ streak: "var(--danger)",
 };
 
 export default function Dashboard() {
@@ -253,7 +253,7 @@ export default function Dashboard() {
  {/* AI Coach — Hero Card */}
  <button style={s.aiCard} onClick={() => navigate("/chat")}>
  <div style={s.aiCardInner}>
- <div style={{ ...s.aiIcon, background: "linear-gradient(135deg, #06B6D4, #0891B2)" }}><Bot size={20} strokeWidth={2} color="#fff" /></div>
+ <div style={{ ...s.aiIcon, background: "var(--gradient-primary)" }}><Bot size={20} strokeWidth={2} color="#fff" /></div>
  <div style={{ flex: 1 }}>
  <div style={s.aiTitle}>AI Coach</div>
  <div style={s.aiDesc}>Pergunta o que quiseres sobre treino ou nutrição</div>
@@ -264,7 +264,7 @@ export default function Dashboard() {
 
  {/* Generate Workout — Primary CTA */}
  <button style={s.generateCta} onClick={() => setShowGenerate(true)}>
- <div style={{ ...s.generateCtaIcon, background: "linear-gradient(135deg, #FF6B35, #F59E0B)" }}>
+ <div style={{ ...s.generateCtaIcon, background: "var(--gradient-cta)" }}>
  <Zap size={22} strokeWidth={2} color="#fff" />
  </div>
  <div style={s.generateCtaContent}>
@@ -302,7 +302,7 @@ export default function Dashboard() {
  {/* Water */}
  <div style={s.waterCard}>
  <div style={s.waterHeader}>
- <Droplets size={18} color="var(--color-water)" strokeWidth={1.5} />
+ <Droplets size={18} color="var(--primary)" strokeWidth={1.5} />
  <span style={s.sectionLabel}>Hidratação</span>
  </div>
  <div style={s.waterBody}>
@@ -311,7 +311,7 @@ export default function Dashboard() {
  <circle cx="44" cy="44" r="40" fill="none" stroke="var(--border)" strokeWidth="4" />
  <circle
  cx="44" cy="44" r="40" fill="none"
- stroke="var(--color-water)" strokeWidth="4"
+ stroke="var(--primary)" strokeWidth="4"
  strokeDasharray={waterCircumference}
  strokeDashoffset={waterOffset}
  strokeLinecap="round"
@@ -333,7 +333,7 @@ export default function Dashboard() {
  {/* Zen summary */}
  <div style={s.zenSummary}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Wind size={18} color="var(--color-zen)" strokeWidth={1.5} />
+ <Wind size={18} color="var(--p3)" strokeWidth={1.5} />
  <span style={s.sectionLabel}>Zen</span>
  </div>
  <div style={s.zenStatRow}>
@@ -358,10 +358,10 @@ export default function Dashboard() {
  {/* Quick Actions — 4 items */}
  <div style={s.actionsRow}>
  {[
- { label: "Registar", to: "/logs", icon: ClipboardList, color: "var(--color-training)", bg: "var(--color-training-light)" },
- { label: "Planos", to: "/plans", icon: Dumbbell, color: "var(--color-progress)", bg: "var(--color-progress-light)" },
- { label: "Relatórios", to: "/reports", icon: BarChart3, color: "var(--color-reports)", bg: "var(--color-reports-light)" },
- { label: "Zen", to: "/zen", icon: Wind, color: "var(--color-zen)", bg: "var(--color-zen-light)" },
+ { label: "Registar", to: "/logs", icon: ClipboardList, color: "var(--primary)", bg: "var(--primary-bg)" },
+ { label: "Planos", to: "/plans", icon: Dumbbell, color: "var(--p2)", bg: "var(--cta-bg)" },
+ { label: "Relatórios", to: "/reports", icon: BarChart3, color: "var(--p3)", bg: "var(--primary-bg)" },
+ { label: "Zen", to: "/zen", icon: Wind, color: "var(--accent)", bg: "var(--primary-bg)" },
  ].map((a, i) => (
  <button key={i} style={s.actionBtn} onClick={() => navigate(a.to)}>
  <div style={{ width: 40, height: 40, borderRadius: 12, background: a.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4 }}>
@@ -377,7 +377,7 @@ export default function Dashboard() {
  <div style={s.insightsCard}>
  <div style={s.insightsHeader}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Sparkles size={18} color="var(--color-progress)" strokeWidth={1.5} />
+ <Sparkles size={18} color="var(--p2)" strokeWidth={1.5} />
  <h4 style={s.insightsTitle}>Progresso</h4>
  </div>
  {insights.trend_direction && (
@@ -399,7 +399,7 @@ export default function Dashboard() {
  <div style={s.insightsList}>
  {insights.highlights.slice(0, 3).map((h, i) => (
  <div key={i} style={s.insightItem}>
- <ArrowRight size={13} color="var(--color-progress)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+ <ArrowRight size={13} color="var(--p2)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
  <span style={s.insightText}>{h}</span>
  </div>
  ))}
@@ -537,9 +537,9 @@ export default function Dashboard() {
  <label className="form-label">Tipo de plano</label>
  <div style={s.typeGrid}>
  {[
- { value: "training", label: "Treino", icon: Dumbbell, color: "#FF6B35", bg: "rgba(255, 107, 53, 0.1)" },
- { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "#10B981", bg: "rgba(16, 185, 129, 0.1)" },
- { value: "combined", label: "Combinado", icon: Zap, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)" },
+ { value: "training", label: "Treino", icon: Dumbbell, color: "var(--primary)", bg: "var(--primary-bg)" },
+ { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "var(--p2)", bg: "var(--cta-bg)" },
+ { value: "combined", label: "Combinado", icon: Zap, color: "var(--p3)", bg: "var(--primary-bg)" },
  ].map((t) => (
  <button
  key={t.value} type="button"
@@ -607,7 +607,7 @@ const s = {
  background: "var(--gradient-primary)", color: "#fff",
  fontSize: 20, fontWeight: 700,
  display: "flex", alignItems: "center", justifyContent: "center",
- boxShadow: "0 2px 8px rgba(217, 117, 30, 0.2)", flexShrink: 0,
+ boxShadow: "var(--btn-primary-shadow)", flexShrink: 0,
  },
 
  /* AI Coach Hero */
@@ -634,7 +634,7 @@ const s = {
   padding: "14px 16px", borderRadius: "var(--radius)",
   background: "var(--card-bg)", border: "2px solid var(--cta)",
   cursor: "pointer", textAlign: "left", marginBottom: 20,
-  boxShadow: "0 2px 12px rgba(217, 117, 30, 0.12)",
+  boxShadow: "0 2px 12px var(--btn-primary-shadow)",
   transition: "transform 0.15s ease, box-shadow 0.15s ease",
   boxSizing: "border-box",
  },
@@ -643,7 +643,7 @@ const s = {
   background: "var(--gradient-cta)", color: "#fff",
   display: "flex", alignItems: "center", justifyContent: "center",
   flexShrink: 0,
-  boxShadow: "0 2px 8px rgba(217, 117, 30, 0.25)",
+  boxShadow: "0 2px 8px var(--btn-primary-shadow)",
  },
  generateCtaContent: { flex: 1, minWidth: 0 },
  generateCtaTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
@@ -692,7 +692,7 @@ const s = {
  transition: "background 0.15s",
  },
  waterBtnPlus: {
- background: "var(--color-water)", color: "#fff", border: "none",
+ background: "var(--primary)", color: "#fff", border: "none",
  },
 
  /* Zen Summary */
@@ -707,7 +707,7 @@ const s = {
  zenStatText: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
  zenLink: {
  marginTop: "auto", paddingTop: 10, background: "none", border: "none",
- color: "var(--color-zen)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+ color: "var(--primary)", fontSize: 13, fontWeight: 600, cursor: "pointer",
  textAlign: "left", padding: "8px 0 0",
  },
 

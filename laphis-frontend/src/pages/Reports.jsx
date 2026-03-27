@@ -5,16 +5,16 @@ import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity } from "lucide-react";
 
 const MOOD_MAP = {
-  calm: { label: "Calmo", color: "#3B82F6" },
-  happy: { label: "Feliz", color: "#F59E0B" },
-  stressed: { label: "Stressado", color: "#EF4444" },
-  anxious: { label: "Ansioso", color: "#EC4899" },
-  tired: { label: "Cansado", color: "#8B5CF6" },
-  energetic: { label: "Energético", color: "#10B981" },
-  neutral: { label: "Neutro", color: "#94A3B8" },
+  calm: { label: "Calmo", color: "var(--p1)" },
+  happy: { label: "Feliz", color: "var(--p2)" },
+  stressed: { label: "Stressado", color: "var(--danger)" },
+  anxious: { label: "Ansioso", color: "var(--p3)" },
+  tired: { label: "Cansado", color: "var(--p4)" },
+  energetic: { label: "Energético", color: "var(--primary)" },
+  neutral: { label: "Neutro", color: "var(--text-muted)" },
 };
 
-const CHART_COLORS = ["#FF6B35", "#10B981", "#3B82F6", "#8B5CF6", "#EF4444", "#F59E0B", "#EC4899"];
+const CHART_COLORS = ["var(--p1)", "var(--p2)", "var(--p3)", "var(--p4)", "var(--p5)", "var(--primary-light)", "var(--accent)"];
 
 export default function Reports() {
   const { profile } = useApp();
@@ -117,12 +117,12 @@ export default function Reports() {
           <span style={s.bigStatLabel}>Refeições</span>
         </div>
         <div style={s.bigStatCard}>
-          <Wind size={18} color="var(--accent-zen, #8C441B)" strokeWidth={1.5} />
+          <Wind size={18} color="var(--accent-zen)" strokeWidth={1.5} />
           <span style={s.bigStatValue}>{report.total_zen_sessions}</span>
           <span style={s.bigStatLabel}>Zen</span>
         </div>
         <div style={s.bigStatCard}>
-          <FileText size={18} color="#BF6734" strokeWidth={1.5} />
+          <FileText size={18} color="var(--primary-light)" strokeWidth={1.5} />
           <span style={s.bigStatValue}>{report.total_plans}</span>
           <span style={s.bigStatLabel}>Planos</span>
         </div>
@@ -242,7 +242,7 @@ export default function Reports() {
                   <XAxis dataKey="week" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                   <YAxis hide allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" name="Treinos" fill="#D9751E" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" name="Treinos" fill="var(--primary)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -258,15 +258,15 @@ export default function Reports() {
                 <AreaChart data={report.workouts_by_week}>
                   <defs>
                     <linearGradient id="durGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#D9751E" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#D9751E" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.05)" />
                   <XAxis dataKey="week" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="total" name="Minutos" stroke="#D9751E" fill="url(#durGrad)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="total" name="Minutos" stroke="var(--primary)" fill="url(#durGrad)" strokeWidth={2.5} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -284,7 +284,7 @@ export default function Reports() {
                   <XAxis dataKey="week" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                   <YAxis hide />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="total" name="Calorias" fill="#8C441B" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="total" name="Calorias" fill="var(--p2)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -326,7 +326,7 @@ export default function Reports() {
                   <XAxis dataKey="week" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
                   <YAxis hide allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" name="Sessões" fill="#8C441B" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" name="Sessões" fill="var(--p3)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -418,7 +418,7 @@ export default function Reports() {
               <div style={s.activityList}>
                 {activePlans.slice(0, 5).map((plan, idx) => {
                   const typeIcons = { training: Dumbbell, nutrition: UtensilsCrossed, combined: Zap };
-                  const typeColors = { training: "var(--primary)", nutrition: "var(--accent)", combined: "#BF6734" };
+                  const typeColors = { training: "var(--primary)", nutrition: "var(--accent)", combined: "var(--primary-light)" };
                   const typeLabels = { training: "Treino", nutrition: "Nutrição", combined: "Misto" };
                   const PlanIcon = typeIcons[plan.type] || FileText;
                   return (
@@ -451,7 +451,7 @@ export default function Reports() {
                 <div style={s.activityList}>
                   {workouts.map((log, idx) => (
                     <div key={idx} style={s.activityItem}>
-                      <div style={{ ...s.activityDot, background: "rgba(217, 117, 30, 0.08)" }}>
+                      <div style={{ ...s.activityDot, background: "var(--primary-bg)" }}>
                         <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />
                       </div>
                       <div style={s.activityInfo}>
@@ -485,7 +485,7 @@ export default function Reports() {
                 <div style={s.activityList}>
                   {meals.map((log, idx) => (
                     <div key={idx} style={s.activityItem}>
-                      <div style={{ ...s.activityDot, background: "rgba(140, 68, 27, 0.08)" }}>
+                      <div style={{ ...s.activityDot, background: "var(--cta-bg)" }}>
                         <UtensilsCrossed size={16} color="var(--accent)" strokeWidth={1.5} />
                       </div>
                       <div style={s.activityInfo}>
@@ -529,7 +529,7 @@ export default function Reports() {
               </div>
               <div style={s.usageDivider} />
               <div style={s.usageItem}>
-                <div style={s.usageIcon}><Wind size={20} color="var(--accent-zen, #8C441B)" strokeWidth={1.5} /></div>
+                <div style={s.usageIcon}><Wind size={20} color="var(--accent-zen)" strokeWidth={1.5} /></div>
                 <div style={s.usageInfo}>
                   <span style={s.usageValue}>{report.total_zen_sessions} sessões zen</span>
                   <span style={s.usageSub}>{report.total_zen_minutes} min meditação</span>
@@ -537,7 +537,7 @@ export default function Reports() {
               </div>
               <div style={s.usageDivider} />
               <div style={s.usageItem}>
-                <div style={s.usageIcon}><FileText size={20} color="#BF6734" strokeWidth={1.5} /></div>
+                <div style={s.usageIcon}><FileText size={20} color="var(--primary-light)" strokeWidth={1.5} /></div>
                 <div style={s.usageInfo}>
                   <span style={s.usageValue}>{report.total_plans} planos criados</span>
                   <span style={s.usageSub}>{activePlans.length} ativos agora</span>
@@ -561,7 +561,7 @@ const s = {
     borderRadius: "var(--radius)",
     padding: "28px 24px",
     textAlign: "center",
-    boxShadow: "0 4px 16px rgba(217, 117, 30, 0.15)",
+    boxShadow: "0 4px 16px var(--btn-primary-shadow)",
   },
   reportTitle: { fontSize: 22, fontWeight: 700, color: "white", margin: "0 0 4px" },
   reportSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.85)", margin: 0, fontWeight: 500 },

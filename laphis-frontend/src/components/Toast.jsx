@@ -21,7 +21,7 @@ const COLORS = {
   success: { bg: "rgba(34, 197, 94, 0.12)", border: "rgba(34, 197, 94, 0.25)", text: "var(--toast-success)" },
   error: { bg: "rgba(239, 68, 68, 0.12)", border: "rgba(239, 68, 68, 0.25)", text: "var(--toast-error)" },
   warning: { bg: "rgba(251, 191, 36, 0.12)", border: "rgba(251, 191, 36, 0.25)", text: "var(--toast-warning)" },
-  info: { bg: "rgba(59, 130, 246, 0.12)", border: "rgba(59, 130, 246, 0.25)", text: "var(--toast-info)" },
+  info: { bg: "var(--primary-bg)", border: "var(--border)", text: "var(--toast-info)" },
 };
 
 // ============ SINGLE TOAST ============

@@ -5,8 +5,8 @@ import ApiService from "../services/api";
 import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame } from "lucide-react";
 
 const TABS = [
-  { key: "treino", label: "Treino", icon: Dumbbell, color: "#FF6B35", shadow: "rgba(255, 107, 53, 0.15)" },
-  { key: "refeicao", label: "Refeição", icon: UtensilsCrossed, color: "#10B981", shadow: "rgba(16, 185, 129, 0.15)" },
+  { key: "treino", label: "Treino", icon: Dumbbell, color: "var(--primary)", shadow: "var(--btn-primary-shadow)" },
+  { key: "refeicao", label: "Refeição", icon: UtensilsCrossed, color: "var(--p2)", shadow: "var(--btn-primary-shadow)" },
 ];
 
 export default function Logs() {
@@ -255,7 +255,7 @@ export default function Logs() {
                           background: form.meal_type === val ? "var(--primary)" : "var(--card-bg)",
                           color: form.meal_type === val ? "white" : "var(--text-secondary)",
                           borderColor: form.meal_type === val ? "var(--primary)" : "var(--border)",
-                          boxShadow: form.meal_type === val ? "0 2px 8px rgba(217, 117, 30, 0.15)" : "var(--shadow)",
+                          boxShadow: form.meal_type === val ? "0 2px 8px var(--btn-primary-shadow)" : "var(--shadow)",
                         }}
                         disabled={saving}
                       >
@@ -342,8 +342,8 @@ export default function Logs() {
               <div style={s.logTop}>
                 <div style={s.logIconWrap}>
                   {tab === "treino"
-                    ? <Dumbbell size={16} color="var(--color-training)" strokeWidth={1.5} />
-                    : <UtensilsCrossed size={16} color="var(--color-nutrition)" strokeWidth={1.5} />
+                    ? <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />
+                    : <UtensilsCrossed size={16} color="var(--p2)" strokeWidth={1.5} />
                   }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -409,8 +409,8 @@ const s = {
   addBtn: { padding: "8px 18px", fontSize: 14 },
   aiBtn: {
     width: 38, height: 38, borderRadius: "var(--radius-sm)",
-    background: "var(--color-ai-light)", border: "1px solid rgba(6, 182, 212, 0.3)",
-    color: "var(--color-ai)", cursor: "pointer",
+    background: "var(--primary-bg)", border: "1px solid var(--border)",
+    color: "var(--primary)", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
     transition: "background 0.15s, transform 0.15s",
     boxShadow: "var(--shadow)",

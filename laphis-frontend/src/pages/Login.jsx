@@ -126,7 +126,7 @@ const s = {
     fontSize: 22, fontWeight: 700,
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     marginBottom: 16,
-    boxShadow: "0 4px 12px rgba(217, 117, 30, 0.15)",
+    boxShadow: "0 4px 12px var(--btn-primary-shadow)",
   },
   title: { fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 6px" },
   subtitle: { fontSize: 14, color: "var(--text-secondary)", margin: 0, fontWeight: 500 },
