@@ -173,9 +173,9 @@
   --btn-cta-text: #023535;
 
   /* Backgrounds */
-  --bg: #011C1C;
-  --bg-surface: #015958;
-  --bg-elevated: #008F8C;
+  --bg: #0D2222;
+  --bg-surface: #014A4A;
+  --bg-elevated: #007B78;
   --bg-subtle: rgba(15, 194, 192, 0.04);
 
   /* Text */
@@ -197,7 +197,7 @@
   --shadow-glow: none;
 
   /* Cards */
-  --card-bg: #015958;
+  --card-bg: #014A4A;
   --card-border: 1px solid rgba(15, 194, 192, 0.08);
   --card-highlight: none;
 
@@ -208,8 +208,8 @@
   --gradient-surface: linear-gradient(135deg, rgba(15, 194, 192, 0.04), transparent);
 
   /* Layout */
-  --header-bg: #011C1C;
-  --nav-bg: #011C1C;
+  --header-bg: #0D2222;
+  --nav-bg: #0D2222;
   --nav-border: rgba(15, 194, 192, 0.06);
   --hover-overlay: rgba(15, 194, 192, 0.06);
   --hover-overlay-strong: rgba(15, 194, 192, 0.12);
