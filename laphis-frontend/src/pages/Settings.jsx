@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
-import { Trash2, Plus, Bell } from "lucide-react";
+import { Trash2, Plus, Bell, Check } from "lucide-react";
 import {
   requestNotificationPermission,
   getNotificationPermission,
@@ -18,7 +18,7 @@ const DAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, colorTheme, setColorTheme, COLOR_THEMES } = useTheme();
   const [notifPerm, setNotifPerm] = useState(getNotificationPermission());
   const [reminders, setReminders] = useState(getReminders());
   const [showAddForm, setShowAddForm] = useState(false);
@@ -124,6 +124,29 @@ export default function Settings() {
               }}
             />
           </button>
+        </div>
+
+        {/* Color Theme Picker */}
+        <div style={{ marginTop: 20 }}>
+          <span style={s.settingLabel}>Cor do tema</span>
+          <span style={s.settingDesc}>Escolhe a paleta de cores da app</span>
+          <div style={s.colorGrid}>
+            {COLOR_THEMES.map((ct) => (
+              <button
+                key={ct.id}
+                onClick={() => setColorTheme(ct.id)}
+                style={{
+                  ...s.colorSwatch,
+                  background: ct.color,
+                  border: colorTheme === ct.id ? "3px solid var(--text)" : "3px solid transparent",
+                  transform: colorTheme === ct.id ? "scale(1.1)" : "scale(1)",
+                }}
+                title={ct.label}
+              >
+                {colorTheme === ct.id && <Check size={18} color="#fff" strokeWidth={3} />}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -330,6 +353,17 @@ const s = {
   },
   settingLabel: { display: "block", fontSize: 14, fontWeight: 600, color: "var(--text)" },
   settingDesc: { display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 },
+
+  /* Color picker */
+  colorGrid: {
+    display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap",
+  },
+  colorSwatch: {
+    width: 44, height: 44, borderRadius: 14, cursor: "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    transition: "all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  },
 
   /* Toggle */
   toggleBtn: {

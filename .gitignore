@@ -22,3 +22,5 @@ node_modules/
 
 uploads/
 **/uploads/
+.vercel
+.env*.local
