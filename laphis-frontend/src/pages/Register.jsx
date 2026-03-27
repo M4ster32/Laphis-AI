@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
-import { Mail, Lock, User } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 const GOALS = [
   { value: "perder_gordura", label: "Perder Gordura" },
@@ -16,6 +16,8 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -76,24 +78,84 @@ export default function Register() {
               <Lock size={16} strokeWidth={1.5} />
               Password
             </label>
-            <input
-              type="password" className="form-input"
-              placeholder="Mínimo 4 caracteres" value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(null); }}
-              disabled={loading} autoComplete="new-password"
-            />
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-input"
+                placeholder="Mínimo 4 caracteres"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                disabled={loading}
+                autoComplete="new-password"
+                style={{ paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                disabled={loading}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  background: "none",
+                  border: "none",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: loading ? 0.5 : 1,
+                  transition: "opacity 0.2s"
+                }}
+              >
+                {showPassword ? (
+                  <EyeOff size={18} strokeWidth={1.5} color="var(--text-muted)" />
+                ) : (
+                  <Eye size={18} strokeWidth={1.5} color="var(--text-muted)" />
+                )}
+              </button>
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Lock size={16} strokeWidth={1.5} />
               Confirmar Password
             </label>
-            <input
-              type="password" className="form-input"
-              placeholder="Repete a password" value={confirm}
-              onChange={(e) => { setConfirm(e.target.value); setError(null); }}
-              disabled={loading} autoComplete="new-password"
-            />
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <input
+                type={showConfirm ? "text" : "password"}
+                className="form-input"
+                placeholder="Repete a password"
+                value={confirm}
+                onChange={(e) => { setConfirm(e.target.value); setError(null); }}
+                disabled={loading}
+                autoComplete="new-password"
+                style={{ paddingRight: 40 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                disabled={loading}
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  background: "none",
+                  border: "none",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: loading ? 0.5 : 1,
+                  transition: "opacity 0.2s"
+                }}
+              >
+                {showConfirm ? (
+                  <EyeOff size={18} strokeWidth={1.5} color="var(--text-muted)" />
+                ) : (
+                  <Eye size={18} strokeWidth={1.5} color="var(--text-muted)" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="form-group">
