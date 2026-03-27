@@ -20,13 +20,13 @@ const AMBIENT_SOUNDS = [
 ];
 
 const MOODS = [
-  { value: "calm", label: "Calmo", color: "var(--accent-sport)" },
-  { value: "happy", label: "Feliz", color: "var(--accent-sport)" },
-  { value: "stressed", label: "Stressado", color: "var(--accent-nutrition)" },
-  { value: "anxious", label: "Ansioso", color: "#EF4444" },
-  { value: "tired", label: "Cansado", color: "var(--accent-zen)" },
-  { value: "energetic", label: "Energético", color: "var(--accent-sport)" },
-  { value: "neutral", label: "Neutro", color: "#94A3A6" },
+  { value: "calm", label: "Calmo", color: "#3B82F6" },
+  { value: "happy", label: "Feliz", color: "#F59E0B" },
+  { value: "stressed", label: "Stressado", color: "#EF4444" },
+  { value: "anxious", label: "Ansioso", color: "#EC4899" },
+  { value: "tired", label: "Cansado", color: "#8B5CF6" },
+  { value: "energetic", label: "Energético", color: "#10B981" },
+  { value: "neutral", label: "Neutro", color: "#94A3B8" },
 ];
 
 const TIMER_PRESETS = [3, 5, 10, 15, 20];

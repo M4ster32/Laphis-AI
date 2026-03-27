@@ -10,6 +10,45 @@
   --accent-nutrition: #BF6734;
   --accent-zen: #8C441B;
 
+  /* ========= FEATURE COLORS — Multi-Color System ========= */
+  /* Training / Workout */
+  --color-training: #FF6B35;
+  --color-training-light: rgba(255, 107, 53, 0.10);
+  --color-training-mid: rgba(255, 107, 53, 0.18);
+
+  /* Nutrition / Food */
+  --color-nutrition: #10B981;
+  --color-nutrition-light: rgba(16, 185, 129, 0.10);
+  --color-nutrition-mid: rgba(16, 185, 129, 0.18);
+
+  /* Water / Hydration */
+  --color-water: #3B82F6;
+  --color-water-light: rgba(59, 130, 246, 0.10);
+  --color-water-mid: rgba(59, 130, 246, 0.18);
+
+  /* Zen / Meditation */
+  --color-zen: #8B5CF6;
+  --color-zen-light: rgba(139, 92, 246, 0.10);
+  --color-zen-mid: rgba(139, 92, 246, 0.18);
+
+  /* AI / Chat */
+  --color-ai: #06B6D4;
+  --color-ai-light: rgba(6, 182, 212, 0.10);
+  --color-ai-mid: rgba(6, 182, 212, 0.18);
+
+  /* Progress / Gold */
+  --color-progress: #F59E0B;
+  --color-progress-light: rgba(245, 158, 11, 0.10);
+  --color-progress-mid: rgba(245, 158, 11, 0.18);
+
+  /* Streak / Fire */
+  --color-streak: #EF4444;
+  --color-streak-light: rgba(239, 68, 68, 0.10);
+
+  /* Reports */
+  --color-reports: #EC4899;
+  --color-reports-light: rgba(236, 72, 153, 0.10);
+
   /* Semantic */
   --primary: var(--accent-sport);
   --primary-light: #E89A4F;

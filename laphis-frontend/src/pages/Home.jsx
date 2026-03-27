@@ -18,14 +18,16 @@ export default function Home() {
       {/* Features */}
       <div style={s.features}>
         {[
-          { icon: Bot, title: "Coach AI", desc: "Planos e conselhos personalizados com IA" },
-          { icon: Dumbbell, title: "Tracking", desc: "Regista treinos, refeições e vê o progresso" },
-          { icon: Wind, title: "Bem-estar", desc: "Meditação, respiração e equilíbrio zen" },
+          { icon: Bot, title: "Coach AI", desc: "Planos e conselhos personalizados com IA", color: "var(--color-ai)", bg: "var(--color-ai-light)" },
+          { icon: Dumbbell, title: "Tracking", desc: "Regista treinos, refeições e vê o progresso", color: "var(--color-training)", bg: "var(--color-training-light)" },
+          { icon: Wind, title: "Bem-estar", desc: "Meditação, respiração e equilíbrio zen", color: "var(--color-zen)", bg: "var(--color-zen-light)" },
         ].map((f, i) => {
           const IconComponent = f.icon;
           return (
             <div key={i} style={s.featureCard}>
-              <IconComponent size={32} color="var(--primary)" strokeWidth={1.5} />
+              <div style={{ ...s.featureIconWrap, background: f.bg }}>
+                <IconComponent size={24} color={f.color} strokeWidth={1.8} />
+              </div>
               <div>
                 <h3 style={s.featureTitle}>{f.title}</h3>
                 <p style={s.featureDesc}>{f.desc}</p>
@@ -87,6 +89,10 @@ const s = {
     padding: "18px 20px", background: "var(--card-bg)",
     borderRadius: 20, boxShadow: "var(--shadow)",
     border: "1px solid var(--border)",
+  },
+  featureIconWrap: {
+    width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+    display: "flex", alignItems: "center", justifyContent: "center",
   },
   featureIcon: { fontSize: 14, fontWeight: 700, color: "var(--primary)", flexShrink: 0,
     width: 40, height: 40, borderRadius: 12, background: "rgba(217, 117, 30, 0.08)",

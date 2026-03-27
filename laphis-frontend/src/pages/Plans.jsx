@@ -252,23 +252,23 @@ export default function Plans() {
           {plans.map((plan) => {
             const getTypeIcon = (type) => {
               switch (type) {
-                case "training": return <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />;
-                case "nutrition": return <UtensilsCrossed size={16} color="var(--primary)" strokeWidth={1.5} />;
-                case "combined": return <Zap size={16} color="var(--primary)" strokeWidth={1.5} />;
+                case "training": return <Dumbbell size={16} color="#FF6B35" strokeWidth={1.5} />;
+                case "nutrition": return <UtensilsCrossed size={16} color="#10B981" strokeWidth={1.5} />;
+                case "combined": return <Zap size={16} color="#F59E0B" strokeWidth={1.5} />;
                 default: return null;
               }
             };
             const typeColors = {
-              training: "var(--primary)",
-              nutrition: "var(--accent)",
-              combined: "#BF6734",
+              training: "#FF6B35",
+              nutrition: "#10B981",
+              combined: "#F59E0B",
             };
             return (
             <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
               <div style={s.planTop}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {getTypeIcon(plan.type)}
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "var(--primary)" }}>{typeLabels[plan.type] || plan.type}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: typeColors[plan.type] || "var(--primary)" }}>{typeLabels[plan.type] || plan.type}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h4 style={s.planTitle}>{plan.title || "Plano sem título"}</h4>
@@ -283,8 +283,8 @@ export default function Plans() {
                 </div>
                 <span style={{
                   ...s.statusBadge,
-                  background: plan.status === "active" ? "rgba(217, 117, 30, 0.1)" : "var(--bg)",
-                  color: plan.status === "active" ? "#2E7D32" : "var(--text-muted)",
+                  background: plan.status === "active" ? "rgba(16, 185, 129, 0.1)" : "var(--bg)",
+                  color: plan.status === "active" ? "#10B981" : "var(--text-muted)",
                 }}>
                   {plan.status === "active" ? "Ativo" : "Arquivado"}
                 </span>
@@ -329,27 +329,27 @@ export default function Plans() {
           <label className="form-label">Tipo de plano</label>
           <div style={s.typeGrid}>
             {[
-              { value: "training", label: "Treino", icon: Dumbbell },
-              { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed },
-              { value: "combined", label: "Combinado", icon: Zap },
+              { value: "training", label: "Treino", icon: Dumbbell, color: "#FF6B35", bg: "rgba(255, 107, 53, 0.1)" },
+              { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "#10B981", bg: "rgba(16, 185, 129, 0.1)" },
+              { value: "combined", label: "Combinado", icon: Zap, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)" },
             ].map((t) => (
               <button
                 key={t.value} type="button"
                 onClick={() => setGenType(t.value)}
                 style={{
                   ...s.typeBtn,
-                  borderColor: genType === t.value ? "var(--primary)" : "var(--border)",
-                  background: genType === t.value ? "rgba(217, 117, 30, 0.1)" : "var(--card-bg)",
+                  borderColor: genType === t.value ? t.color : "var(--border)",
+                  background: genType === t.value ? t.bg : "var(--card-bg)",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   gap: 8,
                 }}
               >
-                <t.icon size={24} color={genType === t.value ? "var(--primary)" : "var(--text-secondary)"} strokeWidth={1.5} />
+                <t.icon size={24} color={genType === t.value ? t.color : "var(--text-secondary)"} strokeWidth={1.5} />
                 <span style={{
                   fontSize: 13, fontWeight: genType === t.value ? 700 : 500,
-                  color: genType === t.value ? "var(--primary)" : "var(--text-secondary)",
+                  color: genType === t.value ? t.color : "var(--text-secondary)",
                 }}>{t.label}</span>
               </button>
             ))}

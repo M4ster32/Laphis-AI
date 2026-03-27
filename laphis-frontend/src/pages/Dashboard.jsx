@@ -25,11 +25,15 @@ const motivationalQuotes = [
 ];
 
 const CHART_COLORS = {
- primary: "#D9751E",
- primaryLight: "rgba(217, 117, 30, 0.08)",
- accent: "#8C441B",
- accentLight: "rgba(140, 68, 27, 0.08)",
- warning: "#BF6734",
+ training: "#FF6B35",
+ trainingLight: "rgba(255, 107, 53, 0.10)",
+ nutrition: "#10B981",
+ nutritionLight: "rgba(16, 185, 129, 0.10)",
+ water: "#3B82F6",
+ zen: "#8B5CF6",
+ ai: "#06B6D4",
+ progress: "#F59E0B",
+ streak: "#EF4444",
 };
 
 export default function Dashboard() {
@@ -249,7 +253,7 @@ export default function Dashboard() {
  {/* AI Coach — Hero Card */}
  <button style={s.aiCard} onClick={() => navigate("/chat")}>
  <div style={s.aiCardInner}>
- <div style={s.aiIcon}><Bot size={20} strokeWidth={2} color="#fff" /></div>
+ <div style={{ ...s.aiIcon, background: "linear-gradient(135deg, #06B6D4, #0891B2)" }}><Bot size={20} strokeWidth={2} color="#fff" /></div>
  <div style={{ flex: 1 }}>
  <div style={s.aiTitle}>AI Coach</div>
  <div style={s.aiDesc}>Pergunta o que quiseres sobre treino ou nutrição</div>
@@ -260,7 +264,7 @@ export default function Dashboard() {
 
  {/* Generate Workout — Primary CTA */}
  <button style={s.generateCta} onClick={() => setShowGenerate(true)}>
- <div style={s.generateCtaIcon}>
+ <div style={{ ...s.generateCtaIcon, background: "linear-gradient(135deg, #FF6B35, #F59E0B)" }}>
  <Zap size={22} strokeWidth={2} color="#fff" />
  </div>
  <div style={s.generateCtaContent}>
@@ -298,7 +302,7 @@ export default function Dashboard() {
  {/* Water */}
  <div style={s.waterCard}>
  <div style={s.waterHeader}>
- <Droplets size={18} color="var(--primary)" strokeWidth={1.5} />
+ <Droplets size={18} color="var(--color-water)" strokeWidth={1.5} />
  <span style={s.sectionLabel}>Hidratação</span>
  </div>
  <div style={s.waterBody}>
@@ -307,7 +311,7 @@ export default function Dashboard() {
  <circle cx="44" cy="44" r="40" fill="none" stroke="var(--border)" strokeWidth="4" />
  <circle
  cx="44" cy="44" r="40" fill="none"
- stroke="var(--primary)" strokeWidth="4"
+ stroke="var(--color-water)" strokeWidth="4"
  strokeDasharray={waterCircumference}
  strokeDashoffset={waterOffset}
  strokeLinecap="round"
@@ -329,7 +333,7 @@ export default function Dashboard() {
  {/* Zen summary */}
  <div style={s.zenSummary}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Wind size={18} color="var(--accent)" strokeWidth={1.5} />
+ <Wind size={18} color="var(--color-zen)" strokeWidth={1.5} />
  <span style={s.sectionLabel}>Zen</span>
  </div>
  <div style={s.zenStatRow}>
@@ -354,13 +358,15 @@ export default function Dashboard() {
  {/* Quick Actions — 4 items */}
  <div style={s.actionsRow}>
  {[
- { label: "Registar", to: "/logs", icon: ClipboardList },
- { label: "Planos", to: "/plans", icon: Dumbbell },
- { label: "Relatórios", to: "/reports", icon: BarChart3 },
- { label: "Zen", to: "/zen", icon: Wind },
+ { label: "Registar", to: "/logs", icon: ClipboardList, color: "var(--color-training)", bg: "var(--color-training-light)" },
+ { label: "Planos", to: "/plans", icon: Dumbbell, color: "var(--color-progress)", bg: "var(--color-progress-light)" },
+ { label: "Relatórios", to: "/reports", icon: BarChart3, color: "var(--color-reports)", bg: "var(--color-reports-light)" },
+ { label: "Zen", to: "/zen", icon: Wind, color: "var(--color-zen)", bg: "var(--color-zen-light)" },
  ].map((a, i) => (
  <button key={i} style={s.actionBtn} onClick={() => navigate(a.to)}>
- <a.icon size={20} strokeWidth={1.5} color="var(--primary)" style={{ marginBottom: 4 }} />
+ <div style={{ width: 40, height: 40, borderRadius: 12, background: a.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4 }}>
+ <a.icon size={20} strokeWidth={1.5} color={a.color} />
+ </div>
  {a.label}
  </button>
  ))}
@@ -371,7 +377,7 @@ export default function Dashboard() {
  <div style={s.insightsCard}>
  <div style={s.insightsHeader}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Sparkles size={18} color="var(--primary)" strokeWidth={1.5} />
+ <Sparkles size={18} color="var(--color-progress)" strokeWidth={1.5} />
  <h4 style={s.insightsTitle}>Progresso</h4>
  </div>
  {insights.trend_direction && (
@@ -393,7 +399,7 @@ export default function Dashboard() {
  <div style={s.insightsList}>
  {insights.highlights.slice(0, 3).map((h, i) => (
  <div key={i} style={s.insightItem}>
- <ArrowRight size={13} color="var(--primary)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+ <ArrowRight size={13} color="var(--color-progress)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
  <span style={s.insightText}>{h}</span>
  </div>
  ))}
@@ -403,7 +409,7 @@ export default function Dashboard() {
  <div style={{ ...s.insightsList, marginTop: 8 }}>
  {insights.suggestions.slice(0, 2).map((sg, i) => (
  <div key={i} style={s.insightItem}>
- <Lightbulb size={13} color={CHART_COLORS.warning} strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+ <Lightbulb size={13} color={CHART_COLORS.ai} strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
  <span style={{ ...s.insightText, color: "var(--text-secondary)" }}>{sg}</span>
  </div>
  ))}
@@ -433,7 +439,7 @@ export default function Dashboard() {
  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
  <YAxis hide allowDecimals={false} />
  <Tooltip content={<CustomTooltip />} />
- <Bar dataKey="treinos" name="Treinos" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+ <Bar dataKey="treinos" name="Treinos" fill={CHART_COLORS.training} radius={[4, 4, 0, 0]} />
  </BarChart>
  </ResponsiveContainer>
  </div>
@@ -446,8 +452,8 @@ export default function Dashboard() {
  <AreaChart data={weeklyData}>
  <defs>
  <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor={CHART_COLORS.accent} stopOpacity={0.2} />
- <stop offset="95%" stopColor={CHART_COLORS.accent} stopOpacity={0} />
+ <stop offset="5%" stopColor={CHART_COLORS.nutrition} stopOpacity={0.2} />
+ <stop offset="95%" stopColor={CHART_COLORS.nutrition} stopOpacity={0} />
  </linearGradient>
  </defs>
  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
@@ -455,8 +461,8 @@ export default function Dashboard() {
  <YAxis hide />
  <Tooltip content={<CustomTooltip />} />
  <Area type="monotone" dataKey="calorias" name="Calorias"
- stroke={CHART_COLORS.accent} fill="url(#calGrad)"
- strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.accent }} />
+ stroke={CHART_COLORS.nutrition} fill="url(#calGrad)"
+ strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.nutrition }} />
  </AreaChart>
  </ResponsiveContainer>
  </div>
@@ -474,8 +480,8 @@ export default function Dashboard() {
  const isWorkout = log.log_type === "treino" || log.type === "workout";
  return (
  <div key={idx} style={s.activityItem}>
- <div style={{ ...s.activityDot, background: isWorkout ? CHART_COLORS.primaryLight : CHART_COLORS.accentLight }}>
- {isWorkout ? <TrendingUp size={18} color={CHART_COLORS.primary} strokeWidth={1.5} /> : <Droplets size={18} color={CHART_COLORS.accent} strokeWidth={1.5} />}
+ <div style={{ ...s.activityDot, background: isWorkout ? CHART_COLORS.trainingLight : CHART_COLORS.nutritionLight }}>
+ {isWorkout ? <TrendingUp size={18} color={CHART_COLORS.training} strokeWidth={1.5} /> : <UtensilsCrossed size={18} color={CHART_COLORS.nutrition} strokeWidth={1.5} />}
  </div>
  <div style={s.activityInfo}>
  <span style={s.activityTitle}>
@@ -531,23 +537,23 @@ export default function Dashboard() {
  <label className="form-label">Tipo de plano</label>
  <div style={s.typeGrid}>
  {[
- { value: "training", label: "Treino", icon: Dumbbell },
- { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed },
- { value: "combined", label: "Combinado", icon: Zap },
+ { value: "training", label: "Treino", icon: Dumbbell, color: "#FF6B35", bg: "rgba(255, 107, 53, 0.1)" },
+ { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "#10B981", bg: "rgba(16, 185, 129, 0.1)" },
+ { value: "combined", label: "Combinado", icon: Zap, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.1)" },
  ].map((t) => (
  <button
  key={t.value} type="button"
  onClick={() => setGenType(t.value)}
  style={{
  ...s.typeBtn,
- borderColor: genType === t.value ? "var(--primary)" : "var(--border)",
- background: genType === t.value ? "rgba(217, 117, 30, 0.1)" : "var(--card-bg)",
+ borderColor: genType === t.value ? t.color : "var(--border)",
+ background: genType === t.value ? t.bg : "var(--card-bg)",
  }}
  >
- <t.icon size={22} color={genType === t.value ? "var(--primary)" : "var(--text-muted)"} strokeWidth={1.5} />
+ <t.icon size={22} color={genType === t.value ? t.color : "var(--text-muted)"} strokeWidth={1.5} />
  <span style={{
  fontSize: 12, fontWeight: genType === t.value ? 700 : 500,
- color: genType === t.value ? "var(--primary)" : "var(--text-secondary)",
+ color: genType === t.value ? t.color : "var(--text-secondary)",
  }}>{t.label}</span>
  </button>
  ))}
@@ -686,7 +692,7 @@ const s = {
  transition: "background 0.15s",
  },
  waterBtnPlus: {
- background: "var(--primary)", color: "#fff", border: "none",
+ background: "var(--color-water)", color: "#fff", border: "none",
  },
 
  /* Zen Summary */
@@ -701,7 +707,7 @@ const s = {
  zenStatText: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
  zenLink: {
  marginTop: "auto", paddingTop: 10, background: "none", border: "none",
- color: "var(--primary)", fontSize: 13, fontWeight: 600, cursor: "pointer",
+ color: "var(--color-zen)", fontSize: 13, fontWeight: 600, cursor: "pointer",
  textAlign: "left", padding: "8px 0 0",
  },
 

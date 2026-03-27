@@ -5,8 +5,8 @@ import ApiService from "../services/api";
 import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame } from "lucide-react";
 
 const TABS = [
-  { key: "treino", label: "Treino", icon: Dumbbell },
-  { key: "refeicao", label: "Refeição", icon: UtensilsCrossed },
+  { key: "treino", label: "Treino", icon: Dumbbell, color: "#FF6B35", shadow: "rgba(255, 107, 53, 0.15)" },
+  { key: "refeicao", label: "Refeição", icon: UtensilsCrossed, color: "#10B981", shadow: "rgba(16, 185, 129, 0.15)" },
 ];
 
 export default function Logs() {
@@ -170,10 +170,10 @@ export default function Logs() {
             onClick={() => { setTab(t.key); setShowForm(false); resetForm(); }}
             style={{
               ...s.tab,
-              background: tab === t.key ? "var(--primary)" : "transparent",
+              background: tab === t.key ? t.color : "transparent",
               color: tab === t.key ? "white" : "var(--text-secondary)",
               fontWeight: tab === t.key ? 600 : 500,
-              boxShadow: tab === t.key ? "0 2px 8px rgba(217, 117, 30, 0.15)" : "none",
+              boxShadow: tab === t.key ? `0 2px 8px ${t.shadow}` : "none",
               display: "flex",
               alignItems: "center",
               gap: 8,
@@ -342,8 +342,8 @@ export default function Logs() {
               <div style={s.logTop}>
                 <div style={s.logIconWrap}>
                   {tab === "treino"
-                    ? <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />
-                    : <UtensilsCrossed size={16} color="var(--accent-nutrition, var(--primary))" strokeWidth={1.5} />
+                    ? <Dumbbell size={16} color="var(--color-training)" strokeWidth={1.5} />
+                    : <UtensilsCrossed size={16} color="var(--color-nutrition)" strokeWidth={1.5} />
                   }
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -409,8 +409,8 @@ const s = {
   addBtn: { padding: "8px 18px", fontSize: 14 },
   aiBtn: {
     width: 38, height: 38, borderRadius: "var(--radius-sm)",
-    background: "rgba(217, 117, 30, 0.1)", border: "1px solid rgba(217, 117, 30, 0.3)",
-    color: "var(--cta, #BF6734)", cursor: "pointer",
+    background: "var(--color-ai-light)", border: "1px solid rgba(6, 182, 212, 0.3)",
+    color: "var(--color-ai)", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
     transition: "background 0.15s, transform 0.15s",
     boxShadow: "var(--shadow)",

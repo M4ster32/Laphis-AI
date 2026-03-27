@@ -230,14 +230,14 @@ body[style*="overflow: hidden"] .bottom-nav {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #06B6D4, #0891B2);
   color: #FFFFFF;
   text-decoration: none;
   cursor: pointer;
   position: relative;
   top: -10px;
   box-shadow:
-    0 2px 8px rgba(217, 117, 30, 0.2),
+    0 2px 8px rgba(6, 182, 212, 0.25),
     0 0 0 3px var(--nav-bg);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   z-index: 2;
@@ -247,7 +247,7 @@ body[style*="overflow: hidden"] .bottom-nav {
 .nav-chat-fab:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 4px 16px rgba(217, 117, 30, 0.25),
+    0 4px 16px rgba(6, 182, 212, 0.30),
     0 0 0 3px var(--nav-bg);
 }
 
@@ -258,7 +258,7 @@ body[style*="overflow: hidden"] .bottom-nav {
 
 .nav-chat-fab.active {
   box-shadow:
-    0 4px 16px rgba(217, 117, 30, 0.3),
+    0 4px 16px rgba(6, 182, 212, 0.35),
     0 0 0 3px var(--nav-bg);
 }
 

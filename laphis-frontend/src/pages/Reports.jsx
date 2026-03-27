@@ -5,16 +5,16 @@ import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity } from "lucide-react";
 
 const MOOD_MAP = {
-  calm: { label: "Calmo", color: "var(--accent-sport)" },
-  happy: { label: "Feliz", color: "var(--accent-sport)" },
-  stressed: { label: "Stressado", color: "var(--accent-nutrition)" },
-  anxious: { label: "Ansioso", color: "#EF4444" },
-  tired: { label: "Cansado", color: "var(--accent-zen)" },
-  energetic: { label: "Energético", color: "var(--accent-sport)" },
-  neutral: { label: "Neutro", color: "#94A3A6" },
+  calm: { label: "Calmo", color: "#3B82F6" },
+  happy: { label: "Feliz", color: "#F59E0B" },
+  stressed: { label: "Stressado", color: "#EF4444" },
+  anxious: { label: "Ansioso", color: "#EC4899" },
+  tired: { label: "Cansado", color: "#8B5CF6" },
+  energetic: { label: "Energético", color: "#10B981" },
+  neutral: { label: "Neutro", color: "#94A3B8" },
 };
 
-const CHART_COLORS = ["#D9751E", "#8C441B", "#D9751E", "#BF6734", "#EF4444", "#8C441B", "#94A3B8"];
+const CHART_COLORS = ["#FF6B35", "#10B981", "#3B82F6", "#8B5CF6", "#EF4444", "#F59E0B", "#EC4899"];
 
 export default function Reports() {
   const { profile } = useApp();
