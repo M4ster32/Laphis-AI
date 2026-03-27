@@ -59,9 +59,9 @@
   --btn-cta-text: #FFFFFF;
 
   /* Backgrounds */
-  --bg: #FFD7B3;
-  --bg-surface: #FFF3EA;
-  --bg-elevated: #FFF8F2;
+  --bg: #FFEFE4;
+  --bg-surface: #F2E0D0;
+  --bg-elevated: #F7EAE0;
   --bg-subtle: rgba(115, 97, 80, 0.06);
 
   /* Text */
@@ -83,7 +83,7 @@
   --shadow-glow: none;
 
   /* Cards */
-  --card-bg: #FFF3EA;
+  --card-bg: #F2E0D0;
   --card-border: 1px solid rgba(115, 97, 80, 0.15);
   --card-highlight: none;
 
@@ -91,11 +91,11 @@
   --primary-glow: rgba(115, 97, 80, 0.25);
   --danger-bg: rgba(201, 64, 64, 0.08);
 
-  --gradient-surface: linear-gradient(135deg, rgba(255, 243, 234, 0.6), transparent);
+  --gradient-surface: linear-gradient(135deg, rgba(242, 224, 208, 0.6), transparent);
 
   /* Layout */
-  --header-bg: #FFF3EA;
-  --nav-bg: #FFF3EA;
+  --header-bg: #F2E0D0;
+  --nav-bg: #F2E0D0;
   --nav-border: rgba(115, 97, 80, 0.15);
   --hover-overlay: rgba(115, 97, 80, 0.06);
   --hover-overlay-strong: rgba(115, 97, 80, 0.12);
