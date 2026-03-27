@@ -24,3 +24,6 @@ uploads/
 **/uploads/
 .vercel
 .env*.local
+
+# Docs (não enviar para GitHub)
+docs/
