@@ -173,10 +173,10 @@
   --btn-cta-text: #023535;
 
   /* Backgrounds */
-  --bg: #023535;
-  --bg-surface: #008F8C;
-  --bg-elevated: #0CABA8;
-  --bg-subtle: rgba(15, 194, 192, 0.06);
+  --bg: #011C1C;
+  --bg-surface: #015958;
+  --bg-elevated: #008F8C;
+  --bg-subtle: rgba(15, 194, 192, 0.04);
 
   /* Text */
   --text: #E0F7F7;
@@ -184,9 +184,9 @@
   --text-muted: #4A8A89;
 
   /* Borders */
-  --border: rgba(15, 194, 192, 0.18);
-  --border-light: rgba(15, 194, 192, 0.08);
-  --glass-border: rgba(15, 194, 192, 0.12);
+  --border: rgba(15, 194, 192, 0.14);
+  --border-light: rgba(15, 194, 192, 0.06);
+  --glass-border: rgba(15, 194, 192, 0.10);
 
   /* Shadows */
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.30), 0 1px 2px rgba(0, 0, 0, 0.20);
@@ -198,7 +198,7 @@
 
   /* Cards */
   --card-bg: #015958;
-  --card-border: 1px solid rgba(15, 194, 192, 0.12);
+  --card-border: 1px solid rgba(15, 194, 192, 0.08);
   --card-highlight: none;
 
   --primary-bg: rgba(15, 194, 192, 0.12);
@@ -208,9 +208,9 @@
   --gradient-surface: linear-gradient(135deg, rgba(15, 194, 192, 0.04), transparent);
 
   /* Layout */
-  --header-bg: #023535;
-  --nav-bg: #023535;
-  --nav-border: rgba(15, 194, 192, 0.10);
+  --header-bg: #011C1C;
+  --nav-bg: #011C1C;
+  --nav-border: rgba(15, 194, 192, 0.06);
   --hover-overlay: rgba(15, 194, 192, 0.06);
   --hover-overlay-strong: rgba(15, 194, 192, 0.12);
   --input-bg: rgba(15, 194, 192, 0.08);
@@ -237,7 +237,7 @@
   --spinner-track: rgba(15, 194, 192, 0.12);
 
   /* Scrollbar */
-  --scrollbar-thumb: rgba(15, 194, 192, 0.15);
+  --scrollbar-thumb: rgba(15, 194, 192, 0.10);
 
   /* Selection */
   --selection-bg: rgba(15, 194, 192, 0.35);
