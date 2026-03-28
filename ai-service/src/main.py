@@ -23,6 +23,8 @@ from .api.water import router as water_router
 from .api.weight import router as weight_router
 from .api.progress import router as progress_router
 from .api.adaptation import router as adaptation_router
+from .api.rag_ingest import router as rag_ingest_router
+from .api.rag_ask import router as rag_ask_router
 
 app = FastAPI(
     title="LAPHIS AI Service",
@@ -110,3 +112,5 @@ app.include_router(water_router)
 app.include_router(weight_router)
 app.include_router(progress_router)
 app.include_router(adaptation_router)
+app.include_router(rag_ingest_router)
+app.include_router(rag_ask_router)

@@ -47,3 +47,11 @@ MAX_PAGE_SIZE = 100
 # Uploads
 MAX_UPLOAD_SIZE_MB = 10
 ALLOWED_UPLOAD_EXTENSIONS = {"csv", "xlsx", "json"}
+
+# RAG (Retrieval-Augmented Generation)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+RAG_EMBEDDING_MODEL = "text-embedding-3-small"
+RAG_CHAT_MODEL = os.getenv("LAPHIS_CHAT_MODEL", "gpt-4o-mini")
+RAG_CHUNK_SIZE = 800
+RAG_CHUNK_OVERLAP = 150
+RAG_MAX_CONTEXT_CHUNKS = 6
