@@ -116,7 +116,7 @@ class ApiService {
   }
 
   /**
-   * Fazer pergunta à IA
+   * Fazer pergunta à IA (endpoint antigo, para compatibilidade)
    */
   static async askAI(question, profileId = null) {
     let response;
@@ -134,6 +134,38 @@ class ApiService {
       throw new Error(data?.detail || "Erro ao obter resposta da IA");
     }
     return await response.json();
+  }
+
+  /**
+   * Fazer pergunta com RAG (retrieval-augmented generation com PDFs)
+   * Usa contexto dos documentos indexados + dados do utilizador
+   */
+  static async ragAsk(question, categories = null, top_k = 6) {
+    const token = localStorage.getItem('authToken');
+    if (!token) throw new Error("Sessão expirada. Faz login novamente.");
+    
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}/rag/ask?token=${token}`, {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: JSON.stringify({ question, categories, top_k }),
+      });
+    } catch (networkErr) {
+      throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr.");
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data?.detail || "Erro ao obter resposta da IA");
+    }
+    return await response.json();
+  }
+
+  /**
+   * Alias para ragAsk (compatibilidade com Chat.jsx atual)
+   */
+  static async askQuestion(question) {
+    return this.ragAsk(question);
   }
 
   /**

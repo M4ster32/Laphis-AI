@@ -56,8 +56,16 @@ export default function Chat() {
     setMessages((prev) => [...prev, { role: "user", content: msg }]);
     setLoading(true);
     try {
-      const resp = await ApiService.askQuestion(msg);
-      setMessages((prev) => [...prev, { role: "assistant", content: resp.answer || resp.response || "Sem resposta." }]);
+      // Usa RAG endpoint (com contexto dos PDFs indexados)
+      const resp = await ApiService.ragAsk(msg);
+      const answer = resp.answer || resp.response || "Sem resposta.";
+      
+      // Se houver fontes, adiciona nota discreta no final
+      const fullAnswer = resp.sources?.length 
+        ? `${answer}\n\n📚 Fontes: ${resp.sources.length} documentos relevantes`
+        : answer;
+      
+      setMessages((prev) => [...prev, { role: "assistant", content: fullAnswer }]);
     } catch (err) {
       setMessages((prev) => [...prev, { role: "assistant", content: "Erro: " + (err.message || "Sem ligação ao servidor") }]);
     } finally {
