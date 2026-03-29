@@ -4,6 +4,7 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import { Send, Trash2, Save, FileText } from "lucide-react";
+import { API_BASE_URL } from "../constants";
 
 const SUGGESTIONS = [
   "Cria um plano semanal de treino",
@@ -56,15 +57,18 @@ export default function Chat() {
     setMessages((prev) => [...prev, { role: "user", content: msg }]);
     setLoading(true);
     try {
-      // Usa RAG endpoint (com contexto dos PDFs indexados)
-      const resp = await ApiService.ragAsk(msg);
-      const answer = resp.answer || resp.response || "Sem resposta.";
-      
-      // Se houver fontes, adiciona nota discreta no final
-      const fullAnswer = resp.sources?.length 
-        ? `${answer}\n\n📚 Fontes: ${resp.sources.length} documentos relevantes`
+      const token = localStorage.getItem("authToken");
+      const res = await fetch(`${API_BASE_URL}/rag/ask?token=${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: msg, top_k: 6 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || "Erro da API");
+      const answer = data.answer || "Sem resposta.";
+      const fullAnswer = data.sources?.length
+        ? `${answer}\n\n📚 Fontes: ${data.sources.length} documentos relevantes`
         : answer;
-      
       setMessages((prev) => [...prev, { role: "assistant", content: fullAnswer }]);
     } catch (err) {
       setMessages((prev) => [...prev, { role: "assistant", content: "Erro: " + (err.message || "Sem ligação ao servidor") }]);
