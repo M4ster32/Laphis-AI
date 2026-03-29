@@ -16,9 +16,14 @@ from typing import Optional
 
 # --------------- CONFIG ---------------
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 EMBEDDING_MODEL = "text-embedding-3-small"  # 1536 dims, barato e bom
 CHAT_MODEL = os.getenv("LAPHIS_CHAT_MODEL", "gpt-4o-mini")  # barato e rápido
+
+def _get_api_key():
+    key = os.getenv("OPENAI_API_KEY", "")
+    if not key:
+        raise ValueError("OPENAI_API_KEY não configurada")
+    return key
 CHUNK_SIZE = 800       # caracteres por chunk
 CHUNK_OVERLAP = 150    # overlap entre chunks
 MAX_CONTEXT_CHUNKS = 6 # chunks enviados ao LLM
@@ -121,8 +126,7 @@ async def get_embeddings(texts: list[str]) -> list[list[float]]:
     Gera embeddings via OpenAI API (batch).
     Retorna lista de vetores 1536-dim.
     """
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY não configurada")
+    api_key = _get_api_key()
 
     # OpenAI aceita até ~8k tokens por batch, vamos enviar em lotes
     all_embeddings = []
@@ -134,7 +138,7 @@ async def get_embeddings(texts: list[str]) -> list[list[float]]:
             resp = await client.post(
                 "https://api.openai.com/v1/embeddings",
                 headers={
-                    "Authorization": f"Bearer {OPENAI_API_KEY}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
                 json={
@@ -367,8 +371,7 @@ async def generate_answer(
     """
     Gera resposta final usando OpenAI com contexto RAG + dados do utilizador.
     """
-    if not OPENAI_API_KEY:
-        raise ValueError("OPENAI_API_KEY não configurada")
+    api_key = _get_api_key()
 
     # Construir prompt
     doc_context = _build_doc_context(doc_chunks)
@@ -398,7 +401,7 @@ async def generate_answer(
         resp = await client.post(
             "https://api.openai.com/v1/chat/completions",
             headers={
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
             json={
