@@ -639,6 +639,32 @@ class ApiService {
     return await response.json();
   }
 
+  /**
+   * Alias para getChatHistory (usado pelo Chat.jsx)
+   */
+  static async chatHistory() {
+    const token = localStorage.getItem('authToken');
+    if (!token) return { history: [] };
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat/0?token=${token}&per_page=50`, {
+        headers: this.getHeaders(),
+      });
+      if (!response.ok) return { history: [] };
+      const data = await response.json();
+      return { history: data.messages || [] };
+    } catch (err) {
+      console.error("Chat history error:", err);
+      return { history: [] };
+    }
+  }
+
+  /**
+   * Limpar histórico de chat (placeholder — backend não tem este endpoint ainda)
+   */
+  static async clearChatHistory() {
+    return { message: "ok" };
+  }
+
   // ==================== ZEN SESSIONS ====================
 
   /**
