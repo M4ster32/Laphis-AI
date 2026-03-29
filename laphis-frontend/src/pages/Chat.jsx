@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
-import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import { Send, Trash2, Save, FileText } from "lucide-react";
 import { API_BASE_URL } from "../constants";
@@ -26,6 +25,8 @@ export default function Chat() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const getToken = () => localStorage.getItem("authToken");
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -35,13 +36,21 @@ export default function Chat() {
 
   const loadHistory = async () => {
     try {
-      const resp = await ApiService.chatHistory();
-      if (resp?.history?.length) {
-        const mapped = resp.history.flatMap((h) => [
-          { role: "user", content: h.question, ts: h.created_at },
-          { role: "assistant", content: h.answer, ts: h.created_at },
-        ]);
-        setMessages(mapped);
+      const token = getToken();
+      if (!token) { setHistoryLoaded(true); return; }
+      const res = await fetch(`${API_BASE_URL}/chat/0?token=${token}&per_page=50`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const msgs = data.messages || [];
+        if (msgs.length) {
+          const mapped = msgs.flatMap((h) => [
+            { role: "user", content: h.question || h.content, ts: h.created_at },
+            ...(h.answer ? [{ role: "assistant", content: h.answer, ts: h.created_at }] : []),
+          ]);
+          setMessages(mapped);
+        }
       }
     } catch (e) {
       console.error("Erro ao carregar histórico:", e);
@@ -57,7 +66,7 @@ export default function Chat() {
     setMessages((prev) => [...prev, { role: "user", content: msg }]);
     setLoading(true);
     try {
-      const token = localStorage.getItem("authToken");
+      const token = getToken();
       const res = await fetch(`${API_BASE_URL}/rag/ask?token=${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -79,19 +88,19 @@ export default function Chat() {
   };
 
   const handleClearHistory = async () => {
-    try {
-      await ApiService.clearChatHistory();
-      setMessages([]);
-      setShowClearModal(false);
-    } catch (err) {
-      console.error("Erro ao limpar:", err);
-    }
+    setMessages([]);
+    setShowClearModal(false);
   };
 
   const handleSaveAsPlan = async (content) => {
     setSavingPlan(content);
     try {
-      await ApiService.generatePlan({ prompt: content, save: true });
+      const token = getToken();
+      await fetch(`${API_BASE_URL}/plans/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ prompt: content, save: true }),
+      });
       setSaveSuccess("Plano guardado com sucesso!");
       setTimeout(() => setSaveSuccess(null), 3000);
     } catch (err) {
@@ -104,7 +113,12 @@ export default function Chat() {
   const handleGeneratePlan = async (content) => {
     setSavingPlan(content);
     try {
-      await ApiService.generatePlan({ prompt: content });
+      const token = getToken();
+      await fetch(`${API_BASE_URL}/plans/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ prompt: content }),
+      });
       navigate("/plans");
     } catch (err) {
       console.error("Erro ao gerar plano:", err);
