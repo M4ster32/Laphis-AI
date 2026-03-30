@@ -104,11 +104,13 @@ class UnifiedLogOut(BaseModel):
 class AskIn(BaseModel):
     profile_id: int
     question: str = Field(min_length=3, max_length=500)
+    session_id: Optional[int] = None
 
 class AskOut(BaseModel):
     title: str
     bullets: List[str]
     disclaimer: str
+    session_id: Optional[int] = None
 
 # ==================== CATEGORY SCHEMAS ====================
 
@@ -186,7 +188,28 @@ class ChatMessageOut(BaseModel):
     id: int
     role: str
     content: str
+    session_id: Optional[int] = None
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ChatSessionOut(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    expires_at: datetime
+    message_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+class ChatSessionDetailOut(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    expires_at: datetime
+    messages: List[ChatMessageOut] = []
 
     class Config:
         from_attributes = True
@@ -196,6 +219,21 @@ class ChatHistoryOut(BaseModel):
     total: int
     page: int
     per_page: int
+
+# ==================== WEEKLY SUMMARY SCHEMAS ====================
+
+class WeeklySummaryOut(BaseModel):
+    id: int
+    week_start: str
+    week_end: str
+    summary_text: str
+    highlights: Optional[List[str]] = None
+    suggestions: Optional[List[str]] = None
+    stats: Optional[dict] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 # ==================== ZEN SESSION SCHEMAS ====================
 

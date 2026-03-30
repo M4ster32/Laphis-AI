@@ -9,8 +9,8 @@ from collections import Counter
 import jwt
 import os
 from ..core.db import get_db
-from ..core.models import User, Profile, WorkoutLog, MealLog, Plan, ZenSession, ChatMessage
-from ..core.schemas import ReportSummaryOut
+from ..core.models import User, Profile, WorkoutLog, MealLog, Plan, ZenSession, ChatMessage, WeeklySummary, WaterLog
+from ..core.schemas import ReportSummaryOut, WeeklySummaryOut
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -182,3 +182,190 @@ def get_report_summary(token: str = None, db: Session = Depends(get_db)):
         mood_distribution=mood_distribution,
         member_since=member_since,
     )
+
+
+# ==================== WEEKLY AI SUMMARY ====================
+
+def _generate_weekly_summary_text(workouts, meals, zen_sessions, water_logs, plans, profile):
+    now = datetime.utcnow()
+    week_ago = now - timedelta(days=7)
+    week_str = lambda d: d.strftime("%Y-%m-%d")
+
+    w_week = [w for w in workouts if w.date and w.date >= week_str(week_ago)]
+    m_week = [m for m in meals if m.date and m.date >= week_str(week_ago)]
+    z_week = [z for z in zen_sessions if z.created_at and z.created_at >= week_ago]
+    water_week = [wl for wl in water_logs if wl.date and wl.date >= week_str(week_ago)]
+
+    total_w = len(w_week)
+    total_min = sum(w.duration_min or 0 for w in w_week)
+    total_cal_burned = sum(w.calories or 0 for w in w_week)
+    total_meals_count = len(m_week)
+    total_cal_eaten = sum(m.calories or 0 for m in m_week)
+    total_protein = sum(m.protein_g or 0 for m in m_week)
+    total_zen = len(z_week)
+    total_zen_min = sum(z.duration_min or 0 for z in z_week)
+    total_water_glasses = sum(wl.glasses or 0 for wl in water_week)
+
+    stats = {
+        "treinos": total_w,
+        "minutos_treino": total_min,
+        "calorias_queimadas": total_cal_burned,
+        "refeicoes": total_meals_count,
+        "calorias_ingeridas": total_cal_eaten,
+        "proteina_g": total_protein,
+        "sessoes_zen": total_zen,
+        "minutos_zen": total_zen_min,
+        "copos_agua": total_water_glasses,
+    }
+
+    highlights = []
+    suggestions = []
+
+    goal_label = {
+        "perder_gordura": "perder gordura",
+        "ganhar_massa": "ganhar massa muscular",
+        "manter": "manter a forma",
+    }.get(profile.goal if profile else "", "melhorar a saúde") if profile else "melhorar a saúde"
+
+    name = profile.name if profile else "Utilizador"
+    days_target = profile.days_per_week if profile else 3
+
+    if total_w >= days_target:
+        highlights.append(f"Cumpriste o objetivo de {days_target} treinos por semana com {total_w} sessões!")
+    elif total_w > 0:
+        highlights.append(f"Fizeste {total_w} treino{'s' if total_w > 1 else ''} esta semana (objetivo: {days_target})")
+        suggestions.append(f"Tenta encaixar mais {days_target - total_w} treino{'s' if (days_target - total_w) > 1 else ''} para atingires o teu objetivo")
+
+    if total_min > 0:
+        highlights.append(f"Total de {total_min} minutos de treino")
+    if total_zen > 0:
+        highlights.append(f"{total_zen} sessão/sessões zen ({total_zen_min} min de mindfulness)")
+    if total_water_glasses > 0:
+        avg_water = round(total_water_glasses / 7, 1)
+        highlights.append(f"Média de {avg_water} copos de água por dia")
+        if avg_water < 6:
+            suggestions.append("Tenta beber pelo menos 8 copos de água por dia")
+
+    if total_meals_count == 0:
+        suggestions.append("Regista as tuas refeições para acompanhar a nutrição")
+    elif total_cal_eaten > 0:
+        avg_cal_day = round(total_cal_eaten / 7)
+        highlights.append(f"Média de {avg_cal_day} kcal/dia")
+
+    if total_w == 0:
+        suggestions.append("Não registaste treinos esta semana — começa com uma sessão leve!")
+    if total_zen == 0:
+        suggestions.append("Experimenta uma sessão de respiração ou meditação para o teu bem-estar")
+
+    summary_parts = [f"Olá {name}! Aqui está o teu resumo semanal:"]
+
+    if highlights:
+        summary_parts.append("\n📊 Destaques:")
+        for h in highlights:
+            summary_parts.append(f"  • {h}")
+
+    if suggestions:
+        summary_parts.append("\n💡 Sugestões:")
+        for s in suggestions:
+            summary_parts.append(f"  • {s}")
+
+    if profile:
+        summary_parts.append(f"\nContinua focado no teu objetivo de {goal_label}. Bom trabalho! 💪")
+
+    summary_text = "\n".join(summary_parts)
+    return summary_text, highlights, suggestions, stats
+
+
+@router.get("/weekly-summary", response_model=WeeklySummaryOut)
+def get_weekly_summary(token: str = None, db: Session = Depends(get_db)):
+    user_id = _get_user_id(token)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    now = datetime.utcnow()
+    week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+    week_end = (now - timedelta(days=now.weekday()) + timedelta(days=6)).strftime("%Y-%m-%d")
+
+    existing = (
+        db.query(WeeklySummary)
+        .filter(WeeklySummary.user_id == user_id, WeeklySummary.week_start == week_start)
+        .first()
+    )
+    if existing:
+        return existing
+
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+    profile_id = profile.id if profile else None
+
+    workouts = db.query(WorkoutLog).filter(WorkoutLog.profile_id == profile_id).all() if profile_id else []
+    meals = db.query(MealLog).filter(MealLog.profile_id == profile_id).all() if profile_id else []
+    zen_sessions = db.query(ZenSession).filter(ZenSession.user_id == user_id).all()
+    water_logs = db.query(WaterLog).filter(WaterLog.user_id == user_id).all()
+    plans = db.query(Plan).filter(Plan.profile_id == profile_id).all() if profile_id else []
+
+    summary_text, highlights, suggestions, stats = _generate_weekly_summary_text(
+        workouts, meals, zen_sessions, water_logs, plans, profile
+    )
+
+    summary = WeeklySummary(
+        user_id=user_id,
+        week_start=week_start,
+        week_end=week_end,
+        summary_text=summary_text,
+        highlights=highlights,
+        suggestions=suggestions,
+        stats=stats,
+    )
+    db.add(summary)
+    db.commit()
+    db.refresh(summary)
+    return summary
+
+
+@router.post("/weekly-summary/refresh", response_model=WeeklySummaryOut)
+def refresh_weekly_summary(token: str = None, db: Session = Depends(get_db)):
+    user_id = _get_user_id(token)
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilizador não encontrado")
+
+    now = datetime.utcnow()
+    week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+    week_end = (now - timedelta(days=now.weekday()) + timedelta(days=6)).strftime("%Y-%m-%d")
+
+    existing = (
+        db.query(WeeklySummary)
+        .filter(WeeklySummary.user_id == user_id, WeeklySummary.week_start == week_start)
+        .first()
+    )
+    if existing:
+        db.delete(existing)
+        db.commit()
+
+    profile = db.query(Profile).filter(Profile.user_id == user_id).first()
+    profile_id = profile.id if profile else None
+
+    workouts = db.query(WorkoutLog).filter(WorkoutLog.profile_id == profile_id).all() if profile_id else []
+    meals = db.query(MealLog).filter(MealLog.profile_id == profile_id).all() if profile_id else []
+    zen_sessions = db.query(ZenSession).filter(ZenSession.user_id == user_id).all()
+    water_logs = db.query(WaterLog).filter(WaterLog.user_id == user_id).all()
+    plans = db.query(Plan).filter(Plan.profile_id == profile_id).all() if profile_id else []
+
+    summary_text, highlights, suggestions, stats = _generate_weekly_summary_text(
+        workouts, meals, zen_sessions, water_logs, plans, profile
+    )
+
+    summary = WeeklySummary(
+        user_id=user_id,
+        week_start=week_start,
+        week_end=week_end,
+        summary_text=summary_text,
+        highlights=highlights,
+        suggestions=suggestions,
+        stats=stats,
+    )
+    db.add(summary)
+    db.commit()
+    db.refresh(summary)
+    return summary

@@ -62,6 +62,7 @@ def _migrate_db():
         ("workout_logs", "created_at", "DATETIME"),
         ("meal_logs", "foods", "TEXT"),
         ("meal_logs", "created_at", "DATETIME"),
+        ("chat_messages", "session_id", "INTEGER"),
     ]
 
     for table, column, col_type in migrations:
@@ -69,7 +70,7 @@ def _migrate_db():
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
             print(f"  ✅ Coluna '{column}' adicionada a '{table}'")
         except sqlite3.OperationalError:
-            pass  # Coluna já existe
+            pass
 
     conn.commit()
     conn.close()
@@ -78,13 +79,20 @@ def _migrate_db():
 # 🔹 Criar tabelas no arranque da aplicação
 @app.on_event("startup")
 def on_startup():
-    """
-    Executado ao iniciar a aplicação FastAPI
-    Cria todas as tabelas SQLAlchemy definidas em models.py
-    """
     print("\n🚀 Iniciando LAPHIS AI Service...")
     init_db()
     _migrate_db()
+    # Limpar sessões de chat expiradas
+    from .core.db import SessionLocal
+    from .api.chat import cleanup_expired_sessions
+    try:
+        db = SessionLocal()
+        deleted = cleanup_expired_sessions(db)
+        if deleted:
+            print(f"  🗑️ {deleted} sessões de chat expiradas removidas")
+        db.close()
+    except Exception:
+        pass
     print("✅ Base de dados pronta para usar!")
 
 # 🔹 Endpoint raiz (para veres algo logo no browser)

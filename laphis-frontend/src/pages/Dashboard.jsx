@@ -47,6 +47,8 @@ export default function Dashboard() {
  const [zenStats, setZenStats] = useState({});
  const [insights, setInsights] = useState(null);
  const [insightsLoading, setInsightsLoading] = useState(false);
+ const [weeklySummary, setWeeklySummary] = useState(null);
+ const [summaryLoading, setSummaryLoading] = useState(false);
 
  // Generate plan modal state
  const [showGenerate, setShowGenerate] = useState(false);
@@ -72,8 +74,7 @@ export default function Dashboard() {
  setWaterData(water || { glasses: 0, ml_total: 0, goal_glasses: 8, percentage: 0 });
  setZenStats(zen || {});
  // Load insights separately (non-blocking)
- ApiService.getProgressInsights().then(data => setInsights(data)).catch(() => {});
- } catch (err) {
+ ApiService.getProgressInsights().then(data => setInsights(data)).catch(() => {}); ApiService.getWeeklySummary().then(data => setWeeklySummary(data)).catch(() => {}); } catch (err) {
  console.error("Error loading dashboard:", err);
  } finally {
  setLoading(false);
@@ -131,6 +132,19 @@ export default function Dashboard() {
  setGenError(err.message || "Erro ao gerar plano");
  } finally {
  setGenerating(false);
+ }
+ };
+
+ const handleRefreshSummary = async () => {
+ try {
+ setSummaryLoading(true);
+ const data = await ApiService.refreshWeeklySummary();
+ setWeeklySummary(data);
+ toast.success("Resumo atualizado!");
+ } catch (err) {
+ toast.error("Erro ao atualizar resumo");
+ } finally {
+ setSummaryLoading(false);
  }
  };
 
@@ -296,6 +310,38 @@ export default function Dashboard() {
  <span style={s.statLabel}>Minutos</span>
  </div>
  </div>
+
+ {/* Weekly AI Summary */}
+ {weeklySummary && (
+ <div style={s.summaryCard}>
+ <div style={s.summaryHeader}>
+ <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+ <Sparkles size={18} color="var(--primary)" strokeWidth={1.5} />
+ <h4 style={s.summaryTitle}>Resumo Semanal</h4>
+ </div>
+ <button style={s.summaryRefresh} onClick={handleRefreshSummary} disabled={summaryLoading}>
+ {summaryLoading ? "..." : "↻"}
+ </button>
+ </div>
+ <p style={s.summaryText}>{weeklySummary.summary_text}</p>
+ {weeklySummary.stats && (
+ <div style={s.summaryStats}>
+ {weeklySummary.stats.treinos > 0 && (
+ <span style={s.summaryStatTag}>🏋️ {weeklySummary.stats.treinos} treinos</span>
+ )}
+ {weeklySummary.stats.minutos_treino > 0 && (
+ <span style={s.summaryStatTag}>⏱️ {weeklySummary.stats.minutos_treino}min</span>
+ )}
+ {weeklySummary.stats.copos_agua > 0 && (
+ <span style={s.summaryStatTag}>💧 {weeklySummary.stats.copos_agua} copos</span>
+ )}
+ {weeklySummary.stats.sessoes_zen > 0 && (
+ <span style={s.summaryStatTag}>🧘 {weeklySummary.stats.sessoes_zen} zen</span>
+ )}
+ </div>
+ )}
+ </div>
+ )}
 
  {/* Hydration + Zen — side by side */}
  <div style={s.twoCol}>
@@ -818,5 +864,33 @@ const s = {
  fontSize: 12, color: "var(--text-secondary)", cursor: "pointer",
  fontWeight: 500, transition: "background 0.15s",
  boxShadow: "var(--shadow)",
+ },
+
+ /* Weekly Summary */
+ summaryCard: {
+ background: "var(--card-bg)", borderRadius: "var(--radius)",
+ padding: "16px", boxShadow: "var(--shadow)",
+ border: "1px solid var(--border)", marginBottom: 16,
+ },
+ summaryHeader: {
+ display: "flex", justifyContent: "space-between", alignItems: "center",
+ marginBottom: 10,
+ },
+ summaryTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 },
+ summaryRefresh: {
+ background: "var(--bg-surface)", border: "1px solid var(--border)",
+ borderRadius: 8, width: 30, height: 30, cursor: "pointer",
+ display: "flex", alignItems: "center", justifyContent: "center",
+ fontSize: 16, color: "var(--text-muted)", transition: "background 0.15s",
+ },
+ summaryText: {
+ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6,
+ margin: "0 0 10px", whiteSpace: "pre-wrap",
+ },
+ summaryStats: { display: "flex", flexWrap: "wrap", gap: 8 },
+ summaryStatTag: {
+ padding: "4px 10px", borderRadius: 12,
+ background: "var(--primary-bg)", fontSize: 12,
+ fontWeight: 600, color: "var(--primary)",
  },
 };

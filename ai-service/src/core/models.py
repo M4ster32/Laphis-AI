@@ -177,6 +177,8 @@ class User(Base):
     # Relacionamentos
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+    weekly_summaries = relationship("WeeklySummary", back_populates="user", cascade="all, delete-orphan")
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
     zen_sessions = relationship("ZenSession", back_populates="user", cascade="all, delete-orphan")
     water_logs = relationship("WaterLog", back_populates="user", cascade="all, delete-orphan")
@@ -186,24 +188,56 @@ class User(Base):
         return f"<User(id={self.id}, email={self.email}, goal={self.goal})>"
 
 
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(120), nullable=False, default="Nova conversa")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+
+    user = relationship("User", back_populates="chat_sessions")
+    messages = relationship("ChatMessage", back_populates="session", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<ChatSession(id={self.id}, user_id={self.user_id}, title={self.title})>"
+
+
 class ChatMessage(Base):
-    """
-    Modelo de Mensagem de Chat
-    Armazena histórico de conversa entre utilizador e IA
-    """
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    role = Column(String(20), nullable=False)  # "user" ou "assistant"
+    session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=True, index=True)
+    role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
-    # Relacionamento com utilizador
     user = relationship("User", back_populates="messages")
+    session = relationship("ChatSession", back_populates="messages")
 
     def __repr__(self):
-        return f"<ChatMessage(id={self.id}, user_id={self.user_id}, role={self.role}, created_at={self.created_at})>"
+        return f"<ChatMessage(id={self.id}, user_id={self.user_id}, role={self.role})>"
+
+
+class WeeklySummary(Base):
+    __tablename__ = "weekly_summaries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    week_start = Column(String(10), nullable=False)
+    week_end = Column(String(10), nullable=False)
+    summary_text = Column(Text, nullable=False)
+    highlights = Column(JSON, nullable=True)
+    suggestions = Column(JSON, nullable=True)
+    stats = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="weekly_summaries")
+
+    def __repr__(self):
+        return f"<WeeklySummary(id={self.id}, user_id={self.user_id}, week_start={self.week_start})>"
 
 
 class Plan(Base):

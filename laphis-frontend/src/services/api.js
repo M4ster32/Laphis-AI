@@ -116,15 +116,17 @@ class ApiService {
   }
 
   /**
-   * Fazer pergunta à IA (endpoint antigo, para compatibilidade)
+   * Fazer pergunta à IA
    */
-  static async askAI(question, profileId = null) {
+  static async askAI(question, profileId = null, sessionId = null) {
     let response;
+    const body = { question, profile_id: profileId };
+    if (sessionId) body.session_id = sessionId;
     try {
       response = await fetch(`${API_BASE_URL}/ask`, {
         method: "POST",
         headers: this.getHeaders(),
-        body: JSON.stringify({ question, profile_id: profileId }),
+        body: JSON.stringify(body),
       });
     } catch (networkErr) {
       throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr.");
@@ -134,38 +136,6 @@ class ApiService {
       throw new Error(data?.detail || "Erro ao obter resposta da IA");
     }
     return await response.json();
-  }
-
-  /**
-   * Fazer pergunta com RAG (retrieval-augmented generation com PDFs)
-   * Usa contexto dos documentos indexados + dados do utilizador
-   */
-  static async ragAsk(question, categories = null, top_k = 6) {
-    const token = localStorage.getItem('authToken');
-    if (!token) throw new Error("Sessão expirada. Faz login novamente.");
-    
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/rag/ask?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ question, categories, top_k }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data?.detail || "Erro ao obter resposta da IA");
-    }
-    return await response.json();
-  }
-
-  /**
-   * Alias para ragAsk (compatibilidade com Chat.jsx atual)
-   */
-  static async askQuestion(question) {
-    return this.ragAsk(question);
   }
 
   /**
@@ -622,7 +592,7 @@ class ApiService {
   // ==================== CHAT HISTORY ====================
 
   /**
-   * Obter histórico de chat
+   * Obter histórico de chat (legacy)
    */
   static async getChatHistory(profileId, page = 1, perPage = 50) {
     let response;
@@ -639,30 +609,64 @@ class ApiService {
     return await response.json();
   }
 
-  /**
-   * Alias para getChatHistory (usado pelo Chat.jsx)
-   */
-  static async chatHistory() {
+  // ==================== CHAT SESSIONS ====================
+
+  static async getChatSessions() {
     const token = localStorage.getItem('authToken');
-    if (!token) return { history: [] };
     try {
-      const response = await fetch(`${API_BASE_URL}/chat/0?token=${token}&per_page=50`, {
+      const response = await fetch(`${API_BASE_URL}/chat/sessions?token=${token}`, {
         headers: this.getHeaders(),
       });
-      if (!response.ok) return { history: [] };
-      const data = await response.json();
-      return { history: data.messages || [] };
+      if (!response.ok) return [];
+      return await response.json();
     } catch (err) {
-      console.error("Chat history error:", err);
-      return { history: [] };
+      console.error("Error fetching chat sessions:", err);
+      return [];
     }
   }
 
-  /**
-   * Limpar histórico de chat (placeholder — backend não tem este endpoint ainda)
-   */
-  static async clearChatHistory() {
-    return { message: "ok" };
+  static async createChatSession() {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/chat/sessions?token=${token}`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error("Erro ao criar sessão");
+    return await response.json();
+  }
+
+  static async getChatSession(sessionId) {
+    const token = localStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}?token=${token}`, {
+        headers: this.getHeaders(),
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (err) {
+      console.error("Error fetching chat session:", err);
+      return null;
+    }
+  }
+
+  static async renameChatSession(sessionId, title) {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(
+      `${API_BASE_URL}/chat/sessions/${sessionId}/title?token=${token}&title=${encodeURIComponent(title)}`,
+      { method: "PUT", headers: this.getHeaders() }
+    );
+    if (!response.ok) throw new Error("Erro ao renomear sessão");
+    return await response.json();
+  }
+
+  static async deleteChatSession(sessionId) {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(
+      `${API_BASE_URL}/chat/sessions/${sessionId}?token=${token}`,
+      { method: "DELETE", headers: this.getHeaders() }
+    );
+    if (!response.ok) throw new Error("Erro ao apagar sessão");
+    return await response.json();
   }
 
   // ==================== ZEN SESSIONS ====================
@@ -762,6 +766,30 @@ class ApiService {
       const resp = await response.json().catch(() => ({}));
       throw new Error(resp.detail || "Erro ao obter relatório");
     }
+    return await response.json();
+  }
+
+  static async getWeeklySummary() {
+    const token = localStorage.getItem('authToken');
+    try {
+      const response = await fetch(`${API_BASE_URL}/reports/weekly-summary?token=${token}`, {
+        headers: this.getHeaders(),
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (err) {
+      console.error("Error fetching weekly summary:", err);
+      return null;
+    }
+  }
+
+  static async refreshWeeklySummary() {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`${API_BASE_URL}/reports/weekly-summary/refresh?token=${token}`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    });
+    if (!response.ok) throw new Error("Erro ao atualizar resumo");
     return await response.json();
   }
 
