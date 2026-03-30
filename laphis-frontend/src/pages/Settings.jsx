@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
-import { Trash2, Plus, Bell } from "lucide-react";
+import { useApp } from "../hooks/useApp";
+import ApiService from "../services/api";
+import { Trash2, Plus, Bell, Play, Archive, Dumbbell, UtensilsCrossed, Zap } from "lucide-react";
 import {
   requestNotificationPermission,
   getNotificationPermission,
@@ -19,6 +21,7 @@ const DAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 export default function Settings() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { profile } = useApp();
   const [notifPerm, setNotifPerm] = useState(getNotificationPermission());
   const [reminders, setReminders] = useState(getReminders());
   const [showAddForm, setShowAddForm] = useState(false);
@@ -27,10 +30,52 @@ export default function Settings() {
   const [newMessage, setNewMessage] = useState("");
   const [newDays, setNewDays] = useState([1, 2, 3, 4, 5]);
   const [testSent, setTestSent] = useState(false);
+  const [archivedPlans, setArchivedPlans] = useState([]);
+  const [archivedLoading, setArchivedLoading] = useState(false);
 
   useEffect(() => {
     startReminderChecker();
-  }, []);
+    if (profile) loadArchivedPlans();
+  }, [profile]);
+
+  const loadArchivedPlans = async () => {
+    try {
+      setArchivedLoading(true);
+      const resp = await ApiService.getPlans(profile.id, "archived");
+      setArchivedPlans(Array.isArray(resp) ? resp : resp.plans || []);
+    } catch (err) {
+      console.error("Erro ao carregar planos arquivados:", err);
+    } finally {
+      setArchivedLoading(false);
+    }
+  };
+
+  const handleActivatePlan = async (planId) => {
+    try {
+      await ApiService.updatePlan(planId, { status: "active" });
+      await loadArchivedPlans();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeletePlan = async (planId) => {
+    try {
+      await ApiService.deletePlan(planId);
+      await loadArchivedPlans();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case "training": return <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />;
+      case "nutrition": return <UtensilsCrossed size={16} color="var(--p2)" strokeWidth={1.5} />;
+      case "combined": return <Zap size={16} color="var(--p3)" strokeWidth={1.5} />;
+      default: return <Archive size={16} color="var(--text-muted)" strokeWidth={1.5} />;
+    }
+  };
 
   const handleRequestPermission = async () => {
     const result = await requestNotificationPermission();
@@ -93,7 +138,7 @@ export default function Settings() {
     }
   };
 
-  const getTypeIcon = (type) => {
+  const getReminderTypeIcon = (type) => {
     const labels = { treino: "T", agua: "A", refeicao: "R", zen: "Z", peso: "P" };
     return labels[type] || "•";
   };
@@ -265,7 +310,7 @@ export default function Settings() {
             {reminders.map((r) => (
               <div key={r.id} style={{ ...s.reminderCard, opacity: r.active ? 1 : 0.5 }}>
                 <div style={s.reminderLeft}>
-                  <span style={s.reminderIcon}>{getTypeIcon(r.type)}</span>
+                  <span style={s.reminderIcon}>{getReminderTypeIcon(r.type)}</span>
                   <div>
                     <span style={s.reminderLabel}>{r.label}</span>
                     <span style={s.reminderTime}>
@@ -288,6 +333,55 @@ export default function Settings() {
                     }} />
                   </button>
                   <button style={s.deleteBtn} onClick={() => handleRemove(r.id)}>
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ===== ARCHIVED PLANS ===== */}
+      <div style={s.section}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+          <Archive size={18} color="var(--text-muted)" strokeWidth={1.5} />
+          <h3 style={{ ...s.sectionTitle, margin: 0 }}>Planos Arquivados</h3>
+        </div>
+
+        {archivedLoading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: 24 }}><div className="spinner" /></div>
+        ) : archivedPlans.length === 0 ? (
+          <div style={s.emptyState}>
+            <p style={s.emptyText}>Sem planos arquivados</p>
+            <p style={s.emptySubtext}>Quando arquivares um plano, aparece aqui.</p>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {archivedPlans.map((plan) => (
+              <div key={plan.id} style={s.archivedCard}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                  {getTypeIcon(plan.type)}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={s.archivedTitle}>{plan.title || "Plano sem título"}</span>
+                    <span style={s.archivedMeta}>
+                      {new Date(plan.created_at).toLocaleDateString("pt-PT")}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <button
+                    style={s.archivedActionBtn}
+                    onClick={() => handleActivatePlan(plan.id)}
+                    title="Reativar plano"
+                  >
+                    <Play size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Ativar
+                  </button>
+                  <button
+                    style={{ ...s.archivedActionBtn, color: "var(--danger)" }}
+                    onClick={() => handleDeletePlan(plan.id)}
+                    title="Apagar plano"
+                  >
                     <Trash2 size={14} strokeWidth={1.5} />
                   </button>
                 </div>
@@ -437,4 +531,25 @@ const s = {
   },
   aboutName: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
   aboutDesc: { fontSize: 13, color: "var(--text-muted)", margin: 0 },
+
+  /* Archived Plans */
+  archivedCard: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "12px 14px", background: "var(--bg)",
+    borderRadius: "var(--radius-xs)", gap: 10,
+    border: "1px solid var(--border)",
+  },
+  archivedTitle: {
+    display: "block", fontSize: 14, fontWeight: 600, color: "var(--text)",
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+  },
+  archivedMeta: {
+    display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 2,
+  },
+  archivedActionBtn: {
+    background: "var(--card-bg)", border: "1px solid var(--border)",
+    borderRadius: 8, padding: "6px 12px", fontSize: 12,
+    fontWeight: 600, color: "var(--primary)", cursor: "pointer",
+    transition: "background 0.15s", display: "flex", alignItems: "center",
+  },
 };

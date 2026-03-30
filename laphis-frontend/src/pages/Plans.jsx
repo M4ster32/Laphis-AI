@@ -3,13 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
-import { Dumbbell, UtensilsCrossed, Zap, Tag, Plus, Archive, Play, Copy, ChevronRight } from "lucide-react";
-
-const STATUS_TABS = [
-  { key: "all", label: "Todos" },
-  { key: "active", label: "Ativos" },
-  { key: "archived", label: "Arquivados" },
-];
+import { Dumbbell, UtensilsCrossed, Zap, Tag, Plus, Archive, Copy, ChevronRight } from "lucide-react";
 
 const CATEGORY_ICONS = ["T", "F", "N", "Z", "C", "M", "O", "R", "S", "P", "H", "E"];
 
@@ -19,7 +13,6 @@ export default function Plans() {
   const { profile } = useApp();
   const [plans, setPlans] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [tab, setTab] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState(null); // null = all
   const [loading, setLoading] = useState(true);
   const [showGenerate, setShowGenerate] = useState(false);
@@ -54,8 +47,7 @@ export default function Plans() {
   const loadPlans = async () => {
     try {
       setLoading(true);
-      const statusFilter = tab === "all" ? null : tab;
-      const resp = await ApiService.getPlans(profile.id, statusFilter, selectedCategory);
+      const resp = await ApiService.getPlans(profile.id, "active", selectedCategory);
       setPlans(Array.isArray(resp) ? resp : resp.plans || []);
     } catch (err) {
       console.error("Erro ao carregar planos:", err);
@@ -64,10 +56,10 @@ export default function Plans() {
     }
   };
 
-  // Reload when tab or category changes
+  // Reload when category changes
   useEffect(() => {
     if (profile) loadPlans();
-  }, [tab, selectedCategory]);
+  }, [selectedCategory]);
 
   const loadCategories = async () => {
     try {
@@ -98,15 +90,6 @@ export default function Plans() {
   const handleArchive = async (planId) => {
     try {
       await ApiService.updatePlan(planId, { status: "archived" });
-      await loadPlans();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleActivate = async (planId) => {
-    try {
-      await ApiService.updatePlan(planId, { status: "active" });
       await loadPlans();
     } catch (err) {
       console.error(err);
@@ -220,25 +203,6 @@ export default function Plans() {
         </div>
       )}
 
-      {/* Status Tabs */}
-      <div style={s.tabs}>
-        {STATUS_TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            style={{
-              ...s.tab,
-              background: tab === t.key ? "var(--primary)" : "transparent",
-              color: tab === t.key ? "white" : "var(--text-secondary)",
-              fontWeight: tab === t.key ? 600 : 500,
-              boxShadow: tab === t.key ? "0 2px 8px var(--btn-primary-shadow)" : "none",
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {/* Plans List */}
       {loading ? (
         <div style={s.loaderArea}><div className="spinner" /></div>
@@ -281,24 +245,12 @@ export default function Plans() {
                     )}
                   </p>
                 </div>
-                <span style={{
-                  ...s.statusBadge,
-                  background: plan.status === "active" ? "var(--primary-bg)" : "var(--bg)",
-                  color: plan.status === "active" ? "var(--primary)" : "var(--text-muted)",
-                }}>
-                  {plan.status === "active" ? "Ativo" : "Arquivado"}
-                </span>
+                <ChevronRight size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
               </div>
               <div style={s.planActions} onClick={(e) => e.stopPropagation()}>
-                {plan.status === "active" ? (
-                  <button style={s.planActionBtn} onClick={() => handleArchive(plan.id)} title="Arquivar">
-                    <Archive size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Arquivar
-                  </button>
-                ) : (
-                  <button style={s.planActionBtn} onClick={() => handleActivate(plan.id)} title="Ativar">
-                    <Play size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Ativar
-                  </button>
-                )}
+                <button style={s.planActionBtn} onClick={() => handleArchive(plan.id)} title="Arquivar">
+                  <Archive size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Arquivar
+                </button>
                 <button style={s.planActionBtn} onClick={() => handleDuplicate(plan.id)} title="Duplicar">
                   <Copy size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Duplicar
                 </button>
@@ -491,18 +443,6 @@ const s = {
     fontSize: 12, fontWeight: 600, cursor: "pointer",
     whiteSpace: "nowrap", transition: "all 0.2s",
     boxShadow: "var(--shadow)",
-  },
-
-  /* Status Tabs */
-  tabs: {
-    display: "flex", gap: 6, marginBottom: 20,
-    background: "var(--bg-card)", borderRadius: 12, padding: 4,
-    boxShadow: "var(--shadow)",
-  },
-  tab: {
-    flex: 1, padding: "10px 12px", borderRadius: 10,
-    border: "none", fontSize: 13, cursor: "pointer",
-    transition: "all 0.2s", textAlign: "center",
   },
 
   /* Plan cards */

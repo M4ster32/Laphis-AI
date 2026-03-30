@@ -65,6 +65,119 @@ def recommend(profile: ProfileOut, question: str) -> Tuple[str, List[str]]:
         title = f"🏋️ Plano de Treino — {name}"
         bullets = [f"Objetivo: {goal} | Nível: {profile.level} | {profile.days_per_week} dias/semana"]
 
+        # ========== TREINO ESPECÍFICO POR GRUPO MUSCULAR ==========
+        if any(w in q for w in ["perna", "pernas", "leg", "glúteo", "gluteo", "quad", "femur"]):
+            return f"🦵 Treino de Pernas — {name}", [
+                f"Objetivo: {goal} | Nível: {profile.level}",
+                "",
+                "📅 Treino de Pernas (Full Leg):",
+                "• Agachamento 4x6-8 (força/hipertrofia)",
+                "• Leg press 3x10-12 (volume/quads)",
+                "• Stiff 3x8-10 (posterior da coxa, glúteos)",
+                "• Extensão pernas 3x12-15 (isolamento quads)",
+                "• Curl pernas deitado 3x10-12 (isolamento posterior)",
+                "• Gémeos máquina 3x15-20 (panturrilhas)",
+                "• Agachamento búlgaro (opcional) 2x10 cada lado",
+                "",
+                "⏱️ Descanso: 60-90s entre séries compostas, 45-60s isolamento",
+                "💡 Rep range: força (6-8), hipertrofia (8-12), definição (12-20)",
+                "🔄 Frequência recomendada: 1x/semana completo ou 2x com volumes diferentes",
+            ]
+
+        if any(w in q for w in ["peito", "chest", "pec", "supino", "bench"]):
+            return f"💪 Treino de Peito — {name}", [
+                f"Objetivo: {goal} | Nível: {profile.level}",
+                "",
+                "📅 Treino de Peito (Full Chest):",
+                "• Supino plano barra 4x6-8 (força/hipertrofia)",
+                "• Supino inclinado halteres 3x8-10 (clavicular)",
+                "• Supino máquina (ou peck deck) 3x10-12 (isolamento)",
+                "• Crucifixo com halteres 3x12-15 (stretch/contração)",
+                "• Flexões (ou resistida) 2x8-12 (funcional)",
+                "• Push-ups assistidos ou máquina 2x12-20 (volume final)",
+                "",
+                "⏱️ Descanso: 2-3 min entre séries pesadas, 60s isolamento",
+                "💡 Progressão: aumenta carga a cada semana ou reps",
+                "🔄 Frequência: 1x/semana ou 2x (volume+intensidade) se avançado",
+            ]
+
+        if any(w in q for w in ["costa", "back", "remada", "puxada", "dorsal", "lat"]):
+            return f"🔙 Treino de Costas — {name}", [
+                f"Objetivo: {goal} | Nível: {profile.level}",
+                "",
+                "📅 Treino de Costas (Full Back):",
+                "• Puxada frente larga 4x6-8 (lats, força)",
+                "• Remada barra ou máquina 4x6-8 (espessura)",
+                "• Remada unilateral 3x8-10 (desequilíbrio/ativação)",
+                "• Face pull 3x12-15 (posterior ombros, postura)",
+                "• Puxada fechada ou inversa 3x8-10 (ativação lats)",
+                "• Encolhimento halteres 3x10-12 (trapézio)",
+                "• Prancha ou ab wheel 2x10-15 (core)",
+                "",
+                "⏱️ Descanso: 2-3 min compostas, 60s isolamento",
+                "💡 Dica: foca-te no 'mind-muscle' (conexão mental)",
+                "🔄 Frequência: 1x/semana ou 2x se tens dias específicos",
+            ]
+
+        if any(w in q for w in ["ombro", "shoulder", "press", "elevação", "elevacao", "deltoid"]):
+            return f"💥 Treino de Ombros — {name}", [
+                f"Objetivo: {goal} | Nível: {profile.level}",
+                "",
+                "📅 Treino de Ombros (Full Shoulders):",
+                "• Press ombros militar 4x6-8 (deltoides anterior/medial)",
+                "• Press ombros máquina ou halteres 3x8-10 (força)",
+                "• Elevação lateral halteres 3x12-15 (deltoides medial)",
+                "• Elevação frontal 3x12-15 (deltoides anterior)",
+                "• Elevação traseira (pec deck invertido) 3x12-15 (deltoides posterior)",
+                "• Encolhimento barra 3x8-10 (trapézio)",
+                "• Elevação lateral com cabo 2x15-20 (drop set final)",
+                "",
+                "⏱️ Descanso: 2 min compostas, 45s isolamento",
+                "💡 Cuidado: ombros são frágeis, técnica > carga",
+                "🔄 Frequência: 1x/semana (treino isolado é raro, geralmente em splits)",
+            ]
+
+        if any(w in q for w in ["braço", "braco", "bícep", "bicep", "trícep", "tricep", "arm"]):
+            return f"💪 Treino de Braços — {name}", [
+                f"Objetivo: {goal} | Nível: {profile.level}",
+                "",
+                "📅 Treino de Braços (Bíceps + Tríceps):",
+                "",
+                "🔵 BÍCEPS:",
+                "• Curl barra 4x6-8 (força pura)",
+                "• Curl halteres 3x8-10 (amplitude, cada lado)",
+                "• Curl máquina 3x10-12 (hipertrofia isolada)",
+                "• Curl martelo 2x12 (braquial, espessura)",
+                "",
+                "🔴 TRÍCEPS:",
+                "• Tríceps corda 4x8-10 (hipertrofia)",
+                "• Extensão francesa (ou acima da cabeça) 3x8-10 (alongamento)",
+                "• Tríceps máquina 3x10-12 (volume)",
+                "• Mergulhos (ou assistidos) 2x6-10 (força funcional)",
+                "",
+                "⏱️ Descanso: 60-90s entre séries",
+                "💡 Dica: braços crescem também com costas/peito — não overtraino!",
+                "🔄 Frequência: 2x/semana idealmente (junto com compostas)",
+            ]
+
+        if any(w in q for w in ["abdomen", "abs", "abdominais", "core", "barriga", "Six-pack"]):
+            return f"🎯 Treino de Core/Abdominais — {name}", [
+                f"Objetivo: {goal} | Nível: {profile.level}",
+                "",
+                "📅 Treino de Abdominais (3x/semana):",
+                "• Crunch máquina 3x12-15 (isolamento reto)",
+                "• Prancha frontal 3x30-60s (isométrico)",
+                "• Ab wheel 3x8-12 (desafio total)",
+                "• Elevação joelhos suspensão 3x10-15 (inferior)",
+                "• Rotação cabo 3x12 cada lado (oblíquos)",
+                "• Prancha lateral 2x30-45s cada lado",
+                "",
+                "⏱️ Descanso: 45-60s",
+                "🔥 IMPORTANTE: abs são visíveis com DIETA! Treino + défice calórico.",
+                "💡 Core forte = melhor desempenho em compostas (agachamento, deadlift)",
+            ]
+
+        # ========== TREINO GENÉRICO (caso não mencione grupo específico) ==========
         if profile.days_per_week <= 3:
             bullets += [
                 "Recomendo: Full-Body 3x/semana (Seg, Qua, Sex)",

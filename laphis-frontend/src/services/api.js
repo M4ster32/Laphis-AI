@@ -511,6 +511,23 @@ class ApiService {
     return await response.json();
   }
 
+  /**
+   * Apagar plano permanentemente
+   */
+  static async deletePlan(planId) {
+    let response;
+    try {
+      response = await fetch(`${API_BASE_URL}/plans/${planId}`, {
+        method: "DELETE",
+        headers: this.getHeaders(),
+      });
+    } catch (networkErr) {
+      throw new Error("Sem ligação ao servidor.");
+    }
+    if (!response.ok) throw new Error("Erro ao apagar plano");
+    return await response.json();
+  }
+
   // ==================== CATEGORIES ====================
 
   /**
