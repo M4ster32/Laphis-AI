@@ -166,11 +166,16 @@ export default function Chat() {
     if (!profile) return;
     setSavingPlan(content);
     try {
-      await ApiService.generatePlan(profile.id, "combined", content);
-      setSaveSuccess("Plano guardado!");
-      setTimeout(() => setSaveSuccess(null), 3000);
+      const lower = content.toLowerCase();
+      const type = lower.includes("nutri") || lower.includes("alimentar") || lower.includes("dieta") || lower.includes("calor")
+        ? (lower.includes("treino") || lower.includes("exerc") ? "combined" : "nutrition")
+        : "training";
+      await ApiService.generatePlan(profile.id, type, content);
+      setSaveSuccess("✅ Plano guardado com sucesso! Vai a Planos para ver.");
+      setTimeout(() => setSaveSuccess(null), 5000);
     } catch (err) {
-      console.error("Erro ao guardar plano:", err);
+      setSaveSuccess("❌ Erro ao guardar plano: " + (err.message || "tenta novamente"));
+      setTimeout(() => setSaveSuccess(null), 4000);
     } finally {
       setSavingPlan(null);
     }

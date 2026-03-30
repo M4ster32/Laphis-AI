@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pathlib import Path
+from sqlalchemy import text, inspect as sa_inspect
 
 # 🔹 IMPORTAR MODELOS PRIMEIRO (necessário para SQLAlchemy descobrir as tabelas)
 # Isto DEVE ser feito antes de create_all() ser chamado
@@ -48,32 +49,32 @@ app.add_middleware(
 )
 
 def _migrate_db():
-    """Adicionar colunas em falta às tabelas existentes (SQLite ALTER TABLE)"""
-    db_path = Path(__file__).resolve().parent / "data" / "laphis.db"
-    if not db_path.exists():
-        return
-
-    conn = sqlite3.connect(str(db_path))
-    cursor = conn.cursor()
-
+    """Adicionar colunas em falta às tabelas existentes (SQLite e PostgreSQL)"""
     migrations = [
         ("workout_logs", "description", "TEXT"),
         ("workout_logs", "calories", "INTEGER"),
-        ("workout_logs", "created_at", "DATETIME"),
+        ("workout_logs", "created_at", "TIMESTAMP"),
         ("meal_logs", "foods", "TEXT"),
-        ("meal_logs", "created_at", "DATETIME"),
+        ("meal_logs", "created_at", "TIMESTAMP"),
         ("chat_messages", "session_id", "INTEGER"),
     ]
 
-    for table, column, col_type in migrations:
-        try:
-            cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
-            print(f"  ✅ Coluna '{column}' adicionada a '{table}'")
-        except sqlite3.OperationalError:
-            pass
-
-    conn.commit()
-    conn.close()
+    try:
+        inspector = sa_inspect(engine)
+        with engine.connect() as conn:
+            for table, column, col_type in migrations:
+                if not inspector.has_table(table):
+                    continue
+                existing_cols = [c["name"] for c in inspector.get_columns(table)]
+                if column not in existing_cols:
+                    try:
+                        conn.execute(text(f'ALTER TABLE {table} ADD COLUMN {column} {col_type}'))
+                        conn.commit()
+                        print(f"  ✅ Coluna '{column}' adicionada a '{table}'")
+                    except Exception:
+                        conn.rollback()
+    except Exception as e:
+        print(f"  ⚠️ Migração: {e}")
 
 
 # 🔹 Criar tabelas no arranque da aplicação

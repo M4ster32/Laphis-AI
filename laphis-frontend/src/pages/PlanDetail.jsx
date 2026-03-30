@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import jsPDF from "jspdf";
-import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare } from "lucide-react";
+import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed } from "lucide-react";
 
 export default function PlanDetail() {
   const { planId } = useParams();
@@ -379,11 +379,11 @@ export default function PlanDetail() {
     }
     // Combined plan
     if (obj.training) {
-      elements.push(<h2 key={key++} style={{ ...s.h2, marginTop: 20 }}><Icon name="dumbbell" size={20} color="currentColor" /> {obj.training.title || "Treino"}</h2>);
+      elements.push(<h2 key={key++} style={{ ...s.h2, marginTop: 20 }}><Dumbbell size={20} color="currentColor" style={{ display: "inline", verticalAlign: -4 }} /> {obj.training.title || "Treino"}</h2>);
       renderSections(obj.training.sections);
     }
     if (obj.nutrition) {
-      elements.push(<h2 key={key++} style={{ ...s.h2, marginTop: 20 }}><Icon name="nutrition" size={20} color="currentColor" /> {obj.nutrition.title || "Nutrição"}</h2>);
+      elements.push(<h2 key={key++} style={{ ...s.h2, marginTop: 20 }}><UtensilsCrossed size={20} color="currentColor" style={{ display: "inline", verticalAlign: -4 }} /> {obj.nutrition.title || "Nutrição"}</h2>);
       renderSections(obj.nutrition.sections);
     }
     // Summary
@@ -746,7 +746,7 @@ const s = {
 
   // Feedback styles
   feedbackCard: {
-    background: "var(--card)", borderRadius: "var(--radius)",
+    background: "var(--card-bg)", borderRadius: "var(--radius)",
     padding: "20px", boxShadow: "var(--shadow)", marginBottom: 16,
     border: "1px solid var(--border)",
   },
