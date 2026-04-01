@@ -26,15 +26,11 @@ export default function DailyPlan() {
   const [generating, setGenerating] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
   const [constraint, setConstraint] = useState("");
-  const [tab, setTab] = useState("tomorrow");
   const [showWorkout, setShowWorkout] = useState(true);
   const [showMeals, setShowMeals] = useState(true);
   const inputRef = useRef(null);
 
-  const getDateStr = (which) => {
-    const d = which === "today" ? new Date() : new Date(Date.now() + 86400000);
-    return d.toISOString().split("T")[0];
-  };
+  const todayStr = new Date().toISOString().split("T")[0];
 
   const formatDate = (str) => {
     const d = new Date(str + "T12:00:00");
@@ -43,12 +39,12 @@ export default function DailyPlan() {
 
   useEffect(() => {
     if (profile) loadPlan();
-  }, [profile, tab]);
+  }, [profile]);
 
   const loadPlan = async () => {
     setLoading(true);
     try {
-      const data = await ApiService.getDailyPlan(profile.id, getDateStr(tab));
+      const data = await ApiService.getDailyPlan(profile.id, todayStr);
       setPlan(data);
     } catch {
       setPlan(null);
@@ -61,7 +57,7 @@ export default function DailyPlan() {
     if (!profile) return;
     setGenerating(true);
     try {
-      const data = await ApiService.generateDailyPlan(profile.id, getDateStr(tab));
+      const data = await ApiService.generateDailyPlan(profile.id, todayStr);
       setPlan(data);
       toast.success("Plano gerado! 🎯");
     } catch (err) {
@@ -117,20 +113,7 @@ export default function DailyPlan() {
           <CalendarClock size={22} color="#fff" strokeWidth={1.5} />
           <h1 style={s.headerTitle}>Plano do Dia</h1>
         </div>
-        <p style={s.headerDate}>{formatDate(getDateStr(tab))}</p>
-
-        {/* Tab toggle */}
-        <div style={s.tabRow}>
-          {["today", "tomorrow"].map((t) => (
-            <button
-              key={t}
-              style={{ ...s.tab, ...(tab === t ? s.tabActive : {}) }}
-              onClick={() => setTab(t)}
-            >
-              {t === "today" ? "Hoje" : "Amanhã"}
-            </button>
-          ))}
-        </div>
+        <p style={s.headerDate}>{formatDate(todayStr)}</p>
       </div>
 
       {/* Content */}
@@ -143,7 +126,7 @@ export default function DailyPlan() {
         <div style={s.emptyWrap}>
           <div style={s.emptyIcon}>📋</div>
           <h3 style={s.emptyTitle}>
-            Sem plano para {tab === "today" ? "hoje" : "amanhã"}
+            Sem plano para hoje
           </h3>
           <p style={s.emptyText}>
             A IA vai criar um plano completo de treino e refeições adaptado ao teu perfil.
@@ -377,25 +360,8 @@ const s = {
   headerDate: {
     fontSize: 13,
     opacity: 0.85,
-    margin: "4px 0 12px",
+    margin: "4px 0 0",
     textTransform: "capitalize",
-  },
-  tabRow: { display: "flex", gap: 8 },
-  tab: {
-    padding: "7px 18px",
-    borderRadius: 20,
-    border: "1px solid rgba(255,255,255,0.3)",
-    background: "rgba(255,255,255,0.1)",
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "all 0.15s",
-  },
-  tabActive: {
-    background: "rgba(255,255,255,0.25)",
-    color: "#fff",
-    borderColor: "rgba(255,255,255,0.5)",
   },
 
   /* Loading */

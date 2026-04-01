@@ -205,11 +205,11 @@ export default function Chat() {
 
   return (
     <div style={s.page}>
-      {/* Sidebar overlay */}
-      {showSidebar && <div style={s.overlay} onClick={() => setShowSidebar(false)} />}
-
-      {/* Session sidebar */}
-      <div style={{ ...s.sidebar, transform: showSidebar ? "translateX(0)" : "translateX(-100%)" }}>
+      {/* Sidebar overlay + sidebar — only rendered when open */}
+      {showSidebar && (
+        <>
+        <div style={s.overlay} onClick={() => setShowSidebar(false)} />
+        <div style={s.sidebar}>
         <div style={s.sidebarHeader}>
           <h3 style={s.sidebarTitle}>Conversas</h3>
           <button style={s.sidebarClose} onClick={() => setShowSidebar(false)}>
@@ -278,6 +278,8 @@ export default function Chat() {
           )}
         </div>
       </div>
+        </>
+      )}
 
       {/* Header */}
       <div style={s.chatHeader}>
@@ -402,7 +404,7 @@ export default function Chat() {
 const s = {
   page: {
     display: "flex", flexDirection: "column", height: "calc(100vh - 130px)",
-    animation: "fadeUp 0.3s ease", position: "relative",
+    animation: "fadeUp 0.3s ease", position: "relative", overflow: "hidden",
   },
 
   /* Sidebar */
