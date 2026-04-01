@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
-import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame } from "lucide-react";
+import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame, Search } from "lucide-react";
+import Modal from "../components/Modal";
 
 const TABS = [
   { key: "treino", label: "Treino", icon: Dumbbell, color: "var(--primary)", shadow: "var(--btn-primary-shadow)" },
@@ -19,6 +20,8 @@ export default function Logs() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -92,6 +95,7 @@ export default function Logs() {
     try {
       await ApiService.deleteLog(logId, logType);
       await loadLogs();
+      setDeleteTarget(null);
       setSuccess("Registo apagado ✓");
       setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
@@ -100,6 +104,15 @@ export default function Logs() {
   };
 
   const filtered = logs.filter((l) => l.log_type === tab);
+  const searched = search.trim()
+    ? filtered.filter((l) => {
+        const q = search.toLowerCase();
+        return (l.description || "").toLowerCase().includes(q)
+          || (l.foods || "").toLowerCase().includes(q)
+          || (l.notes || "").toLowerCase().includes(q)
+          || (l.meal_type || "").toLowerCase().includes(q);
+      })
+    : filtered;
   const mealLabels = {
     "pequeno-almoco": "Peq. Almoço",
     "pequeno_almoco": "Peq. Almoço",
@@ -183,6 +196,20 @@ export default function Logs() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      {/* Search */}
+      <div style={s.searchWrap}>
+        <Search size={15} color="var(--text-muted)" strokeWidth={1.5} style={{ flexShrink: 0 }} />
+        <input
+          type="text" style={s.searchInput}
+          placeholder={`Pesquisar ${tab === "treino" ? "treinos" : "refeições"}...`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button style={s.searchClear} onClick={() => setSearch("")}>✕</button>
+        )}
       </div>
 
       {/* Success */}
@@ -311,33 +338,43 @@ export default function Logs() {
         <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
           <div className="spinner" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : searched.length === 0 ? (
         <div style={s.emptyState}>
-          {tab === "treino" ? (
-            <Dumbbell size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
+          {search ? (
+            <>
+              <Search size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
+              <h3 style={s.emptyTitle}>Sem resultados</h3>
+              <p style={s.emptyText}>Nenhum registo encontrado para "{search}"</p>
+              <button className="btn btn-secondary btn-sm" onClick={() => setSearch("")}>Limpar pesquisa</button>
+            </>
+          ) : tab === "treino" ? (
+            <>
+              <Dumbbell size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
+              <h3 style={s.emptyTitle}>Sem treinos</h3>
+              <p style={s.emptyText}>Regista o teu primeiro treino!</p>
+              <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
+                <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
+                  <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />Adicionar Treino
+                </button>
+                <button className="btn btn-secondary btn-sm" onClick={() => navigate("/plans?generate=true")}>
+                  <Zap size={14} strokeWidth={2} style={{ marginRight: 4 }} />Gerar com AI
+                </button>
+              </div>
+            </>
           ) : (
-            <UtensilsCrossed size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
-          )}
-          <h3 style={s.emptyTitle}>Sem registos</h3>
-          <p style={s.emptyText}>
-            {tab === "treino" ? "Regista o teu primeiro treino!" : "Regista a tua primeira refeição!"}
-          </p>
-          <div style={{ display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap", justifyContent: "center" }}>
-            <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)}>
-              <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />
-              Adicionar {tab === "treino" ? "Treino" : "Refeição"}
-            </button>
-            {tab === "treino" && (
-              <button className="btn btn-secondary btn-sm" onClick={() => navigate("/plans?generate=true")}>
-                <Zap size={14} strokeWidth={2} style={{ marginRight: 4 }} />
-                Gerar com AI
+            <>
+              <UtensilsCrossed size={36} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4, marginBottom: 4 }} />
+              <h3 style={s.emptyTitle}>Sem refeições</h3>
+              <p style={s.emptyText}>Regista a tua primeira refeição!</p>
+              <button className="btn btn-primary btn-sm" onClick={() => setShowForm(true)} style={{ marginTop: 16 }}>
+                <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />Adicionar Refeição
               </button>
-            )}
-          </div>
+            </>
+          )}
         </div>
       ) : (
         <div style={s.logsList}>
-          {filtered.map((log) => (
+          {searched.map((log) => (
             <div key={`${log.log_type}-${log.id}`} style={s.logCard}>
               <div style={s.logTop}>
                 <div style={s.logIconWrap}>
@@ -357,7 +394,7 @@ export default function Logs() {
                     {log.date || (log.created_at ? new Date(log.created_at).toLocaleDateString("pt-PT") : "—")}
                   </p>
                 </div>
-                <button style={s.deleteBtn} onClick={() => handleDelete(log.id, log.log_type)} title="Apagar">
+                <button style={s.deleteBtn} onClick={() => setDeleteTarget(log)} title="Apagar">
                   <Trash2 size={14} strokeWidth={1.5} />
                 </button>
               </div>
@@ -388,6 +425,21 @@ export default function Logs() {
           ))}
         </div>
       )}
+
+      {/* Confirm Delete Modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Apagar Registo"
+        confirmText="Apagar"
+        onConfirm={() => handleDelete(deleteTarget.id, deleteTarget.log_type)}
+      >
+        <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          Tens a certeza que queres apagar este registo?
+          {deleteTarget?.description && <><br /><strong>{deleteTarget.description}</strong></>}
+          {deleteTarget?.foods && <><br /><strong>{deleteTarget.foods}</strong></>}
+        </p>
+      </Modal>
     </div>
   );
 }
@@ -425,10 +477,27 @@ const s = {
     display: "flex", alignItems: "center", gap: 5, padding: "10px 8px",
     background: g.bg, borderRadius: 14, boxShadow: g.shadow,
     justifyContent: "center", flexWrap: "wrap",
-    border: g.border,
+    border: g.border, minWidth: 0, overflow: "hidden",
   },
-  statChipValue: { fontSize: 15, fontWeight: 800, color: "var(--text)" },
-  statChipLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600 },
+  statChipValue: { fontSize: 15, fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" },
+  statChipLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" },
+
+  /* Search */
+  searchWrap: {
+    display: "flex", alignItems: "center", gap: 8,
+    padding: "10px 14px", marginBottom: 16,
+    background: g.bg, borderRadius: 14,
+    border: g.border, boxShadow: g.shadow,
+  },
+  searchInput: {
+    flex: 1, border: "none", background: "transparent",
+    color: "var(--text)", fontSize: 13, fontFamily: "inherit",
+    outline: "none", fontWeight: 500,
+  },
+  searchClear: {
+    background: "none", border: "none", cursor: "pointer",
+    color: "var(--text-muted)", fontSize: 14, padding: "2px 4px",
+  },
 
   /* Tabs */
   tabs: {
@@ -474,7 +543,10 @@ const s = {
     display: "flex", alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
-  logTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
+  logTitle: {
+    fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px",
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+  },
   logDate: { fontSize: 12, color: "var(--text-muted)", margin: 0 },
   deleteBtn: {
     background: "var(--card-bg)", border: g.border,

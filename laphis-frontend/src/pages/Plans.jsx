@@ -4,6 +4,7 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import GeneratePlanModal from "../components/GeneratePlanModal";
+import EmptyState from "../components/EmptyState";
 import { Tag, Plus, Archive, Copy, ChevronRight } from "lucide-react";
 
 const CATEGORY_ICONS = ["T", "F", "N", "Z", "C", "M", "O", "R", "S", "P", "H", "E"];
@@ -144,11 +145,13 @@ export default function Plans() {
   if (!profile) {
     return (
       <div style={s.page}>
-        <div style={s.emptyState}>
-          <h3 style={s.emptyTitle}>Cria o teu perfil primeiro</h3>
-          <p style={s.emptyText}>Para gerar planos, precisamos de conhecer-te.</p>
-          <button className="btn btn-primary" onClick={() => navigate("/profile")}>Criar Perfil</button>
-        </div>
+        <EmptyState
+          icon="📝"
+          title="Cria o teu perfil primeiro"
+          description="Para gerar planos, precisamos de conhecer-te."
+          actionLabel="Criar Perfil"
+          actionTo="/profile"
+        />
       </div>
     );
   }
@@ -203,10 +206,13 @@ export default function Plans() {
       {loading ? (
         <div style={s.loaderArea}><div className="spinner" /></div>
       ) : plans.length === 0 ? (
-        <div style={s.emptyState}>
-          <h3 style={s.emptyTitle}>Sem planos</h3>
-          <p style={s.emptyText}>Gera um plano com o Coach AI ou cria um novo.</p>
-        </div>
+        <EmptyState
+          icon="📋"
+          title="Sem planos"
+          description="Gera um plano com o Coach AI ou cria um novo."
+          actionLabel="Gerar Plano"
+          onAction={() => setShowGenerate(true)}
+        />
       ) : (
         <div style={s.plansList}>
           {plans.map((plan) => {

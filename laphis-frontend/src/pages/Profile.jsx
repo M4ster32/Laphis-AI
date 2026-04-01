@@ -215,6 +215,21 @@ export default function Profile() {
               </div>
             </div>
 
+            {/* Live BMI Preview */}
+            {formData.height_cm && formData.weight_kg && parseInt(formData.height_cm) >= 120 && parseFloat(formData.weight_kg) >= 35 && (() => {
+              const h = parseInt(formData.height_cm) / 100;
+              const liveBMI = (parseFloat(formData.weight_kg) / (h * h));
+              const cat = getBMICategory(liveBMI);
+              const color = liveBMI < 18.5 ? "var(--p3)" : liveBMI < 25 ? "var(--p1)" : liveBMI < 30 ? "var(--p4)" : "var(--danger)";
+              return (
+                <div style={s.bmiPreview}>
+                  <span style={s.bmiPreviewLabel}>IMC</span>
+                  <span style={{ ...s.bmiPreviewValue, color }}>{liveBMI.toFixed(1)}</span>
+                  <span style={{ ...s.bmiPreviewCat, color }}>{cat}</span>
+                </div>
+              );
+            })()}
+
             {/* Goal */}
             <div className="form-group">
               <label className="form-label">Objetivo <span className="required">*</span></label>
@@ -350,8 +365,16 @@ export default function Profile() {
         </div>
         <div style={s.infoDivider} />
         <div style={s.infoRow}>
+          <span style={s.infoLabel}>Sexo</span>
+          <span style={s.infoValue}>{sexLabels[profile?.sex] || profile?.sex}</span>
+        </div>
+        <div style={s.infoDivider} />
+        <div style={s.infoRow}>
           <span style={s.infoLabel}>IMC</span>
-          <span style={s.infoValue}>{bmi.toFixed(1)} — {getBMICategory(bmi)}</span>
+          <span style={{
+            ...s.infoValue,
+            color: bmi < 18.5 ? "var(--p3)" : bmi < 25 ? "var(--p1)" : bmi < 30 ? "var(--p4)" : "var(--danger)",
+          }}>{bmi.toFixed(1)} — {getBMICategory(bmi)}</span>
         </div>
         <div style={s.infoDivider} />
         <div style={s.infoRow}>
@@ -507,6 +530,15 @@ const s = {
     boxShadow: "var(--shadow)",
     transition: "background 0.15s",
   },
+  bmiPreview: {
+    display: "flex", alignItems: "center", gap: 8,
+    padding: "10px 14px", marginBottom: 12, borderRadius: 12,
+    background: "var(--bg-subtle, rgba(139,109,78,0.04))",
+    border: "1px solid var(--border)",
+  },
+  bmiPreviewLabel: { fontSize: 12, fontWeight: 700, color: "var(--text-muted)" },
+  bmiPreviewValue: { fontSize: 18, fontWeight: 700 },
+  bmiPreviewCat: { fontSize: 12, fontWeight: 600 },
   row: { display: "flex", gap: 12 },
   optionGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 },
   optionCard: {

@@ -71,6 +71,9 @@ export default function Register() {
               onChange={(e) => { setEmail(e.target.value); setError(null); }}
               disabled={loading} autoComplete="email"
             />
+            {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
+              <span style={{ fontSize: 11, color: "var(--danger, #e74c3c)", marginTop: 4, display: "block" }}>Email inválido</span>
+            )}
           </div>
           <PasswordInput
             label="Password"
@@ -79,6 +82,7 @@ export default function Register() {
             placeholder="Mínimo 4 caracteres"
             disabled={loading}
             autoComplete="new-password"
+            showStrength
           />
           <PasswordInput
             label="Confirmar Password"
@@ -88,6 +92,9 @@ export default function Register() {
             disabled={loading}
             autoComplete="new-password"
           />
+          {confirm && password !== confirm && (
+            <span style={{ fontSize: 11, color: "var(--danger, #e74c3c)", marginTop: -8, marginBottom: 8, display: "block" }}>As passwords não coincidem</span>
+          )}
 
           <div className="form-group">
             <label className="form-label">Objetivo (opcional)</label>

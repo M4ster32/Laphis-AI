@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
+import EmptyState from "../components/EmptyState";
 import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -191,11 +192,13 @@ export default function Chat() {
   if (!profile) {
     return (
       <div style={s.page}>
-        <div style={s.emptyState}>
-          <h3 style={s.emptyTitle}>Cria o teu perfil primeiro</h3>
-          <p style={s.emptyText}>Para ter recomendações personalizadas, precisamos de conhecer-te.</p>
-          <button className="btn btn-primary" onClick={() => navigate("/profile")}>Criar Perfil</button>
-        </div>
+        <EmptyState
+          icon="🤖"
+          title="Cria o teu perfil primeiro"
+          description="Para ter recomendações personalizadas, precisamos de conhecer-te."
+          actionLabel="Criar Perfil"
+          actionTo="/profile"
+        />
       </div>
     );
   }

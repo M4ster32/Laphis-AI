@@ -71,6 +71,9 @@ export default function Login() {
               onChange={(e) => { setEmail(e.target.value); setError(null); }}
               disabled={loading} autoComplete="email"
             />
+            {email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
+              <span style={{ fontSize: 11, color: "var(--danger, #e74c3c)", marginTop: 4, display: "block" }}>Email inválido</span>
+            )}
           </div>
           <PasswordInput
             label="Password"

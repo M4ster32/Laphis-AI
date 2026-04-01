@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
+import { useToast } from "../components/Toast";
+import EmptyState from "../components/EmptyState";
+import jsPDF from "jspdf";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity } from "lucide-react";
+import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity, Download } from "lucide-react";
 
 const MOOD_MAP = {
   calm: { label: "Calmo", color: "var(--p1)" },
@@ -18,6 +21,7 @@ const CHART_COLORS = ["var(--p1)", "var(--p2)", "var(--p3)", "var(--p4)", "var(-
 
 export default function Reports() {
   const { profile } = useApp();
+  const toast = useToast();
   const [report, setReport] = useState(null);
   const [recentLogs, setRecentLogs] = useState([]);
   const [activePlans, setActivePlans] = useState([]);
@@ -48,6 +52,116 @@ export default function Reports() {
     }
   };
 
+  const handleExportPDF = () => {
+    if (!report) return;
+    try {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const m = 16;
+      const maxW = W - m * 2;
+      let y = 0;
+      const checkPage = (need = 20) => { if (y + need > H - 20) { doc.addPage(); y = 16; } };
+
+      // Header
+      doc.setFillColor(155, 106, 74);
+      doc.rect(0, 0, W, 38, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(255, 255, 255);
+      doc.text("LAPHIS", m, 18);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Relat\u00f3rio Completo", m, 28);
+      doc.setFontSize(9);
+      doc.text(new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }), W - m, 28, { align: "right" });
+      if (profile?.name) {
+        doc.text(profile.name, W - m, 18, { align: "right" });
+      }
+      y = 48;
+      doc.setTextColor(60, 60, 60);
+
+      // Stats summary
+      doc.setFontSize(12); doc.setFont("helvetica", "bold");
+      doc.text("Resumo Geral", m, y); y += 8;
+      doc.setFontSize(10); doc.setFont("helvetica", "normal");
+      const stats = [
+        `Treinos: ${report.total_workouts} (${report.total_workout_minutes} min)`,
+        `Refei\u00e7\u00f5es: ${report.total_meals} (${report.total_calories.toLocaleString()} cal)`,
+        `Sess\u00f5es Zen: ${report.total_zen_sessions} (${report.total_zen_minutes} min)`,
+        `Planos: ${report.total_plans}`,
+        `Streak Treino: ${report.workout_streak} dias`,
+        `Streak Zen: ${report.zen_streak} dias`,
+        `M\u00e9dia treino: ${report.avg_workout_duration} min | M\u00e9dia cal/dia: ${report.avg_calories_per_day}`,
+      ];
+      stats.forEach((line) => { checkPage(6); doc.text(line, m, y); y += 6; });
+      y += 6;
+
+      // Workouts by week
+      if (report.workouts_by_week?.length) {
+        checkPage(16);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text("Treinos por Semana", m, y); y += 7;
+        doc.setFontSize(9); doc.setFont("helvetica", "normal");
+        report.workouts_by_week.forEach((w) => {
+          checkPage(6);
+          doc.text(`${w.week}: ${w.count} treinos${w.total ? " (" + w.total + " min)" : ""}`, m + 2, y); y += 5;
+        });
+        y += 6;
+      }
+
+      // Calories by week
+      if (report.calories_by_week?.length) {
+        checkPage(16);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text("Calorias por Semana", m, y); y += 7;
+        doc.setFontSize(9); doc.setFont("helvetica", "normal");
+        report.calories_by_week.forEach((w) => {
+          checkPage(6);
+          doc.text(`${w.week}: ${w.total.toLocaleString()} cal`, m + 2, y); y += 5;
+        });
+        y += 6;
+      }
+
+      // Zen summary
+      if (report.zen_by_week?.length) {
+        checkPage(16);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text("Zen por Semana", m, y); y += 7;
+        doc.setFontSize(9); doc.setFont("helvetica", "normal");
+        report.zen_by_week.forEach((w) => {
+          checkPage(6);
+          doc.text(`${w.week}: ${w.count} sess\u00f5es`, m + 2, y); y += 5;
+        });
+        y += 6;
+      }
+
+      // Mood
+      if (report.mood_distribution?.length) {
+        checkPage(16);
+        doc.setFontSize(11); doc.setFont("helvetica", "bold");
+        doc.text("Distribui\u00e7\u00e3o de Humor", m, y); y += 7;
+        doc.setFontSize(9); doc.setFont("helvetica", "normal");
+        report.mood_distribution.forEach((d) => {
+          checkPage(6);
+          const label = MOOD_MAP[d.mood]?.label || d.mood;
+          doc.text(`${label}: ${d.count}`, m + 2, y); y += 5;
+        });
+      }
+
+      // Footer
+      y = H - 12;
+      doc.setFontSize(8); doc.setTextColor(160, 160, 160);
+      doc.text("Gerado por LAPHIS \u2014 o teu assistente de sa\u00fade inteligente", m, y);
+
+      doc.save(`LAPHIS_Relatorio_${new Date().toISOString().split("T")[0]}.pdf`);
+      toast.success("PDF guardado!");
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("Erro ao gerar PDF");
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -60,10 +174,13 @@ export default function Reports() {
   if (!report) {
     return (
       <div style={s.page}>
-        <div style={s.emptyCard}>
-          <h3 style={s.emptyTitle}>Sem dados suficientes</h3>
-          <p style={s.emptyText}>Começa a registar treinos, refeições e sessões zen para ver o teu relatório.</p>
-        </div>
+        <EmptyState
+          icon="📊"
+          title="Sem dados suficientes"
+          description="Começa a registar treinos, refeições e sessões zen para ver o teu relatório."
+          actionLabel="Registar"
+          actionTo="/logs"
+        />
       </div>
     );
   }
@@ -94,10 +211,17 @@ export default function Reports() {
       {/* Header */}
       <div style={s.reportHeader}>
         <div style={s.reportHeaderBg}>
-          <h1 style={s.reportTitle}>Relatório</h1>
-          <p style={s.reportSubtitle}>
-            {profile?.name ? `Dados de ${profile.name}` : "O teu progresso completo"}
-          </p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <h1 style={s.reportTitle}>Relatório</h1>
+              <p style={s.reportSubtitle}>
+                {profile?.name ? `Dados de ${profile.name}` : "O teu progresso completo"}
+              </p>
+            </div>
+            <button onClick={handleExportPDF} style={s.pdfBtn} title="Guardar PDF">
+              <Download size={16} strokeWidth={2} />
+            </button>
+          </div>
           {report.member_since && (
             <p style={s.memberSince}>Membro desde {report.member_since}</p>
           )}
@@ -566,6 +690,13 @@ const s = {
   reportTitle: { fontSize: 22, fontWeight: 700, color: "white", margin: "0 0 4px" },
   reportSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.85)", margin: 0, fontWeight: 500 },
   memberSince: { fontSize: 12, color: "rgba(255,255,255,0.6)", margin: "8px 0 0", fontWeight: 500 },
+  pdfBtn: {
+    width: 36, height: 36, borderRadius: 10,
+    background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
+    color: "white", cursor: "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    transition: "background 0.15s", flexShrink: 0,
+  },
 
   /* Big Stats */
   bigStatsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 20 },
@@ -573,9 +704,10 @@ const s = {
     background: "var(--card-bg)", borderRadius: "var(--radius-sm)", padding: "14px 6px",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
     boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+    minWidth: 0, overflow: "hidden",
   },
-  bigStatValue: { fontSize: 20, fontWeight: 700, color: "var(--text)" },
-  bigStatLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600 },
+  bigStatValue: { fontSize: 20, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap" },
+  bigStatLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" },
 
   /* Tabs */
   tabBar: {
