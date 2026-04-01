@@ -40,9 +40,11 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main content — keyed on pathname for page-enter animation */}
       <main className="layout-main">
-        <Outlet />
+        <div className="page-transition" key={location.pathname}>
+          <Outlet />
+        </div>
       </main>
 
       {/* Bottom nav — 4 tabs + center AI */}

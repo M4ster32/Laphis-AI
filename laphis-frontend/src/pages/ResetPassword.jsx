@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import ApiService from "../services/api";
-import { Lock } from "lucide-react";
+import PasswordInput from "../components/PasswordInput";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
@@ -135,30 +135,22 @@ export default function ResetPassword() {
           </div>
 
           {/* New password */}
-          <div className="form-group">
-            <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Lock size={16} strokeWidth={1.5} />
-              Nova Password
-            </label>
-            <input
-              type="password" className="form-input"
-              placeholder="Mínimo 4 caracteres" value={newPassword}
-              onChange={(e) => { setNewPassword(e.target.value); setError(null); }}
-              disabled={loading} autoComplete="new-password"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Lock size={16} strokeWidth={1.5} />
-              Confirmar Password
-            </label>
-            <input
-              type="password" className="form-input"
-              placeholder="Repete a password" value={confirmPassword}
-              onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
-              disabled={loading} autoComplete="new-password"
-            />
-          </div>
+          <PasswordInput
+            label="Nova Password"
+            value={newPassword}
+            onChange={(v) => { setNewPassword(v); setError(null); }}
+            placeholder="Mínimo 4 caracteres"
+            disabled={loading}
+            autoComplete="new-password"
+          />
+          <PasswordInput
+            label="Confirmar Password"
+            value={confirmPassword}
+            onChange={(v) => { setConfirmPassword(v); setError(null); }}
+            placeholder="Repete a password"
+            disabled={loading}
+            autoComplete="new-password"
+          />
 
           <button type="submit" disabled={loading} className="btn btn-primary btn-full" style={{ marginTop: 8 }}>
             {loading ? (

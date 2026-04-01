@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import { useApp } from "../contexts/AppContext";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import PasswordInput from "../components/PasswordInput";
+import { Mail } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,7 +12,6 @@ export default function Login() {
   const { loadMyProfile } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -72,48 +72,13 @@ export default function Login() {
               disabled={loading} autoComplete="email"
             />
           </div>
-          <div className="form-group">
-            <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <Lock size={16} strokeWidth={1.5} />
-              Password
-            </label>
-            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                className="form-input"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                disabled={loading}
-                autoComplete="current-password"
-                style={{ paddingRight: 40 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                disabled={loading}
-                style={{
-                  position: "absolute",
-                  right: 12,
-                  background: "none",
-                  border: "none",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  padding: 4,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: loading ? 0.5 : 1,
-                  transition: "opacity 0.2s"
-                }}
-              >
-                {showPassword ? (
-                  <EyeOff size={18} strokeWidth={1.5} color="var(--text-muted)" />
-                ) : (
-                  <Eye size={18} strokeWidth={1.5} color="var(--text-muted)" />
-                )}
-              </button>
-            </div>
-          </div>
+          <PasswordInput
+            label="Password"
+            value={password}
+            onChange={(v) => { setPassword(v); setError(null); }}
+            disabled={loading}
+            autoComplete="current-password"
+          />
           <div style={{ textAlign: "right", marginTop: -4, marginBottom: 8 }}>
             <Link to="/forgot-password" style={{ fontSize: 13, color: "var(--accent-sport)", fontWeight: 600, textDecoration: "none" }}>
               Esqueceste a password?

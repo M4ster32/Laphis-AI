@@ -1,6 +1,7 @@
 /**
- * Skeleton Loading Components
- * Placeholders visuais durante carregamento
+ * Skeleton loading components.
+ * Visual placeholders that match the shape of real content
+ * to prevent layout shift and perceived jank.
  */
 
 export function SkeletonLine({ width = "100%", height = 14, style = {} }) {
@@ -129,6 +130,101 @@ export function SkeletonList({ count = 4 }) {
             <SkeletonLine width="80%" height={11} />
           </div>
           <SkeletonLine width={40} height={20} style={{ borderRadius: 6 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the Profile page — avatar + info fields.
+ */
+export function SkeletonProfile() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeIn 0.3s ease" }}>
+      {/* Avatar + name */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <SkeletonCircle size={72} />
+        <div style={{ flex: 1 }}>
+          <SkeletonLine width="50%" height={20} style={{ marginBottom: 10 }} />
+          <SkeletonLine width="35%" height={14} />
+        </div>
+      </div>
+
+      {/* Form fields */}
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i}>
+          <SkeletonLine width="30%" height={12} style={{ marginBottom: 8 }} />
+          <SkeletonLine width="100%" height={42} style={{ borderRadius: "var(--radius-sm)" }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the Plans grid — mimics plan cards.
+ */
+export function SkeletonPlans({ count = 3 }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, animation: "fadeIn 0.3s ease" }}>
+      {/* Header row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <SkeletonLine width="30%" height={22} />
+        <SkeletonLine width={100} height={36} style={{ borderRadius: 12 }} />
+      </div>
+      {/* Plan cards */}
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            background: "var(--card-bg)",
+            borderRadius: "var(--radius)",
+            border: "1px solid var(--border)",
+            padding: 20,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+            <SkeletonLine width="55%" height={16} />
+            <SkeletonLine width={60} height={22} style={{ borderRadius: 10 }} />
+          </div>
+          <SkeletonLine width="90%" height={12} style={{ marginBottom: 8 }} />
+          <SkeletonLine width="70%" height={12} style={{ marginBottom: 14 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <SkeletonLine width={80} height={28} style={{ borderRadius: 8 }} />
+            <SkeletonLine width={80} height={28} style={{ borderRadius: 8 }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Skeleton for the Logs page — timeline-like entries.
+ */
+export function SkeletonLogs({ count = 5 }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeIn 0.3s ease" }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            background: "var(--card-bg)",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border)",
+            padding: "12px 16px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <SkeletonLine width={6} height={32} style={{ borderRadius: 3, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <SkeletonLine width="45%" height={14} style={{ marginBottom: 6 }} />
+            <SkeletonLine width="70%" height={11} />
+          </div>
+          <SkeletonLine width={50} height={12} />
         </div>
       ))}
     </div>

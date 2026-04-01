@@ -1,1094 +1,798 @@
 /**
- * Serviço de comunicação com a API do backend
- * Centraliza todas as chamadas HTTP para a API FastAPI
+ * API service — single entry-point for all backend communication.
+ * Every public method delegates to `_request` so networking concerns
+ * (auth headers, error parsing, 401 handling) live in one place.
+ *
+ * @module ApiService
  */
 
 import { API_BASE_URL } from "../constants";
 
 class ApiService {
+  // ==================== BASE HELPERS ====================
+
   /**
-   * Obter headers com token de autenticação
+   * Build default headers, optionally including the Bearer token.
+   * @param {boolean} [includeAuth=true]
+   * @returns {Object} Headers dictionary.
    */
   static getHeaders(includeAuth = true) {
     const headers = { "Content-Type": "application/json" };
     if (includeAuth) {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+      const token = localStorage.getItem("authToken");
+      if (token) headers.Authorization = `Bearer ${token}`;
     }
     return headers;
   }
 
   /**
-   * Verificar status da API
+   * Convenience getter — appends `?token=<jwt>` to a path.
+   * Many legacy endpoints expect the token as a query param.
+   * @param {string} path - API path starting with `/`.
+   * @returns {string} Path with token query param.
    */
-  static async health() {
-    try {
-      const response = await fetch(`${API_BASE_URL}/health`);
-      return await response.json();
-    } catch (error) {
-      console.error("Health check failed:", error);
-      throw error;
-    }
+  static _withToken(path) {
+    const token = localStorage.getItem("authToken");
+    const sep = path.includes("?") ? "&" : "?";
+    return `${path}${sep}token=${token}`;
   }
 
   /**
-   * Obter perfil do utilizador autenticado
+   * Central request dispatcher — eliminates repetitive try/catch blocks.
+   *
+   * @param {string} path      - API path (e.g. `/health`).
+   * @param {Object} [opts]
+   * @param {string} [opts.method='GET']   - HTTP method.
+   * @param {Object} [opts.body]           - JSON-serialisable body.
+   * @param {boolean}[opts.auth=true]      - Attach auth headers.
+   * @param {*}      [opts.fallback]       - Return this on failure instead of throwing.
+   * @param {string} [opts.errorMsg]       - Default user-facing error message.
+   * @returns {Promise<*>} Parsed JSON response.
    */
-  static async getMyProfile() {
-    const token = localStorage.getItem('authToken');
-    if (!token) return null;
-
+  static async _request(path, { method = "GET", body, auth = true, fallback, errorMsg } = {}) {
     let response;
     try {
-      response = await fetch(`${API_BASE_URL}/profile/me?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      console.error("Network error fetching profile:", networkErr);
-      return null;
-    }
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userEmail');
-        return null;
-      }
-      if (response.status === 404) return null;
-      return null;
-    }
-    return await response.json();
-  }
-
-  /**
-   * Obter perfil do utilizador (por ID)
-   */
-  static async getProfile(profileId) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/profile/${profileId}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
+      const config = {
+        method,
+        headers: auth ? this.getHeaders() : { "Content-Type": "application/json" },
+      };
+      if (body) config.body = JSON.stringify(body);
+      response = await fetch(`${API_BASE_URL}${path}`, config);
+    } catch (_networkErr) {
+      if (fallback !== undefined) return fallback;
       throw new Error("Sem ligação ao servidor.");
     }
-    if (!response.ok) throw new Error("Erro ao obter perfil");
-    return await response.json();
+
+    if (!response.ok) {
+      /* Auto-clear stale auth tokens on 401 */
+      if (response.status === 401) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userEmail");
+      }
+      if (fallback !== undefined) return fallback;
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || errorMsg || "Erro na operação");
+    }
+
+    return response.json();
+  }
+
+  // ==================== HEALTH ====================
+
+  /**
+   * Check API availability.
+   * @returns {Promise<Object>}
+   */
+  static async health() {
+    return this._request("/health", { auth: false, fallback: { status: "unreachable" } });
+  }
+
+  // ==================== PROFILE ====================
+
+  /**
+   * Fetch the authenticated user's profile.
+   * Returns null instead of throwing when profile is missing or token is invalid.
+   * @returns {Promise<Object|null>}
+   */
+  static async getMyProfile() {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+    return this._request(this._withToken("/profile/me"), {
+      fallback: null,
+    });
   }
 
   /**
-   * Criar ou atualizar perfil
+   * Fetch a profile by its ID.
+   * @param {number|string} profileId
+   * @returns {Promise<Object>}
+   */
+  static async getProfile(profileId) {
+    return this._request(`/profile/${profileId}`, { errorMsg: "Erro ao obter perfil" });
+  }
+
+  /**
+   * Create or update the current user's profile.
+   * @param {Object} profileData
+   * @returns {Promise<Object>}
    */
   static async createProfile(profileData) {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (!token) throw new Error("Sessão expirada. Faz login novamente.");
-
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/profile?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(profileData),
-      });
-    } catch (networkErr) {
-      console.error("Network error creating profile:", networkErr);
-      throw new Error("Sem ligação ao servidor. Tenta novamente.");
-    }
-
-    const responseData = await response.json();
-    if (!response.ok) {
-      if (response.status === 401) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userEmail');
-        throw new Error("Sessão inválida. Faz login novamente.");
-      }
-      throw new Error(responseData?.detail || "Erro ao criar perfil");
-    }
-    return responseData;
+    return this._request(this._withToken("/profile"), {
+      method: "POST",
+      body: profileData,
+      errorMsg: "Erro ao criar perfil",
+    });
   }
 
-  /**
-   * Criar ou atualizar perfil (alias)
-   */
+  /** Alias for createProfile (upsert semantics on the backend). */
   static async updateProfile(profileData) {
     return this.createProfile(profileData);
   }
 
+  // ==================== AI CHAT ====================
+
   /**
-   * Fazer pergunta à IA
+   * Send a question to the AI coach.
+   * @param {string} question
+   * @param {number|null} profileId
+   * @param {string|null} sessionId
+   * @returns {Promise<Object>}
    */
   static async askAI(question, profileId = null, sessionId = null) {
-    let response;
     const body = { question, profile_id: profileId };
     if (sessionId) body.session_id = sessionId;
-    try {
-      response = await fetch(`${API_BASE_URL}/ask`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(body),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor. Verifica que o backend está a correr.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data?.detail || "Erro ao obter resposta da IA");
-    }
-    return await response.json();
+    return this._request("/ask", {
+      method: "POST",
+      body,
+      errorMsg: "Erro ao obter resposta da IA",
+    });
   }
 
+  // ==================== LOGS ====================
+
   /**
-   * Obter histórico de atividades (treinos + refeições unificados)
+   * Fetch activity logs (workouts + meals, unified).
+   * @param {number} [limit=100]
+   * @param {number} [offset=0]
+   * @returns {Promise<Array>}
    */
   static async getLogs(limit = 100, offset = 0) {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/logs?token=${token}&limit=${limit}&offset=${offset}`,
-        { headers: this.getHeaders() }
-      );
-      if (!response.ok) {
-        if (response.status === 404) return []; // Perfil não criado
-        throw new Error("Failed to fetch logs");
-      }
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching logs:", error);
-      return [];
-    }
+    return this._request(
+      this._withToken(`/logs`) + `&limit=${limit}&offset=${offset}`,
+      { fallback: [] }
+    );
   }
 
   /**
-   * Criar novo registo (treino ou refeição)
+   * Create a new log entry (workout or meal).
+   * @param {Object} data
+   * @returns {Promise<Object>}
    */
   static async createLog(data) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/logs?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(data),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const resp = await response.json().catch(() => ({}));
-      throw new Error(resp.detail || "Erro ao guardar registo");
-    }
-    return await response.json();
+    return this._request(this._withToken("/logs"), {
+      method: "POST",
+      body: data,
+      errorMsg: "Erro ao guardar registo",
+    });
   }
 
   /**
-   * Apagar registo (treino ou refeição)
+   * Delete a log entry.
+   * @param {number|string} logId
+   * @param {string} [logType='treino']
+   * @returns {Promise<Object>}
    */
   static async deleteLog(logId, logType = "treino") {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/logs/${logId}?token=${token}&log_type=${logType}`, {
-        method: "DELETE",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao apagar registo");
-    return await response.json();
+    return this._request(
+      this._withToken(`/logs/${logId}`) + `&log_type=${logType}`,
+      { method: "DELETE", errorMsg: "Erro ao apagar registo" }
+    );
   }
 
+  // ==================== AUTH ====================
+
   /**
-   * Registrar novo utilizador
+   * Register a new user account.
+   * @param {string} email
+   * @param {string} password
+   * @param {string} goal
+   * @returns {Promise<Object>}
    */
   static async register(email, password, goal) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, goal }),
-      });
-    } catch (networkErr) {
-      console.error("Register network error:", networkErr, "URL:", API_BASE_URL);
-      throw new Error("Sem ligação ao servidor. Tenta novamente.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao registar");
-    }
-    return await response.json();
+    return this._request("/auth/register", {
+      method: "POST",
+      auth: false,
+      body: { email, password, goal },
+      errorMsg: "Erro ao registar",
+    });
   }
 
   /**
-   * Fazer login
+   * Authenticate an existing user.
+   * @param {string} email
+   * @param {string} [password='']
+   * @returns {Promise<Object>}
    */
   static async login(email, password = "") {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-    } catch (networkErr) {
-      console.error("Login network error:", networkErr, "URL:", API_BASE_URL);
-      throw new Error("Sem ligação ao servidor. Tenta novamente.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Email ou senha incorretos");
-    }
-    return await response.json();
+    return this._request("/auth/login", {
+      method: "POST",
+      auth: false,
+      body: { email, password },
+      errorMsg: "Email ou senha incorretos",
+    });
   }
 
   // ==================== EMAIL VERIFICATION ====================
 
   /**
-   * Verificar email com código de 6 dígitos
+   * Verify email with a 6-digit code.
+   * @param {string} email
+   * @param {string} code
+   * @returns {Promise<Object>}
    */
   static async verifyEmail(email, code) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao verificar email");
-    }
-    return await response.json();
+    return this._request("/auth/verify-email", {
+      method: "POST",
+      auth: false,
+      body: { email, code },
+      errorMsg: "Erro ao verificar email",
+    });
   }
 
   /**
-   * Reenviar código de verificação
+   * Resend the email verification code.
+   * @param {string} email
+   * @returns {Promise<Object>}
    */
   static async resendVerificationCode(email) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/auth/resend-code`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao reenviar código");
-    }
-    return await response.json();
+    return this._request("/auth/resend-code", {
+      method: "POST",
+      auth: false,
+      body: { email },
+      errorMsg: "Erro ao reenviar código",
+    });
   }
 
   // ==================== PASSWORD RESET ====================
 
   /**
-   * Pedir código de recuperação de password
+   * Request a password recovery code.
+   * @param {string} email
+   * @returns {Promise<Object>}
    */
   static async forgotPassword(email) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao pedir recuperação");
-    }
-    return await response.json();
+    return this._request("/auth/forgot-password", {
+      method: "POST",
+      auth: false,
+      body: { email },
+      errorMsg: "Erro ao pedir recuperação",
+    });
   }
 
   /**
-   * Redefinir password com código
+   * Reset password using a recovery code.
+   * @param {string} email
+   * @param {string} code
+   * @param {string} newPassword
+   * @returns {Promise<Object>}
    */
   static async resetPassword(email, code, newPassword) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, new_password: newPassword }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao redefinir password");
-    }
-    return await response.json();
+    return this._request("/auth/reset-password", {
+      method: "POST",
+      auth: false,
+      body: { email, code, new_password: newPassword },
+      errorMsg: "Erro ao redefinir password",
+    });
   }
 
   /**
-   * Fazer logout
+   * Log out the current user and clear local auth state.
+   * Always resolves to `true` — never throws.
+   * @returns {Promise<true>}
    */
   static async logout() {
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      // Clear local storage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userEmail');
-      return true;
-    } catch (error) {
-      console.error("Error logging out:", error);
-      // Clear anyway
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userEmail');
-      return true;
+      await this._request("/auth/logout", { method: "POST" });
+    } catch {
+      /* Ignore — we clear tokens regardless */
     }
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userEmail");
+    return true;
   }
 
   /**
-   * Obter utilizador atual
+   * Fetch the currently authenticated user.
+   * @returns {Promise<Object>}
    */
   static async getCurrentUser() {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) throw new Error("No token found");
-      
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) throw new Error("Failed to fetch current user");
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching current user:", error);
-      throw error;
-    }
+    return this._request("/auth/me", { errorMsg: "Erro ao obter utilizador" });
   }
 
   /**
-   * Ingestar dados (upload)
+   * Upload data for ingestion (multipart form).
+   * Uses raw fetch because body is FormData, not JSON.
+   * @param {FormData} formData
+   * @returns {Promise<Object>}
    */
   static async ingestData(formData) {
-    try {
-      const response = await fetch(`${API_BASE_URL}/ingest`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Failed to ingest data");
-      return await response.json();
-    } catch (error) {
-      console.error("Error ingesting data:", error);
-      throw error;
-    }
+    const response = await fetch(`${API_BASE_URL}/ingest`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Erro ao enviar dados");
+    return response.json();
   }
 
   // ==================== PLANS ====================
 
   /**
-   * Gerar plano via IA
+   * Generate an AI-powered plan.
+   * @param {number} profileId
+   * @param {string} [type='combined']
+   * @param {string|null} [notes]
+   * @param {number|null} [categoryId]
+   * @returns {Promise<Object>}
    */
   static async generatePlan(profileId, type = "combined", notes = null, categoryId = null) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/plans/generate`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ profile_id: profileId, type, notes, category_id: categoryId }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao gerar plano");
-    }
-    return await response.json();
+    return this._request("/plans/generate", {
+      method: "POST",
+      body: { profile_id: profileId, type, notes, category_id: categoryId },
+      errorMsg: "Erro ao gerar plano",
+    });
   }
 
   /**
-   * Guardar plano customizado
+   * Save a custom plan.
+   * @param {Object} planData
+   * @returns {Promise<Object>}
    */
   static async savePlan(planData) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/plans/save`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(planData),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao guardar plano");
-    }
-    return await response.json();
+    return this._request("/plans/save", {
+      method: "POST",
+      body: planData,
+      errorMsg: "Erro ao guardar plano",
+    });
   }
 
   /**
-   * Listar planos de um perfil
+   * List plans for a given profile.
+   * @param {number} profileId
+   * @param {string|null} [status]
+   * @param {number|null} [categoryId]
+   * @returns {Promise<Array>}
    */
   static async getPlans(profileId, status = null, categoryId = null) {
-    let url = `${API_BASE_URL}/plans/list/${profileId}`;
+    let path = `/plans/list/${profileId}`;
     const params = [];
     if (status) params.push(`status=${status}`);
     if (categoryId) params.push(`category_id=${categoryId}`);
-    if (params.length) url += `?${params.join("&")}`;
-    let response;
-    try {
-      response = await fetch(url, { headers: this.getHeaders() });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao obter planos");
-    return await response.json();
+    if (params.length) path += `?${params.join("&")}`;
+    return this._request(path, { errorMsg: "Erro ao obter planos" });
   }
 
   /**
-   * Obter detalhe de um plano
+   * Fetch detailed data for a single plan.
+   * @param {number|string} planId
+   * @returns {Promise<Object>}
    */
   static async getPlanDetail(planId) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/plans/detail/${planId}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao obter plano");
-    return await response.json();
+    return this._request(`/plans/detail/${planId}`, { errorMsg: "Erro ao obter plano" });
   }
 
   /**
-   * Atualizar plano (título, notas, status, categoria)
+   * Update plan metadata (title, notes, status, category).
+   * @param {number|string} planId
+   * @param {Object} updateData
+   * @returns {Promise<Object>}
    */
   static async updatePlan(planId, updateData) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/plans/${planId}`, {
-        method: "PUT",
-        headers: this.getHeaders(),
-        body: JSON.stringify(updateData),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao atualizar plano");
-    return await response.json();
+    return this._request(`/plans/${planId}`, {
+      method: "PUT",
+      body: updateData,
+      errorMsg: "Erro ao atualizar plano",
+    });
   }
 
   /**
-   * Duplicar plano
+   * Duplicate an existing plan.
+   * @param {number|string} planId
+   * @returns {Promise<Object>}
    */
   static async duplicatePlan(planId) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/plans/${planId}/duplicate`, {
-        method: "POST",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao duplicar plano");
-    return await response.json();
+    return this._request(`/plans/${planId}/duplicate`, {
+      method: "POST",
+      errorMsg: "Erro ao duplicar plano",
+    });
   }
 
   /**
-   * Apagar plano permanentemente
+   * Permanently delete a plan.
+   * @param {number|string} planId
+   * @returns {Promise<Object>}
    */
   static async deletePlan(planId) {
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/plans/${planId}`, {
-        method: "DELETE",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao apagar plano");
-    return await response.json();
+    return this._request(`/plans/${planId}`, {
+      method: "DELETE",
+      errorMsg: "Erro ao apagar plano",
+    });
   }
 
   // ==================== CATEGORIES ====================
 
   /**
-   * Listar categorias do utilizador
+   * List the user's categories.
+   * @returns {Promise<Array>}
    */
   static async getCategories() {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/categories?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao obter categorias");
-    return await response.json();
+    return this._request(this._withToken("/categories"), { errorMsg: "Erro ao obter categorias" });
   }
 
   /**
-   * Criar categoria
+   * Create a new category.
+   * @param {Object} data
+   * @returns {Promise<Object>}
    */
   static async createCategory(data) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/categories?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(data),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const resp = await response.json().catch(() => ({}));
-      throw new Error(resp.detail || "Erro ao criar categoria");
-    }
-    return await response.json();
+    return this._request(this._withToken("/categories"), {
+      method: "POST",
+      body: data,
+      errorMsg: "Erro ao criar categoria",
+    });
   }
 
   /**
-   * Editar categoria
+   * Update an existing category.
+   * @param {number|string} categoryId
+   * @param {Object} data
+   * @returns {Promise<Object>}
    */
   static async updateCategory(categoryId, data) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/categories/${categoryId}?token=${token}`, {
-        method: "PUT",
-        headers: this.getHeaders(),
-        body: JSON.stringify(data),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao editar categoria");
-    return await response.json();
+    return this._request(this._withToken(`/categories/${categoryId}`), {
+      method: "PUT",
+      body: data,
+      errorMsg: "Erro ao editar categoria",
+    });
   }
 
   /**
-   * Apagar categoria
+   * Delete a category.
+   * @param {number|string} categoryId
+   * @returns {Promise<Object>}
    */
   static async deleteCategory(categoryId) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/categories/${categoryId}?token=${token}`, {
-        method: "DELETE",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao apagar categoria");
-    return await response.json();
+    return this._request(this._withToken(`/categories/${categoryId}`), {
+      method: "DELETE",
+      errorMsg: "Erro ao apagar categoria",
+    });
   }
 
   // ==================== CHAT HISTORY ====================
 
   /**
-   * Obter histórico de chat (legacy)
+   * Fetch legacy paginated chat history.
+   * @param {number} profileId
+   * @param {number} [page=1]
+   * @param {number} [perPage=50]
+   * @returns {Promise<Object>}
    */
   static async getChatHistory(profileId, page = 1, perPage = 50) {
-    let response;
-    try {
-      response = await fetch(
-        `${API_BASE_URL}/chat/${profileId}?page=${page}&per_page=${perPage}`,
-        { headers: this.getHeaders() }
-      );
-    } catch (networkErr) {
-      console.error("Network error fetching chat history:", networkErr);
-      return { messages: [], total: 0, page: 1, per_page: perPage };
-    }
-    if (!response.ok) return { messages: [], total: 0, page: 1, per_page: perPage };
-    return await response.json();
+    return this._request(`/chat/${profileId}?page=${page}&per_page=${perPage}`, {
+      fallback: { messages: [], total: 0, page: 1, per_page: perPage },
+    });
   }
 
   // ==================== CHAT SESSIONS ====================
 
+  /**
+   * List all chat sessions for the current user.
+   * @returns {Promise<Array>}
+   */
   static async getChatSessions() {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/chat/sessions?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching chat sessions:", err);
-      return [];
-    }
+    return this._request(this._withToken("/chat/sessions"), { fallback: [] });
   }
 
+  /**
+   * Create a new chat session.
+   * @returns {Promise<Object>}
+   */
   static async createChatSession() {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/chat/sessions?token=${token}`, {
+    return this._request(this._withToken("/chat/sessions"), {
       method: "POST",
-      headers: this.getHeaders(),
+      errorMsg: "Erro ao criar sessão",
     });
-    if (!response.ok) throw new Error("Erro ao criar sessão");
-    return await response.json();
   }
 
+  /**
+   * Fetch a single chat session by ID.
+   * @param {string} sessionId
+   * @returns {Promise<Object|null>}
+   */
   static async getChatSession(sessionId) {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching chat session:", err);
-      return null;
-    }
+    return this._request(this._withToken(`/chat/sessions/${sessionId}`), { fallback: null });
   }
 
+  /**
+   * Rename a chat session.
+   * @param {string} sessionId
+   * @param {string} title
+   * @returns {Promise<Object>}
+   */
   static async renameChatSession(sessionId, title) {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(
-      `${API_BASE_URL}/chat/sessions/${sessionId}/title?token=${token}&title=${encodeURIComponent(title)}`,
-      { method: "PUT", headers: this.getHeaders() }
+    return this._request(
+      this._withToken(`/chat/sessions/${sessionId}/title`) + `&title=${encodeURIComponent(title)}`,
+      { method: "PUT", errorMsg: "Erro ao renomear sessão" }
     );
-    if (!response.ok) throw new Error("Erro ao renomear sessão");
-    return await response.json();
   }
 
+  /**
+   * Delete a chat session.
+   * @param {string} sessionId
+   * @returns {Promise<Object>}
+   */
   static async deleteChatSession(sessionId) {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(
-      `${API_BASE_URL}/chat/sessions/${sessionId}?token=${token}`,
-      { method: "DELETE", headers: this.getHeaders() }
-    );
-    if (!response.ok) throw new Error("Erro ao apagar sessão");
-    return await response.json();
+    return this._request(this._withToken(`/chat/sessions/${sessionId}`), {
+      method: "DELETE",
+      errorMsg: "Erro ao apagar sessão",
+    });
   }
 
   // ==================== ZEN SESSIONS ====================
 
   /**
-   * Listar sessões zen do utilizador
+   * List the user's zen (mindfulness) sessions.
+   * @param {number} [limit=50]
+   * @returns {Promise<Array>}
    */
   static async getZenSessions(limit = 50) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/zen?token=${token}&limit=${limit}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      console.error("Network error fetching zen sessions:", networkErr);
-      return [];
-    }
-    if (!response.ok) return [];
-    return await response.json();
+    return this._request(this._withToken("/zen") + `&limit=${limit}`, { fallback: [] });
   }
 
   /**
-   * Guardar nova sessão zen
+   * Save a new zen session.
+   * @param {Object} data
+   * @returns {Promise<Object>}
    */
   static async saveZenSession(data) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/zen?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(data),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const resp = await response.json().catch(() => ({}));
-      throw new Error(resp.detail || "Erro ao guardar sessão zen");
-    }
-    return await response.json();
+    return this._request(this._withToken("/zen"), {
+      method: "POST",
+      body: data,
+      errorMsg: "Erro ao guardar sessão zen",
+    });
   }
 
   /**
-   * Apagar sessão zen
+   * Delete a zen session.
+   * @param {number|string} sessionId
+   * @returns {Promise<Object>}
    */
   static async deleteZenSession(sessionId) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/zen/${sessionId}?token=${token}`, {
-        method: "DELETE",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao apagar sessão zen");
-    return await response.json();
+    return this._request(this._withToken(`/zen/${sessionId}`), {
+      method: "DELETE",
+      errorMsg: "Erro ao apagar sessão zen",
+    });
   }
 
   /**
-   * Obter estatísticas zen
+   * Fetch aggregated zen statistics.
+   * @returns {Promise<Object>}
    */
   static async getZenStats() {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/zen/stats?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      console.error("Network error fetching zen stats:", networkErr);
-      return {};
-    }
-    if (!response.ok) return {};
-    return await response.json();
+    return this._request(this._withToken("/zen/stats"), { fallback: {} });
   }
 
   // ==================== REPORTS ====================
 
   /**
-   * Obter relatório completo do utilizador
+   * Fetch the full user report summary.
+   * @returns {Promise<Object>}
    */
   static async getReportSummary() {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/reports/summary?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const resp = await response.json().catch(() => ({}));
-      throw new Error(resp.detail || "Erro ao obter relatório");
-    }
-    return await response.json();
-  }
-
-  static async getWeeklySummary() {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/reports/weekly-summary?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching weekly summary:", err);
-      return null;
-    }
-  }
-
-  static async refreshWeeklySummary() {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/reports/weekly-summary/refresh?token=${token}`, {
-      method: "POST",
-      headers: this.getHeaders(),
+    return this._request(this._withToken("/reports/summary"), {
+      errorMsg: "Erro ao obter relatório",
     });
-    if (!response.ok) throw new Error("Erro ao atualizar resumo");
-    return await response.json();
+  }
+
+  /**
+   * Fetch the AI-generated weekly summary.
+   * @returns {Promise<Object|null>}
+   */
+  static async getWeeklySummary() {
+    return this._request(this._withToken("/reports/weekly-summary"), { fallback: null });
+  }
+
+  /**
+   * Force-refresh the weekly summary.
+   * @returns {Promise<Object>}
+   */
+  static async refreshWeeklySummary() {
+    return this._request(this._withToken("/reports/weekly-summary/refresh"), {
+      method: "POST",
+      errorMsg: "Erro ao atualizar resumo",
+    });
   }
 
   // ==================== WATER TRACKING ====================
 
   /**
-   * Obter dados de água de hoje
+   * Fetch today's water intake data.
+   * @returns {Promise<Object>}
    */
   static async getWaterToday() {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/water/today?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return { glasses: 0, ml_total: 0, goal_glasses: 8, percentage: 0 };
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching water:", err);
-      return { glasses: 0, ml_total: 0, goal_glasses: 8, percentage: 0 };
-    }
+    return this._request(this._withToken("/water/today"), {
+      fallback: { glasses: 0, ml_total: 0, goal_glasses: 8, percentage: 0 },
+    });
   }
 
   /**
-   * Adicionar água
+   * Add glasses of water.
+   * @param {number} [glasses=1]
+   * @returns {Promise<Object>}
    */
   static async addWater(glasses = 1) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/water/add?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ glasses }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao adicionar água");
-    return await response.json();
+    return this._request(this._withToken("/water/add"), {
+      method: "POST",
+      body: { glasses },
+      errorMsg: "Erro ao adicionar água",
+    });
   }
 
   /**
-   * Remover 1 copo de água
+   * Remove one glass of water.
+   * @returns {Promise<Object>}
    */
   static async removeWater() {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/water/remove?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao remover água");
-    return await response.json();
+    return this._request(this._withToken("/water/remove"), {
+      method: "POST",
+      errorMsg: "Erro ao remover água",
+    });
   }
 
   /**
-   * Histórico de água (últimos N dias)
+   * Fetch water intake history over the last N days.
+   * @param {number} [days=7]
+   * @returns {Promise<Array>}
    */
   static async getWaterHistory(days = 7) {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/water/history?token=${token}&days=${days}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching water history:", err);
-      return [];
-    }
+    return this._request(this._withToken("/water/history") + `&days=${days}`, { fallback: [] });
   }
 
   // ==================== WEIGHT TRACKING ====================
 
   /**
-   * Listar registos de peso
+   * List weight log entries.
+   * @param {number} [limit=60]
+   * @returns {Promise<Array>}
    */
   static async getWeightEntries(limit = 60) {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/weight?token=${token}&limit=${limit}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching weight entries:", err);
-      return [];
-    }
+    return this._request(this._withToken("/weight") + `&limit=${limit}`, { fallback: [] });
   }
 
   /**
-   * Adicionar registo de peso
+   * Add a new weight entry.
+   * @param {number} weightKg
+   * @param {string|null} [notes]
+   * @returns {Promise<Object>}
    */
   static async addWeightEntry(weightKg, notes = null) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/weight?token=${token}`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ weight_kg: weightKg, notes }),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) {
-      const resp = await response.json().catch(() => ({}));
-      throw new Error(resp.detail || "Erro ao registar peso");
-    }
-    return await response.json();
+    return this._request(this._withToken("/weight"), {
+      method: "POST",
+      body: { weight_kg: weightKg, notes },
+      errorMsg: "Erro ao registar peso",
+    });
   }
 
   /**
-   * Apagar registo de peso
+   * Delete a weight entry.
+   * @param {number|string} entryId
+   * @returns {Promise<Object>}
    */
   static async deleteWeightEntry(entryId) {
-    const token = localStorage.getItem('authToken');
-    let response;
-    try {
-      response = await fetch(`${API_BASE_URL}/weight/${entryId}?token=${token}`, {
-        method: "DELETE",
-        headers: this.getHeaders(),
-      });
-    } catch (networkErr) {
-      throw new Error("Sem ligação ao servidor.");
-    }
-    if (!response.ok) throw new Error("Erro ao apagar registo");
-    return await response.json();
+    return this._request(this._withToken(`/weight/${entryId}`), {
+      method: "DELETE",
+      errorMsg: "Erro ao apagar registo",
+    });
   }
 
   /**
-   * Estatísticas de peso
+   * Fetch aggregated weight statistics.
+   * @returns {Promise<Object>}
    */
   static async getWeightStats() {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/weight/stats?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return {};
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching weight stats:", err);
-      return {};
-    }
+    return this._request(this._withToken("/weight/stats"), { fallback: {} });
   }
 
   // ==================== PROGRESS & ADAPTATION ====================
 
   /**
-   * Criar snapshot de progresso (agrega métricas da semana)
+   * Create a progress snapshot (aggregates weekly metrics).
+   * @returns {Promise<Object>}
    */
   static async createProgressSnapshot() {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/progress/snapshot?token=${token}`, {
+    return this._request(this._withToken("/progress/snapshot"), {
       method: "POST",
-      headers: this.getHeaders(),
+      errorMsg: "Erro ao criar snapshot",
     });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao criar snapshot");
-    }
-    return await response.json();
   }
 
   /**
-   * Listar snapshots de progresso
+   * List progress snapshots.
+   * @param {number} [limit=20]
+   * @returns {Promise<Array>}
    */
   static async getProgressSnapshots(limit = 20) {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/progress/snapshots?token=${token}&limit=${limit}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching snapshots:", err);
-      return [];
-    }
+    return this._request(this._withToken("/progress/snapshots") + `&limit=${limit}`, {
+      fallback: [],
+    });
   }
 
   /**
-   * Obter insights de progresso (comparação entre snapshots)
+   * Fetch progress insights (cross-snapshot comparison).
+   * @returns {Promise<Object|null>}
    */
   static async getProgressInsights() {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/progress/insights?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching insights:", err);
-      return null;
-    }
+    return this._request(this._withToken("/progress/insights"), { fallback: null });
   }
 
   /**
-   * Submeter feedback sobre um plano
+   * Submit user feedback about a plan.
+   * @param {Object} feedbackData
+   * @returns {Promise<Object>}
    */
   static async submitPlanFeedback(feedbackData) {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/adaptation/feedback?token=${token}`, {
+    return this._request(this._withToken("/adaptation/feedback"), {
       method: "POST",
-      headers: this.getHeaders(),
-      body: JSON.stringify(feedbackData),
+      body: feedbackData,
+      errorMsg: "Erro ao enviar feedback",
     });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro ao enviar feedback");
-    }
-    return await response.json();
   }
 
   /**
-   * Obter feedback de um plano específico
+   * Fetch feedback for a specific plan.
+   * @param {number|string} planId
+   * @returns {Promise<Object|null>}
    */
   static async getPlanFeedback(planId) {
-    const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch(`${API_BASE_URL}/adaptation/feedback/${planId}?token=${token}`, {
-        headers: this.getHeaders(),
-      });
-      if (!response.ok) return null;
-      return await response.json();
-    } catch (err) {
-      return null;
-    }
+    return this._request(this._withToken(`/adaptation/feedback/${planId}`), { fallback: null });
   }
 
   /**
-   * Listar sugestões de adaptação
+   * List adaptation suggestions (optionally filtered by status).
+   * @param {string|null} [status]
+   * @returns {Promise<Array>}
    */
   static async getAdaptationSuggestions(status = null) {
-    const token = localStorage.getItem('authToken');
-    let url = `${API_BASE_URL}/adaptation/suggestions?token=${token}`;
-    if (status) url += `&status=${status}`;
-    try {
-      const response = await fetch(url, { headers: this.getHeaders() });
-      if (!response.ok) return [];
-      return await response.json();
-    } catch (err) {
-      console.error("Error fetching suggestions:", err);
-      return [];
-    }
+    let path = this._withToken("/adaptation/suggestions");
+    if (status) path += `&status=${status}`;
+    return this._request(path, { fallback: [] });
   }
 
   /**
-   * Responder a uma sugestão (aceitar/rejeitar)
+   * Respond to an adaptation suggestion (accept/reject).
+   * @param {number|string} suggestionId
+   * @param {string} status
+   * @param {string|null} [userResponse]
+   * @returns {Promise<Object>}
    */
   static async respondToSuggestion(suggestionId, status, userResponse = null) {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/adaptation/suggestions/${suggestionId}?token=${token}`, {
+    return this._request(this._withToken(`/adaptation/suggestions/${suggestionId}`), {
       method: "PUT",
-      headers: this.getHeaders(),
-      body: JSON.stringify({ status, user_response: userResponse }),
+      body: { status, user_response: userResponse },
+      errorMsg: "Erro ao responder à sugestão",
     });
-    if (!response.ok) throw new Error("Erro ao responder à sugestão");
-    return await response.json();
   }
 
   /**
-   * Disparar análise heurística manual
+   * Trigger a manual heuristic analysis.
+   * @returns {Promise<Object>}
    */
   static async triggerAnalysis() {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_BASE_URL}/adaptation/analyze?token=${token}`, {
+    return this._request(this._withToken("/adaptation/analyze"), {
       method: "POST",
-      headers: this.getHeaders(),
+      errorMsg: "Erro na análise",
     });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || "Erro na análise");
-    }
-    return await response.json();
   }
 }
 

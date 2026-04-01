@@ -5,8 +5,8 @@ import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
-import Modal from "../components/Modal";
-import { Wind, Zap, Droplets, TrendingUp, TrendingDown, Bot, ClipboardList, BarChart3, ChevronRight, Activity, Sparkles, ArrowRight, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame } from "lucide-react";
+import jsPDF from "jspdf";
+import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw } from "lucide-react";
 import {
  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
  Tooltip, ResponsiveContainer,
@@ -50,12 +50,7 @@ export default function Dashboard() {
  const [weeklySummary, setWeeklySummary] = useState(null);
  const [summaryLoading, setSummaryLoading] = useState(false);
 
- // Generate plan modal state
- const [showGenerate, setShowGenerate] = useState(false);
- const [genPrompt, setGenPrompt] = useState("");
- const [genType, setGenType] = useState("training");
- const [generating, setGenerating] = useState(false);
- const [genError, setGenError] = useState(null);
+
 
  useEffect(() => {
  if (profile) loadData();
@@ -118,23 +113,6 @@ export default function Dashboard() {
  }
  };
 
- const handleGenerate = async () => {
- if (!genPrompt.trim()) return;
- try {
- setGenerating(true);
- setGenError(null);
- await ApiService.generatePlan(profile.id, genType, genPrompt.trim(), null);
- setShowGenerate(false);
- setGenPrompt("");
- toast.success("Plano gerado com sucesso! 🎉");
- navigate("/plans");
- } catch (err) {
- setGenError(err.message || "Erro ao gerar plano");
- } finally {
- setGenerating(false);
- }
- };
-
  const handleRefreshSummary = async () => {
  try {
  setSummaryLoading(true);
@@ -145,6 +123,121 @@ export default function Dashboard() {
  toast.error("Erro ao atualizar resumo");
  } finally {
  setSummaryLoading(false);
+ }
+ };
+
+ const handleDownloadPDF = () => {
+ try {
+ const doc = new jsPDF({ unit: "mm", format: "a4" });
+ const W = doc.internal.pageSize.getWidth();
+ const H = doc.internal.pageSize.getHeight();
+ const margin = 16;
+ const maxW = W - margin * 2;
+ let y = 0;
+
+ const checkPage = (need = 20) => { if (y + need > H - 20) { doc.addPage(); y = 16; } };
+
+ // — Header bar
+ doc.setFillColor(155, 106, 74);
+ doc.rect(0, 0, W, 38, "F");
+ doc.setFont("helvetica", "bold");
+ doc.setFontSize(22);
+ doc.setTextColor(255, 255, 255);
+ doc.text("LAPHIS", margin, 18);
+ doc.setFontSize(11);
+ doc.setFont("helvetica", "normal");
+ doc.text("Resumo Semanal", margin, 28);
+ doc.setFontSize(9);
+ doc.text(new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }), W - margin, 28, { align: "right" });
+ y = 48;
+
+ doc.setTextColor(60, 60, 60);
+
+ // — Stats
+ if (weeklySummary?.stats) {
+ const st = weeklySummary.stats;
+ const parts = [];
+ if (st.treinos > 0) parts.push(`${st.treinos} treinos`);
+ if (st.minutos_treino > 0) parts.push(`${st.minutos_treino} min`);
+ if (st.copos_agua > 0) parts.push(`${st.copos_agua} copos de água`);
+ if (st.sessoes_zen > 0) parts.push(`${st.sessoes_zen} sessões zen`);
+ if (parts.length) {
+   doc.setFontSize(11);
+   doc.setFont("helvetica", "bold");
+   doc.text("Estatísticas", margin, y);
+   y += 7;
+   doc.setFont("helvetica", "normal");
+   doc.setFontSize(10);
+   doc.text(parts.join("  •  "), margin, y);
+   y += 12;
+ }
+ }
+
+ // — Summary text
+ if (weeklySummary?.summary_text) {
+ checkPage(30);
+ doc.setFontSize(11);
+ doc.setFont("helvetica", "bold");
+ doc.text("Resumo AI", margin, y);
+ y += 7;
+ doc.setFont("helvetica", "normal");
+ doc.setFontSize(10);
+ const lines = doc.splitTextToSize(weeklySummary.summary_text, maxW);
+ lines.forEach((line) => { checkPage(6); doc.text(line, margin, y); y += 5.5; });
+ y += 8;
+ }
+
+ // — Insights
+ if (insights) {
+ if (insights.trend_direction) {
+   checkPage(12);
+   doc.setFontSize(11);
+   doc.setFont("helvetica", "bold");
+   const trendLabel = insights.trend_direction === "improving" ? "📈 A melhorar"
+     : insights.trend_direction === "declining" ? "📉 Em queda" : "➡️ Estável";
+   doc.text(`Progresso: ${trendLabel}`, margin, y);
+   y += 8;
+ }
+ if (insights.highlights?.length) {
+   checkPage(10);
+   doc.setFontSize(10);
+   doc.setFont("helvetica", "bold");
+   doc.text("Destaques", margin, y);
+   y += 6;
+   doc.setFont("helvetica", "normal");
+   insights.highlights.forEach((h) => {
+     checkPage(7);
+     const hl = doc.splitTextToSize(`• ${h}`, maxW - 4);
+     hl.forEach((l) => { doc.text(l, margin + 2, y); y += 5.5; });
+   });
+   y += 6;
+ }
+ if (insights.suggestions?.length) {
+   checkPage(10);
+   doc.setFontSize(10);
+   doc.setFont("helvetica", "bold");
+   doc.text("Sugestões", margin, y);
+   y += 6;
+   doc.setFont("helvetica", "normal");
+   insights.suggestions.forEach((sg) => {
+     checkPage(7);
+     const sl = doc.splitTextToSize(`💡 ${sg}`, maxW - 4);
+     sl.forEach((l) => { doc.text(l, margin + 2, y); y += 5.5; });
+   });
+ }
+ }
+
+ // — Footer
+ y = H - 12;
+ doc.setFontSize(8);
+ doc.setTextColor(160, 160, 160);
+ doc.text("Gerado por LAPHIS — o teu assistente de saúde inteligente", margin, y);
+
+ doc.save(`LAPHIS_Resumo_${new Date().toISOString().split("T")[0]}.pdf`);
+ toast.success("PDF guardado!");
+ } catch (err) {
+ console.error("PDF export error:", err);
+ toast.error("Erro ao gerar PDF");
  }
  };
 
@@ -264,30 +357,6 @@ export default function Dashboard() {
  </div>
  </div>
 
- {/* AI Coach — Hero Card */}
- <button style={s.aiCard} onClick={() => navigate("/chat")}>
- <div style={s.aiCardInner}>
- <div style={{ ...s.aiIcon, background: "var(--gradient-primary)" }}><Bot size={20} strokeWidth={2} color="#fff" /></div>
- <div style={{ flex: 1 }}>
- <div style={s.aiTitle}>AI Coach</div>
- <div style={s.aiDesc}>Pergunta o que quiseres sobre treino ou nutrição</div>
- </div>
- <ChevronRight size={20} color="var(--text-muted)" strokeWidth={1.5} />
- </div>
- </button>
-
- {/* Generate Workout — Primary CTA */}
- <button style={s.generateCta} onClick={() => setShowGenerate(true)}>
- <div style={{ ...s.generateCtaIcon, background: "var(--gradient-cta)" }}>
- <Zap size={22} strokeWidth={2} color="#fff" />
- </div>
- <div style={s.generateCtaContent}>
- <div style={s.generateCtaTitle}>Gerar Plano com AI</div>
- <div style={s.generateCtaDesc}>Treino, nutrição ou combinado — personalizado para ti</div>
- </div>
- <ArrowRight size={18} color="var(--cta)" strokeWidth={2} />
- </button>
-
  {/* Stats Row — compact inline */}
  <div style={s.statsRow}>
  <div style={s.statItem}>
@@ -311,20 +380,30 @@ export default function Dashboard() {
  </div>
  </div>
 
- {/* Weekly AI Summary */}
- {weeklySummary && (
+ {/* ====== RESUMO SEMANAL (unified) ====== */}
  <div style={s.summaryCard}>
  <div style={s.summaryHeader}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
  <Sparkles size={18} color="var(--primary)" strokeWidth={1.5} />
  <h4 style={s.summaryTitle}>Resumo Semanal</h4>
  </div>
- <button style={s.summaryRefresh} onClick={handleRefreshSummary} disabled={summaryLoading}>
- {summaryLoading ? "..." : "↻"}
+ <div style={{ display: "flex", gap: 6 }}>
+ <button style={s.summaryIconBtn} onClick={handleDownloadPDF} title="Guardar PDF">
+ <Download size={15} strokeWidth={2} />
+ </button>
+ <button style={s.summaryIconBtn} onClick={handleRefreshSummary} disabled={summaryLoading} title="Atualizar">
+ <RefreshCw size={15} strokeWidth={2} className={summaryLoading ? "spin" : ""} />
  </button>
  </div>
+ </div>
+
+ {/* AI Summary text */}
+ {weeklySummary?.summary_text && (
  <p style={s.summaryText}>{weeklySummary.summary_text}</p>
- {weeklySummary.stats && (
+ )}
+
+ {/* Stats tags */}
+ {weeklySummary?.stats && (
  <div style={s.summaryStats}>
  {weeklySummary.stats.treinos > 0 && (
  <span style={s.summaryStatTag}>🏋️ {weeklySummary.stats.treinos} treinos</span>
@@ -340,8 +419,55 @@ export default function Dashboard() {
  )}
  </div>
  )}
- </div>
+
+ {/* Progress insights */}
+ {insights && (insights.highlights?.length > 0 || insights.suggestions?.length > 0) && (
+ <>
+ <div style={s.insightsDivider} />
+ <div style={s.insightsInline}>
+ <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+ <span style={s.insightsSubtitle}>Progresso</span>
+ {insights.trend_direction && (
+ <span style={{
+ ...s.insightsBadge,
+ background: insights.trend_direction === "improving" ? "rgba(76, 175, 80, 0.12)"
+ : insights.trend_direction === "declining" ? "rgba(244, 67, 54, 0.12)"
+ : "rgba(255, 193, 7, 0.12)",
+ color: insights.trend_direction === "improving" ? "#2E7D32"
+ : insights.trend_direction === "declining" ? "#C62828"
+ : "#F57F17",
+ }}>
+ {insights.trend_direction === "improving" ? <TrendingUp size={13} /> : insights.trend_direction === "declining" ? <TrendingDown size={13} /> : <Activity size={13} />}
+ {insights.trend_direction === "improving" ? " A melhorar" : insights.trend_direction === "declining" ? " Em queda" : " Estável"}
+ </span>
  )}
+ </div>
+ {insights.highlights?.slice(0, 3).map((h, i) => (
+ <div key={`h-${i}`} style={s.insightItem}>
+ <TrendingUp size={13} color="var(--p2)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+ <span style={s.insightText}>{h}</span>
+ </div>
+ ))}
+ {insights.suggestions?.slice(0, 2).map((sg, i) => (
+ <div key={`s-${i}`} style={s.insightItem}>
+ <Lightbulb size={13} color="var(--primary)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
+ <span style={{ ...s.insightText, color: "var(--text-secondary)" }}>{sg}</span>
+ </div>
+ ))}
+ </div>
+ </>
+ )}
+
+ {/* No data — CTA to generate */}
+ {!weeklySummary && !insights && !summaryLoading && !insightsLoading && (
+ <p style={s.summaryEmpty}>Ainda sem dados esta semana. Regista treinos ou refeições para ver o teu resumo.</p>
+ )}
+
+ {/* Analyze button */}
+ <button style={s.snapshotBtn} onClick={handleCreateSnapshot} disabled={insightsLoading}>
+ {insightsLoading ? "A analisar..." : "📊 Analisar Progresso"}
+ </button>
+ </div>
 
  {/* Hydration + Zen — side by side */}
  <div style={s.twoCol}>
@@ -417,63 +543,6 @@ export default function Dashboard() {
  </button>
  ))}
  </div>
-
- {/* Progress Insights */}
- {insights && (insights.highlights?.length > 0 || insights.suggestions?.length > 0) && (
- <div style={s.insightsCard}>
- <div style={s.insightsHeader}>
- <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Sparkles size={18} color="var(--p2)" strokeWidth={1.5} />
- <h4 style={s.insightsTitle}>Progresso</h4>
- </div>
- {insights.trend_direction && (
- <span style={{
- ...s.insightsBadge,
- background: insights.trend_direction === "improving" ? "rgba(76, 175, 80, 0.12)"
- : insights.trend_direction === "declining" ? "rgba(244, 67, 54, 0.12)"
- : "rgba(255, 193, 7, 0.12)",
- color: insights.trend_direction === "improving" ? "#2E7D32"
- : insights.trend_direction === "declining" ? "#C62828"
- : "#F57F17",
- }}>
- {insights.trend_direction === "improving" ? <TrendingUp size={13} /> : insights.trend_direction === "declining" ? <TrendingDown size={13} /> : <Activity size={13} />}
- {insights.trend_direction === "improving" ? " A melhorar" : insights.trend_direction === "declining" ? " Em queda" : " Estável"}
- </span>
- )}
- </div>
- {insights.highlights?.length > 0 && (
- <div style={s.insightsList}>
- {insights.highlights.slice(0, 3).map((h, i) => (
- <div key={i} style={s.insightItem}>
- <ArrowRight size={13} color="var(--p2)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
- <span style={s.insightText}>{h}</span>
- </div>
- ))}
- </div>
- )}
- {insights.suggestions?.length > 0 && (
- <div style={{ ...s.insightsList, marginTop: 8 }}>
- {insights.suggestions.slice(0, 2).map((sg, i) => (
- <div key={i} style={s.insightItem}>
- <Lightbulb size={13} color={CHART_COLORS.ai} strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
- <span style={{ ...s.insightText, color: "var(--text-secondary)" }}>{sg}</span>
- </div>
- ))}
- </div>
- )}
- <button style={s.snapshotBtn} onClick={handleCreateSnapshot} disabled={insightsLoading} title="Gera uma análise do teu progresso semanal">
- {insightsLoading ? "A registar..." : "📊 Analisar Progresso Semanal"}
- </button>
- </div>
- )}
-
- {/* No insights yet — show snapshot button */}
- {(!insights || (!insights.highlights?.length && !insights.suggestions?.length)) && (
- <button style={s.snapshotBtnStandalone} onClick={handleCreateSnapshot} disabled={insightsLoading} title="Gera uma análise do teu progresso semanal baseada nos teus treinos e refeições">
- <Sparkles size={16} strokeWidth={1.5} />
- {insightsLoading ? "A registar..." : "📊 Analisar Progresso Semanal"}
- </button>
- )}
 
  {/* Weekly Chart */}
  {workoutLogs.length > 0 && (
@@ -552,77 +621,11 @@ export default function Dashboard() {
  <Flame size={32} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.5, marginBottom: 8 }} />
  <h4 style={s.emptyCardTitle}>Começa a tua jornada!</h4>
  <p style={s.emptyCardText}>Regista o teu primeiro treino ou refeição para acompanhar o progresso.</p>
- <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
- <button className="btn btn-primary btn-sm" onClick={() => navigate("/logs")}>
+ <button className="btn btn-primary btn-sm" onClick={() => navigate("/logs")} style={{ marginTop: 14 }}>
  <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />Registar
  </button>
- <button className="btn btn-secondary btn-sm" onClick={() => setShowGenerate(true)}>
- <Zap size={14} strokeWidth={2} style={{ marginRight: 4 }} />Gerar Plano
- </button>
- </div>
  </div>
  )}
-
- {/* ====== GENERATE PLAN MODAL ====== */}
- <Modal
- isOpen={showGenerate}
- onClose={() => { setShowGenerate(false); setGenError(null); setGenPrompt(""); }}
- title="Gerar Plano com AI"
- confirmText="Gerar Plano"
- onConfirm={handleGenerate}
- loading={generating}
- >
- {genError && (
- <div className="alert alert-error" style={{ marginBottom: 12 }}>
- <span className="alert-icon">⚠️</span><span>{genError}</span>
- </div>
- )}
-
- {/* Plan Type */}
- <div className="form-group">
- <label className="form-label">Tipo de plano</label>
- <div style={s.typeGrid}>
- {[
- { value: "training", label: "Treino", icon: Dumbbell, color: "var(--primary)", bg: "var(--primary-bg)" },
- { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "var(--p2)", bg: "var(--cta-bg)" },
- { value: "combined", label: "Combinado", icon: Zap, color: "var(--p3)", bg: "var(--primary-bg)" },
- ].map((t) => (
- <button
- key={t.value} type="button"
- onClick={() => setGenType(t.value)}
- style={{
- ...s.typeBtn,
- borderColor: genType === t.value ? t.color : "var(--border)",
- background: genType === t.value ? t.bg : "var(--card-bg)",
- }}
- >
- <t.icon size={22} color={genType === t.value ? t.color : "var(--text-muted)"} strokeWidth={1.5} />
- <span style={{
- fontSize: 12, fontWeight: genType === t.value ? 700 : 500,
- color: genType === t.value ? t.color : "var(--text-secondary)",
- }}>{t.label}</span>
- </button>
- ))}
- </div>
- </div>
-
- <div className="form-group">
- <label className="form-label">Descreve o que queres</label>
- <textarea
- className="form-input"
- placeholder="Ex: Plano semanal de treino para ganhar massa, 4 dias"
- value={genPrompt} onChange={(e) => setGenPrompt(e.target.value)}
- rows={3} style={{ resize: "vertical" }} disabled={generating}
- />
- </div>
-
- {/* Quick prompt chips */}
- <div style={s.quickPrompts}>
- {["Plano semanal de treino", "Nutrição para emagrecer", "Treino corpo inteiro", "Treino em casa"].map((p, i) => (
- <button key={i} style={s.quickPromptBtn} onClick={() => setGenPrompt(p)} type="button">{p}</button>
- ))}
- </div>
- </Modal>
  </div>
  );
 }
@@ -655,45 +658,6 @@ const s = {
  display: "flex", alignItems: "center", justifyContent: "center",
  boxShadow: "var(--btn-primary-shadow)", flexShrink: 0,
  },
-
- /* AI Coach Hero */
- aiCard: {
-  display: "block", width: "100%", padding: "14px 16px",
-  borderRadius: "var(--radius)", background: "var(--card-bg)",
-  border: "1px solid var(--border)", cursor: "pointer",
-  boxShadow: "var(--shadow)", transition: "transform 0.15s ease, box-shadow 0.15s ease",
-  marginBottom: 12, textAlign: "left", boxSizing: "border-box",
- },
- aiCardInner: { display: "flex", alignItems: "center", gap: 12, color: "var(--text)", minWidth: 0 },
- aiIcon: {
- width: 42, height: 42, borderRadius: 12,
- background: "var(--gradient-primary)", color: "#fff",
- display: "flex", alignItems: "center", justifyContent: "center",
- fontSize: 14, fontWeight: 800, letterSpacing: -0.5, flexShrink: 0,
- },
- aiTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
- aiDesc: { fontSize: 13, color: "var(--text-muted)", fontWeight: 400 },
-
- /* Generate CTA */
- generateCta: {
-  display: "flex", alignItems: "center", gap: 12, width: "100%",
-  padding: "14px 16px", borderRadius: "var(--radius)",
-  background: "var(--card-bg)", border: "2px solid var(--cta)",
-  cursor: "pointer", textAlign: "left", marginBottom: 20,
-  boxShadow: "0 2px 12px var(--btn-primary-shadow)",
-  transition: "transform 0.15s ease, box-shadow 0.15s ease",
-  boxSizing: "border-box",
- },
- generateCtaIcon: {
-  width: 44, height: 44, borderRadius: 14,
-  background: "var(--gradient-cta)", color: "#fff",
-  display: "flex", alignItems: "center", justifyContent: "center",
-  flexShrink: 0,
-  boxShadow: "0 2px 8px var(--btn-primary-shadow)",
- },
- generateCtaContent: { flex: 1, minWidth: 0 },
- generateCtaTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", marginBottom: 2 },
- generateCtaDesc: { fontSize: 12, color: "var(--text-muted)", fontWeight: 400, lineHeight: 1.4 },
 
  /* Stats Row */
  statsRow: {
@@ -810,20 +774,16 @@ const s = {
  tooltipLabel: { fontSize: 12, fontWeight: 600, color: "var(--text)", margin: "0 0 4px" },
  tooltipValue: { fontSize: 12, fontWeight: 400, margin: 0 },
 
- /* Progress Insights */
- insightsCard: {
- background: "var(--card-bg)", borderRadius: "var(--radius)", padding: "16px",
- marginBottom: 16, boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+ /* Progress Insights (inline within summary card) */
+ insightsDivider: {
+ height: 1, background: "var(--border)", margin: "14px 0",
  },
- insightsHeader: {
- display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12,
- },
- insightsTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
+ insightsInline: { display: "flex", flexDirection: "column", gap: 6 },
+ insightsSubtitle: { fontSize: 13, fontWeight: 700, color: "var(--text)" },
  insightsBadge: {
- display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600,
- padding: "4px 10px", borderRadius: 20,
+ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600,
+ padding: "3px 8px", borderRadius: 20,
  },
- insightsList: { display: "flex", flexDirection: "column", gap: 6 },
  insightItem: { display: "flex", alignItems: "flex-start", gap: 8 },
  insightText: { fontSize: 13, color: "var(--text)", lineHeight: 1.4 },
  snapshotBtn: {
@@ -831,11 +791,8 @@ const s = {
  borderRadius: 10, background: "none", color: "var(--text-secondary)",
  fontSize: 12, fontWeight: 600, cursor: "pointer",
  },
- snapshotBtnStandalone: {
- display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
- width: "100%", marginBottom: 16, padding: "12px", border: "1px dashed var(--border)",
- borderRadius: "var(--radius)", background: "var(--card-bg)", color: "var(--text-secondary)",
- fontSize: 13, fontWeight: 600, cursor: "pointer", boxShadow: "var(--shadow)",
+ summaryEmpty: {
+ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, margin: "0 0 4px", fontStyle: "italic",
  },
 
  /* Empty State */
@@ -866,7 +823,7 @@ const s = {
  boxShadow: "var(--shadow)",
  },
 
- /* Weekly Summary */
+ /* Weekly Summary (unified) */
  summaryCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
  padding: "16px", boxShadow: "var(--shadow)",
@@ -877,17 +834,17 @@ const s = {
  marginBottom: 10,
  },
  summaryTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 },
- summaryRefresh: {
+ summaryIconBtn: {
  background: "var(--bg-surface)", border: "1px solid var(--border)",
  borderRadius: 8, width: 30, height: 30, cursor: "pointer",
  display: "flex", alignItems: "center", justifyContent: "center",
- fontSize: 16, color: "var(--text-muted)", transition: "background 0.15s",
+ color: "var(--text-muted)", transition: "background 0.15s, color 0.15s",
  },
  summaryText: {
  fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6,
  margin: "0 0 10px", whiteSpace: "pre-wrap",
  },
- summaryStats: { display: "flex", flexWrap: "wrap", gap: 8 },
+ summaryStats: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 },
  summaryStatTag: {
  padding: "4px 10px", borderRadius: 12,
  background: "var(--primary-bg)", fontSize: 12,

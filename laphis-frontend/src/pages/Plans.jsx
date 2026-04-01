@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
-import { Dumbbell, UtensilsCrossed, Zap, Tag, Plus, Archive, Copy, ChevronRight } from "lucide-react";
+import GeneratePlanModal from "../components/GeneratePlanModal";
+import { Tag, Plus, Archive, Copy, ChevronRight } from "lucide-react";
 
 const CATEGORY_ICONS = ["T", "F", "N", "Z", "C", "M", "O", "R", "S", "P", "H", "E"];
 
@@ -18,8 +19,6 @@ export default function Plans() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [genType, setGenType] = useState("combined");
-  const [genCategory, setGenCategory] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
 
@@ -70,15 +69,12 @@ export default function Plans() {
     }
   };
 
-  const handleGenerate = async () => {
-    if (!prompt.trim()) return;
+  const handleGenerate = async (type, promptText, categoryId) => {
     try {
       setGenerating(true);
       setError(null);
-      await ApiService.generatePlan(profile.id, genType, prompt.trim(), genCategory);
+      await ApiService.generatePlan(profile.id, type, promptText, categoryId);
       setShowGenerate(false);
-      setPrompt("");
-      setGenCategory(null);
       await loadPlans();
     } catch (err) {
       setError(err.message || "Erro ao gerar plano");
@@ -262,84 +258,14 @@ export default function Plans() {
       )}
 
       {/* ====== GENERATE MODAL ====== */}
-      <Modal
+      <GeneratePlanModal
         isOpen={showGenerate}
-        onClose={() => { setShowGenerate(false); setError(null); setPrompt(""); }}
-        title="Gerar Novo Plano"
-        confirmText="Gerar com AI"
-        onConfirm={handleGenerate}
-        loading={generating}
-      >
-        {error && (
-          <div className="alert alert-error" style={{ marginBottom: 12 }}>
-            <span className="alert-icon">⚠️</span><span>{error}</span>
-          </div>
-        )}
-
-        {/* Plan Type */}
-        <div className="form-group">
-          <label className="form-label">Tipo de plano</label>
-          <div style={s.typeGrid}>
-            {[
-              { value: "training", label: "Treino", icon: Dumbbell, color: "var(--primary)", bg: "var(--primary-bg)" },
-              { value: "nutrition", label: "Nutrição", icon: UtensilsCrossed, color: "var(--p2)", bg: "var(--cta-bg)" },
-              { value: "combined", label: "Combinado", icon: Zap, color: "var(--p3)", bg: "var(--primary-bg)" },
-            ].map((t) => (
-              <button
-                key={t.value} type="button"
-                onClick={() => setGenType(t.value)}
-                style={{
-                  ...s.typeBtn,
-                  borderColor: genType === t.value ? t.color : "var(--border)",
-                  background: genType === t.value ? t.bg : "var(--card-bg)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <t.icon size={24} color={genType === t.value ? t.color : "var(--text-secondary)"} strokeWidth={1.5} />
-                <span style={{
-                  fontSize: 13, fontWeight: genType === t.value ? 700 : 500,
-                  color: genType === t.value ? t.color : "var(--text-secondary)",
-                }}>{t.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Category select */}
-        {categories.length > 0 && (
-          <div className="form-group">
-            <label className="form-label">Categoria (opcional)</label>
-            <select
-              className="form-select"
-              value={genCategory || ""}
-              onChange={(e) => setGenCategory(e.target.value ? parseInt(e.target.value) : null)}
-            >
-              <option value="">Sem categoria</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div className="form-group">
-          <label className="form-label">Descreve o plano que queres</label>
-          <textarea
-            className="form-input"
-            placeholder="Ex: Plano semanal de treino para ganhar massa, 4 dias"
-            value={prompt} onChange={(e) => setPrompt(e.target.value)}
-            rows={4} style={{ resize: "vertical" }} disabled={generating}
-          />
-        </div>
-        <div style={s.quickPrompts}>
-          {["Plano semanal de treino", "Plano de nutrição para emagrecer", "Treino de corpo inteiro"].map((p, i) => (
-            <button key={i} style={s.quickPromptBtn} onClick={() => setPrompt(p)} type="button">{p}</button>
-          ))}
-        </div>
-      </Modal>
+        onClose={() => { setShowGenerate(false); setError(null); }}
+        onGenerate={handleGenerate}
+        generating={generating}
+        error={error}
+        categories={categories}
+      />
 
       {/* ====== CATEGORY MANAGEMENT MODAL ====== */}
       <Modal
