@@ -19,6 +19,7 @@ import PlanDetail from "./pages/PlanDetail";
 import Settings from "./pages/Settings";
 import Zen from "./pages/Zen";
 import Reports from "./pages/Reports";
+import DailyPlan from "./pages/DailyPlan";
 
 // Route protection component
 const ProtectedRoute = ({ children }) => {
@@ -58,6 +59,7 @@ export default function AppRouter() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/zen" element={<Zen />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/daily-plan" element={<DailyPlan />} />
           </Route>
 
           {/* Fallback */}

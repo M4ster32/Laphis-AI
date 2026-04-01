@@ -35,6 +35,7 @@ class Profile(Base):
     progress_snapshots = relationship("ProgressSnapshot", back_populates="profile", cascade="all, delete-orphan")
     plan_feedback = relationship("PlanFeedback", back_populates="profile", cascade="all, delete-orphan")
     adaptation_logs = relationship("AdaptationLog", back_populates="profile", cascade="all, delete-orphan")
+    daily_plans = relationship("DailyPlan", back_populates="profile", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Profile(id={self.id}, user_id={self.user_id}, name={self.name}, goal={self.goal})>"
@@ -418,4 +419,29 @@ class AdaptationLog(Base):
 
     def __repr__(self):
         return f"<AdaptationLog(id={self.id}, profile_id={self.profile_id}, trigger={self.trigger}, status={self.status})>"
+
+
+class DailyPlan(Base):
+    """
+    Plano Diário Adaptativo
+    Gerado pela IA para um dia específico, com treino + refeições.
+    O utilizador pode ajustar em tempo real com constraints naturais.
+    """
+    __tablename__ = "daily_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    profile_id = Column(Integer, ForeignKey("profiles.id"), nullable=False, index=True)
+    date = Column(String(10), nullable=False, index=True)  # "YYYY-MM-DD"
+    workout = Column(JSON, nullable=False)
+    meals = Column(JSON, nullable=False)
+    adjustments = Column(JSON, nullable=True)  # list of adjustment records
+    status = Column(String(20), nullable=False, default="active")  # "active", "completed", "skipped"
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationship
+    profile = relationship("Profile", back_populates="daily_plans")
+
+    def __repr__(self):
+        return f"<DailyPlan(id={self.id}, profile_id={self.profile_id}, date={self.date}, status={self.status})>"
 

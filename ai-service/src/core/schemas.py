@@ -424,3 +424,28 @@ class AdaptationLogOut(BaseModel):
 class AdaptationRespondIn(BaseModel):
     status: Literal["accepted", "rejected"]
     user_response: Optional[str] = Field(default=None, max_length=300)
+
+
+# ==================== DAILY PLAN SCHEMAS ====================
+
+class DailyPlanGenerateIn(BaseModel):
+    profile_id: int
+    date: Optional[str] = Field(default=None, description="YYYY-MM-DD, defaults to tomorrow")
+
+class DailyPlanAdjustIn(BaseModel):
+    plan_id: int
+    constraint: str = Field(min_length=2, max_length=500)
+
+class DailyPlanOut(BaseModel):
+    id: int
+    profile_id: int
+    date: str
+    workout: dict
+    meals: dict
+    adjustments: Optional[list] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

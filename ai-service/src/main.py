@@ -26,6 +26,7 @@ from .api.progress import router as progress_router
 from .api.adaptation import router as adaptation_router
 from .api.rag_ingest import router as rag_ingest_router
 from .api.rag_ask import router as rag_ask_router
+from .api.daily_plan import router as daily_plan_router
 
 app = FastAPI(
     title="LAPHIS AI Service",
@@ -123,3 +124,4 @@ app.include_router(progress_router)
 app.include_router(adaptation_router)
 app.include_router(rag_ingest_router)
 app.include_router(rag_ask_router)
+app.include_router(daily_plan_router)

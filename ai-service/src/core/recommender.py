@@ -373,3 +373,363 @@ def recommend(profile: ProfileOut, question: str) -> Tuple[str, List[str]]:
         "",
         "Experimenta: 'Cria-me um plano de treino' ou 'Quantas calorias preciso?'",
     ]
+
+
+# ==================== DAILY PLAN GENERATION ====================
+
+import re as _re
+import copy as _copy
+from datetime import datetime as _dt
+
+# Exercise pool — each entry has a bodyweight alternative
+_EXERCISE_POOL = {
+    "peito": [
+        {"name": "Supino plano barra", "sets": 4, "reps": "8-10", "rest_sec": 90, "muscle": "peito", "bw": "Flexões"},
+        {"name": "Supino inclinado halteres", "sets": 3, "reps": "10-12", "rest_sec": 60, "muscle": "peito", "bw": "Flexões inclinadas"},
+        {"name": "Crossover cabos", "sets": 3, "reps": "12-15", "rest_sec": 45, "muscle": "peito", "bw": "Flexões largas"},
+    ],
+    "costas": [
+        {"name": "Puxada frente", "sets": 4, "reps": "8-10", "rest_sec": 90, "muscle": "costas", "bw": "Puxadas na barra"},
+        {"name": "Remada baixa", "sets": 3, "reps": "10-12", "rest_sec": 90, "muscle": "costas", "bw": "Remada invertida"},
+        {"name": "Remada unilateral", "sets": 3, "reps": "10-12", "rest_sec": 60, "muscle": "costas", "bw": "Superman"},
+    ],
+    "ombros": [
+        {"name": "Press ombros halteres", "sets": 3, "reps": "10-12", "rest_sec": 60, "muscle": "ombros", "bw": "Pike push-ups"},
+        {"name": "Elevação lateral", "sets": 3, "reps": "15-20", "rest_sec": 45, "muscle": "ombros", "bw": "Elevação lateral garrafas"},
+        {"name": "Face pull", "sets": 3, "reps": "15-20", "rest_sec": 45, "muscle": "ombros", "bw": "Band pull-apart"},
+    ],
+    "pernas": [
+        {"name": "Agachamento barra", "sets": 4, "reps": "8-10", "rest_sec": 120, "muscle": "pernas", "bw": "Agachamento livre"},
+        {"name": "Leg press", "sets": 3, "reps": "12-15", "rest_sec": 90, "muscle": "pernas", "bw": "Agachamento búlgaro"},
+        {"name": "Extensão pernas", "sets": 3, "reps": "12-15", "rest_sec": 60, "muscle": "pernas", "bw": "Sissy squat"},
+    ],
+    "posterior": [
+        {"name": "Stiff", "sets": 3, "reps": "10-12", "rest_sec": 90, "muscle": "posterior", "bw": "Ponte glúteos"},
+        {"name": "Curl pernas deitado", "sets": 3, "reps": "12-15", "rest_sec": 60, "muscle": "posterior", "bw": "Nordic curl"},
+        {"name": "Hip thrust", "sets": 3, "reps": "10-12", "rest_sec": 60, "muscle": "posterior", "bw": "Ponte glúteos unilateral"},
+    ],
+    "biceps": [
+        {"name": "Curl bíceps barra", "sets": 3, "reps": "10-12", "rest_sec": 45, "muscle": "biceps", "bw": "Curl com mochila"},
+        {"name": "Curl martelo", "sets": 2, "reps": "12-15", "rest_sec": 45, "muscle": "biceps", "bw": "Curl isométrico"},
+    ],
+    "triceps": [
+        {"name": "Tríceps corda", "sets": 3, "reps": "12-15", "rest_sec": 45, "muscle": "triceps", "bw": "Diamond push-ups"},
+        {"name": "Extensão tríceps", "sets": 2, "reps": "12-15", "rest_sec": 45, "muscle": "triceps", "bw": "Dips no banco"},
+    ],
+    "core": [
+        {"name": "Prancha frontal", "sets": 3, "reps": "30-45s", "rest_sec": 30, "muscle": "core", "bw": "Prancha frontal"},
+        {"name": "Crunch máquina", "sets": 3, "reps": "15-20", "rest_sec": 30, "muscle": "core", "bw": "Crunch no chão"},
+        {"name": "Elevação joelhos", "sets": 2, "reps": "12-15", "rest_sec": 30, "muscle": "core", "bw": "Mountain climbers"},
+    ],
+}
+
+# Workout templates — pick exercises from pool by muscle group
+_WORKOUT_TEMPLATES = [
+    {
+        "title": "💪 Full Body — Força",
+        "focus": "Treino composto para todo o corpo",
+        "picks": {"peito": 1, "costas": 1, "pernas": 1, "ombros": 1, "biceps": 1, "triceps": 1},
+    },
+    {
+        "title": "🦵 Lower Body — Pernas & Core",
+        "focus": "Foco em pernas, glúteos e core",
+        "picks": {"pernas": 2, "posterior": 2, "core": 2},
+    },
+    {
+        "title": "🏋️ Upper Body — Tronco",
+        "focus": "Foco no tronco superior",
+        "picks": {"peito": 2, "costas": 2, "ombros": 1, "biceps": 1, "triceps": 1},
+    },
+    {
+        "title": "⚡ Push — Peito, Ombros & Tríceps",
+        "focus": "Movimentos de empurrar",
+        "picks": {"peito": 2, "ombros": 2, "triceps": 2},
+    },
+    {
+        "title": "🔙 Pull — Costas & Bíceps",
+        "focus": "Movimentos de puxar",
+        "picks": {"costas": 3, "biceps": 2, "posterior": 1},
+    },
+]
+
+# Meal templates
+_MEAL_TEMPLATES = {
+    "pequeno_almoco": [
+        {"foods": ["Ovos mexidos (3)", "Pão integral (2 fatias)", "Banana"], "base_cal": 450, "base_prot": 28},
+        {"foods": ["Papas de aveia (60g)", "Iogurte grego (150g)", "Mel e frutos vermelhos"], "base_cal": 420, "base_prot": 25},
+        {"foods": ["Tosta integral com ovo e abacate", "Sumo de laranja natural"], "base_cal": 480, "base_prot": 22},
+        {"foods": ["Panquecas de aveia (3)", "Manteiga de amendoim", "Fruta da época"], "base_cal": 460, "base_prot": 24},
+    ],
+    "almoco": [
+        {"foods": ["Frango grelhado (150g)", "Arroz integral (100g)", "Brócolos e cenoura"], "base_cal": 550, "base_prot": 42},
+        {"foods": ["Salmão no forno (150g)", "Batata-doce (150g)", "Salada mista"], "base_cal": 580, "base_prot": 38},
+        {"foods": ["Peru grelhado (150g)", "Massa integral (100g)", "Legumes salteados"], "base_cal": 520, "base_prot": 40},
+        {"foods": ["Atum em posta (150g)", "Quinoa (100g)", "Espinafres salteados"], "base_cal": 510, "base_prot": 44},
+    ],
+    "lanche": [
+        {"foods": ["Iogurte grego (200g)", "Granola (30g)", "Banana"], "base_cal": 300, "base_prot": 18},
+        {"foods": ["Batido proteico", "Frutos secos (30g)"], "base_cal": 280, "base_prot": 25},
+        {"foods": ["Tosta de arroz com manteiga de amendoim", "Maçã"], "base_cal": 260, "base_prot": 10},
+        {"foods": ["Queijo fresco (100g)", "Cenoura baby", "Húmus"], "base_cal": 250, "base_prot": 15},
+    ],
+    "jantar": [
+        {"foods": ["Peito de frango (150g)", "Batata cozida (150g)", "Salada de tomate e pepino"], "base_cal": 480, "base_prot": 40},
+        {"foods": ["Peixe grelhado (150g)", "Arroz basmati (80g)", "Legumes no vapor"], "base_cal": 450, "base_prot": 35},
+        {"foods": ["Omelete (3 ovos) com legumes", "Pão integral", "Sopa de legumes"], "base_cal": 420, "base_prot": 30},
+        {"foods": ["Carne de vaca magra (120g)", "Puré de batata", "Brócolos gratinados"], "base_cal": 500, "base_prot": 38},
+    ],
+}
+
+# Vegetarian replacements for common protein sources
+_VEGGIE_SUBS = {
+    "Frango grelhado (150g)": "Tofu grelhado (200g)",
+    "Salmão no forno (150g)": "Tofu marinado (200g)",
+    "Peru grelhado (150g)": "Seitan grelhado (150g)",
+    "Atum em posta (150g)": "Grão-de-bico cozido (200g)",
+    "Peito de frango (150g)": "Tempeh (150g)",
+    "Peixe grelhado (150g)": "Lentilhas cozidas (200g)",
+    "Carne de vaca magra (120g)": "Seitan (150g)",
+    "Iogurte grego (150g)": "Iogurte de soja (150g)",
+    "Iogurte grego (200g)": "Iogurte de coco (200g)",
+    "Queijo fresco (100g)": "Tofu sedoso (100g)",
+    "Ovos mexidos (3)": "Tofu mexido (200g)",
+}
+
+
+def _daily_tdee(profile: ProfileOut):
+    """Calculate BMR, TDEE, target calories and protein for daily plan."""
+    if profile.sex == "masculino":
+        bmr = 88.36 + (13.4 * profile.weight_kg) + (4.8 * profile.height_cm) - (5.7 * profile.age)
+    else:
+        bmr = 447.6 + (9.2 * profile.weight_kg) + (3.1 * profile.height_cm) - (4.3 * profile.age)
+
+    mult = {1: 1.2, 2: 1.375, 3: 1.55, 4: 1.55, 5: 1.725, 6: 1.725, 7: 1.9}
+    tdee = int(bmr * mult.get(profile.days_per_week, 1.55))
+
+    if profile.goal == "perder_gordura":
+        target = tdee - 400
+    elif profile.goal == "ganhar_massa":
+        target = tdee + 300
+    else:
+        target = tdee
+
+    protein = int(profile.weight_kg * 1.8)
+    return int(bmr), tdee, target, protein
+
+
+def _build_daily_workout(profile: ProfileOut, date_str: str) -> dict:
+    """Build a structured workout for the given date."""
+    d = _dt.strptime(date_str, "%Y-%m-%d")
+    day_num = d.timetuple().tm_yday
+    template = _WORKOUT_TEMPLATES[day_num % len(_WORKOUT_TEMPLATES)]
+
+    base_dur = {"iniciante": 35, "intermedio": 45, "avancado": 55}.get(profile.level, 45)
+
+    exercises = []
+    for muscle, count in template["picks"].items():
+        pool = _EXERCISE_POOL.get(muscle, [])
+        for i in range(min(count, len(pool))):
+            idx = (day_num + i) % len(pool)
+            ex = _copy.deepcopy(pool[idx])
+            if profile.level == "iniciante":
+                ex["sets"] = max(2, ex["sets"] - 1)
+            elif profile.level == "avancado":
+                ex["sets"] = ex["sets"] + 1
+            exercises.append(ex)
+
+    return {
+        "title": template["title"],
+        "focus": template["focus"],
+        "duration_min": base_dur,
+        "warmup": "5 min cardio leve + mobilidade articular",
+        "exercises": exercises,
+        "cooldown": "5 min alongamentos estáticos",
+        "tips": [
+            "Mantém boa técnica em todos os exercícios",
+            f"Descanso: {90 if profile.level == 'iniciante' else 60}-{120 if profile.level == 'avancado' else 90}s entre séries",
+            "Hidrata-te durante o treino",
+        ],
+    }
+
+
+def _build_daily_meals(profile: ProfileOut, target_cal: int, protein_g: int, date_str: str) -> dict:
+    """Build structured meal plan for a specific date."""
+    d = _dt.strptime(date_str, "%Y-%m-%d")
+    seed = d.timetuple().tm_yday
+
+    dist = [
+        ("pequeno_almoco", 0.25, "🌅 Pequeno-almoço", "08:00"),
+        ("almoco", 0.35, "🍽️ Almoço", "13:00"),
+        ("lanche", 0.15, "🥤 Lanche", "16:30"),
+        ("jantar", 0.25, "🌙 Jantar", "20:00"),
+    ]
+
+    meals = []
+    for i, (key, pct, label, time) in enumerate(dist):
+        pool = _MEAL_TEMPLATES[key]
+        idx = (seed + profile.id + i) % len(pool)
+        tpl = pool[idx]
+        meals.append({
+            "type": label,
+            "time": time,
+            "foods": list(tpl["foods"]),
+            "calories": int(target_cal * pct),
+            "protein_g": int(protein_g * pct),
+        })
+
+    water_l = max(2.0, round(profile.weight_kg * 0.033, 1))
+    return {
+        "total_calories": target_cal,
+        "total_protein_g": protein_g,
+        "meals": meals,
+        "hydration": f"💧 Beber {water_l}L de água ao longo do dia",
+        "tips": [
+            "Comer 1-2h antes do treino (carboidratos + proteína)",
+            "Pós-treino (30 min): proteína + carboidratos rápidos",
+            "Distribuir proteína ao longo do dia",
+        ],
+    }
+
+
+def generate_daily_plan(profile: ProfileOut, target_date: str) -> dict:
+    """
+    Generate a complete structured daily plan with workout and meals.
+    Returns dict with 'workout' and 'meals' keys.
+    """
+    _, _, target_cal, protein_g = _daily_tdee(profile)
+    workout = _build_daily_workout(profile, target_date)
+    meals = _build_daily_meals(profile, target_cal, protein_g, target_date)
+    return {"workout": workout, "meals": meals}
+
+
+def adjust_daily_plan(plan_data: dict, constraint: str, profile: ProfileOut):
+    """
+    Adjust a daily plan based on a natural-language constraint.
+    Returns (adjusted_plan_data, adjustment_record).
+    """
+    c = constraint.lower().strip()
+    workout = _copy.deepcopy(plan_data.get("workout", {}))
+    meals = _copy.deepcopy(plan_data.get("meals", {}))
+    changes = []
+
+    # ======= TIME CONSTRAINT =======
+    time_match = _re.search(r'(\d+)\s*(min|minuto)', c)
+    half_hour = "meia hora" in c
+    if time_match or half_hour or any(w in c for w in ["pouco tempo", "rápido", "despachar", "à pressa"]):
+        avail = int(time_match.group(1)) if time_match else (30 if half_hour else 20)
+        exs = workout.get("exercises", [])
+        compounds = [e for e in exs if e.get("sets", 0) >= 3]
+        isolation = [e for e in exs if e.get("sets", 0) < 3]
+
+        if avail <= 20:
+            kept = compounds[:3]
+            for e in kept:
+                e["sets"] = min(e["sets"], 2)
+        elif avail <= 30:
+            kept = compounds[:4]
+            for e in kept:
+                e["sets"] = min(e["sets"], 3)
+        elif avail <= 45:
+            kept = compounds + isolation[:1]
+        else:
+            kept = exs
+
+        workout["exercises"] = kept
+        workout["duration_min"] = avail
+        base = workout.get("title", "").split("—")[0].strip()
+        workout["title"] = f"{base} — {avail} min"
+        changes.append(f"⏱️ Treino ajustado para {avail} min ({len(kept)} exercícios)")
+
+    # ======= HOME / BODYWEIGHT =======
+    if any(w in c for w in ["casa", "sem equipamento", "sem ginásio", "sem gym", "bodyweight", "sem máquina"]):
+        for ex in workout.get("exercises", []):
+            bw = ex.pop("bw", None)
+            if bw:
+                ex["name"] = bw
+        base = workout.get("title", "").split("—")[0].strip()
+        workout["title"] = f"{base} — Em Casa"
+        workout["focus"] = "Treino bodyweight sem equipamento"
+        changes.append("🏠 Exercícios adaptados para treinar em casa")
+
+    # ======= BODY PART PAIN =======
+    body_map = {
+        "ombro": ["ombros"],
+        "joelho": ["pernas"],
+        "costa": ["costas"],
+        "braço": ["biceps", "triceps"],
+        "pulso": ["biceps", "triceps", "peito"],
+        "perna": ["pernas", "posterior"],
+        "peito": ["peito"],
+        "lombar": ["costas", "posterior"],
+    }
+    for part, muscles in body_map.items():
+        if part in c and any(w in c for w in ["dói", "dor", "magoa", "lesão", "lesao", "não posso", "nao posso", "magoei"]):
+            before = len(workout.get("exercises", []))
+            workout["exercises"] = [
+                e for e in workout.get("exercises", [])
+                if e.get("muscle", "") not in muscles
+            ]
+            removed = before - len(workout.get("exercises", []))
+            if removed > 0:
+                changes.append(f"⚠️ Removidos {removed} exercícios que envolvem {part} — cuida-te!")
+                workout.setdefault("tips", []).append(f"🩹 Evita exercícios que causem dor no {part}")
+
+    # ======= SKIP WORKOUT =======
+    if any(w in c for w in ["não vou treinar", "nao vou treinar", "descanso", "dia off", "folga", "skip treino"]):
+        workout["exercises"] = []
+        workout["title"] = "🧘 Dia de Descanso"
+        workout["focus"] = "Recuperação ativa"
+        workout["duration_min"] = 0
+        workout["warmup"] = ""
+        workout["cooldown"] = "10 min alongamentos suaves (opcional)"
+        workout["tips"] = [
+            "Descansa bem — o corpo cresce durante o repouso!",
+            "Faz alongamentos leves se quiseres",
+            "Foca-te na alimentação e hidratação",
+        ]
+        total = meals.get("total_calories", 0)
+        if total:
+            meals["total_calories"] = total - 300
+            for m in meals.get("meals", []):
+                m["calories"] = int(m["calories"] * 0.85)
+        changes.append("🧘 Dia de descanso — calorias reduzidas em ~300 cal")
+
+    # ======= VEGETARIAN =======
+    if any(w in c for w in ["vegetariano", "vegan", "sem carne", "não como carne", "nao como carne", "plant based"]):
+        for meal in meals.get("meals", []):
+            meal["foods"] = [_VEGGIE_SUBS.get(f, f) for f in meal.get("foods", [])]
+        changes.append("🌱 Refeições adaptadas — proteína animal substituída por vegetal")
+
+    # ======= MORE FOOD =======
+    if any(w in c for w in ["mais fome", "comer mais", "mais comida", "pouca comida"]):
+        extra = 200
+        meals["total_calories"] = meals.get("total_calories", 0) + extra
+        for m in meals.get("meals", []):
+            m["calories"] = int(m["calories"] * 1.1)
+        meals["meals"].insert(3, {
+            "type": "🍎 Snack extra",
+            "time": "15:00",
+            "foods": ["Fruta + punhado de frutos secos (30g)"],
+            "calories": extra,
+            "protein_g": 8,
+        })
+        changes.append(f"📈 +{extra} cal — snack extra incluído")
+
+    # ======= LESS FOOD =======
+    elif any(w in c for w in ["menos fome", "comer menos", "menos comida", "mais leve", "leve"]):
+        meals["total_calories"] = meals.get("total_calories", 0) - 200
+        for m in meals.get("meals", []):
+            m["calories"] = int(m["calories"] * 0.9)
+        changes.append("📉 Calorias reduzidas em ~200 cal")
+
+    # ======= FALLBACK =======
+    if not changes:
+        changes.append(f"📝 Nota registada: \"{constraint}\"")
+        workout.setdefault("tips", []).append(f"📝 {constraint}")
+
+    record = {
+        "constraint": constraint,
+        "changes": changes,
+        "timestamp": _dt.utcnow().isoformat(),
+    }
+    return {"workout": workout, "meals": meals}, record

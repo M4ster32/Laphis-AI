@@ -6,7 +6,7 @@ import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
 import jsPDF from "jspdf";
-import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw } from "lucide-react";
+import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight } from "lucide-react";
 import {
  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
  Tooltip, ResponsiveContainer,
@@ -378,6 +378,18 @@ export default function Dashboard() {
  <span style={s.statValue}>{totalDuration}</span>
  <span style={s.statLabel}>Minutos</span>
  </div>
+ </div>
+
+ {/* Daily Plan shortcut */}
+ <div style={s.dailyPlanCard} onClick={() => navigate("/daily-plan")}>
+  <div style={s.dpLeft}>
+   <div style={s.dpIcon}><CalendarClock size={20} color="var(--primary)" /></div>
+   <div>
+    <h4 style={s.dpTitle}>Plano do Dia</h4>
+    <p style={s.dpText}>Treino + refeições adaptáveis pela IA</p>
+   </div>
+  </div>
+  <ChevronRight size={18} color="var(--primary)" />
  </div>
 
  {/* ====== RESUMO SEMANAL (unified) ====== */}
@@ -850,4 +862,21 @@ const s = {
  background: "var(--primary-bg)", fontSize: 12,
  fontWeight: 600, color: "var(--primary)",
  },
+
+ /* Daily Plan Card */
+ dailyPlanCard: {
+ display: "flex", alignItems: "center", justifyContent: "space-between",
+ padding: "14px 16px", borderRadius: "var(--radius-sm)",
+ background: "var(--card-bg)", border: "1px solid var(--primary)",
+ cursor: "pointer", marginBottom: 16, boxShadow: "var(--shadow)",
+ transition: "opacity 0.15s",
+ },
+ dpLeft: { display: "flex", alignItems: "center", gap: 12 },
+ dpIcon: {
+ width: 38, height: 38, borderRadius: 10,
+ background: "var(--primary-bg)",
+ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+ },
+ dpTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
+ dpText: { fontSize: 12, color: "var(--text-secondary)", margin: "2px 0 0" },
 };

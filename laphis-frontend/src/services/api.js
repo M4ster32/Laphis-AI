@@ -794,6 +794,48 @@ class ApiService {
       errorMsg: "Erro na análise",
     });
   }
+
+  // ==================== DAILY PLAN ====================
+
+  /**
+   * Generate a daily adaptive plan (workout + meals) for a specific date.
+   * @param {number} profileId
+   * @param {string|null} [date] - YYYY-MM-DD, defaults to tomorrow on backend
+   * @returns {Promise<Object>}
+   */
+  static async generateDailyPlan(profileId, date = null) {
+    return this._request("/daily-plan/generate", {
+      method: "POST",
+      body: { profile_id: profileId, date },
+      errorMsg: "Erro ao gerar plano diário",
+    });
+  }
+
+  /**
+   * Get the daily plan for a specific date.
+   * @param {number} profileId
+   * @param {string|null} [date] - YYYY-MM-DD, defaults to today on backend
+   * @returns {Promise<Object|null>}
+   */
+  static async getDailyPlan(profileId, date = null) {
+    let path = `/daily-plan/today/${profileId}`;
+    if (date) path += `?date=${date}`;
+    return this._request(path, { fallback: null });
+  }
+
+  /**
+   * Adjust a daily plan with a natural-language constraint.
+   * @param {number} planId
+   * @param {string} constraint - e.g. "Só tenho 30 minutos"
+   * @returns {Promise<Object>}
+   */
+  static async adjustDailyPlan(planId, constraint) {
+    return this._request("/daily-plan/adjust", {
+      method: "POST",
+      body: { plan_id: planId, constraint },
+      errorMsg: "Erro ao ajustar plano",
+    });
+  }
 }
 
 export default ApiService;
