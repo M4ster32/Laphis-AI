@@ -41,7 +41,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Check a plain-text password against its bcrypt hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
-
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create a signed JWT with an optional custom expiry."""
     to_encode = data.copy()

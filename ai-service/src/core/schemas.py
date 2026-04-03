@@ -5,6 +5,7 @@ from datetime import datetime
 Goal = Literal["perder_gordura", "ganhar_massa", "manter"]
 Level = Literal["iniciante", "intermedio", "avancado"]
 Sex = Literal["masculino", "feminino", "outro"]
+DietType = Literal["omnivoro", "vegetariano", "vegan", "pescetariano"]
 
 # ==================== AUTH SCHEMAS ====================
 
@@ -54,6 +55,8 @@ class ProfileIn(BaseModel):
     goal: Goal
     level: Level
     days_per_week: int = Field(ge=1, le=7)
+    diet_type: Optional[DietType] = None
+    allergies: Optional[str] = Field(default=None, max_length=500)
     avatar: Optional[str] = Field(default=None, max_length=255)
 
 class ProfileOut(ProfileIn):

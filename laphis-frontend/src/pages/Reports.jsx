@@ -4,8 +4,8 @@ import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import EmptyState from "../components/EmptyState";
 import jsPDF from "jspdf";
-import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity, Download } from "lucide-react";
+import { BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity, Download, Scale, Plus, Trash2 } from "lucide-react";
 
 const MOOD_MAP = {
   calm: { label: "Calmo", color: "var(--p1)" },
@@ -27,6 +27,13 @@ export default function Reports() {
   const [activePlans, setActivePlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("overview");
+  
+  // Weight tracking state
+  const [weightHistory, setWeightHistory] = useState([]);
+  const [weightStats, setWeightStats] = useState({});
+  const [weightInput, setWeightInput] = useState("");
+  const [weightNotes, setWeightNotes] = useState("");
+  const [weightAdding, setWeightAdding] = useState(false);
 
   useEffect(() => {
     loadReport();
@@ -35,16 +42,20 @@ export default function Reports() {
   const loadReport = async () => {
     try {
       setLoading(true);
-      const [data, logs, plans] = await Promise.all([
+      const [data, logs, plans, wHistory, wStats] = await Promise.all([
         ApiService.getReportSummary(),
         ApiService.getLogs(50, 0).catch(() => []),
         profile?.id ? ApiService.getPlans(profile.id).catch(() => []) : Promise.resolve([]),
+        ApiService.getWeightEntries(60).catch(() => []),
+        ApiService.getWeightStats().catch(() => ({})),
       ]);
       setReport(data);
       const logsArr = Array.isArray(logs) ? logs : logs?.logs || [];
       setRecentLogs(logsArr);
       const plansArr = Array.isArray(plans) ? plans : plans?.plans || [];
       setActivePlans(plansArr.filter(p => p.status === "active"));
+      setWeightHistory(Array.isArray(wHistory) ? wHistory.reverse() : []);
+      setWeightStats(wStats || {});
     } catch (err) {
       console.error("Erro ao carregar relatório:", err);
     } finally {
@@ -188,9 +199,48 @@ export default function Reports() {
   const SECTIONS = [
     { key: "overview", label: "Geral", icon: PieChartIcon },
     { key: "fitness", label: "Fitness", icon: TrendingUp },
+    { key: "weight", label: "Peso", icon: Scale },
     { key: "zen", label: "Zen", icon: Wind },
     { key: "activity", label: "Atividade", icon: Activity },
   ];
+
+  const handleAddWeight = async () => {
+    const w = parseFloat(weightInput);
+    if (!w || w < 30 || w > 300) return;
+    try {
+      setWeightAdding(true);
+      await ApiService.addWeightEntry(w, weightNotes.trim() || null);
+      setWeightInput("");
+      setWeightNotes("");
+      toast.success("Peso registado!");
+      // Reload weight data
+      const [wH, wS] = await Promise.all([
+        ApiService.getWeightEntries(60).catch(() => []),
+        ApiService.getWeightStats().catch(() => ({})),
+      ]);
+      setWeightHistory(Array.isArray(wH) ? wH.reverse() : []);
+      setWeightStats(wS || {});
+    } catch (err) {
+      toast.error("Erro ao registar peso");
+    } finally {
+      setWeightAdding(false);
+    }
+  };
+
+  const handleDeleteWeight = async (entryId) => {
+    try {
+      await ApiService.deleteWeightEntry(entryId);
+      const [wH, wS] = await Promise.all([
+        ApiService.getWeightEntries(60).catch(() => []),
+        ApiService.getWeightStats().catch(() => ({})),
+      ]);
+      setWeightHistory(Array.isArray(wH) ? wH.reverse() : []);
+      setWeightStats(wS || {});
+      toast.success("Registo apagado");
+    } catch (err) {
+      toast.error("Erro ao apagar");
+    }
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
@@ -415,6 +465,122 @@ export default function Reports() {
               <p style={s.noData}>Sem dados de refeições</p>
             )}
           </div>
+        </>
+      )}
+
+      {/* ===== WEIGHT SECTION ===== */}
+      {activeSection === "weight" && (
+        <>
+          {/* Add Weight Form */}
+          <div style={s.card}>
+            <h4 style={s.cardTitle}>
+              <Scale size={16} strokeWidth={1.5} style={{ marginRight: 8, verticalAlign: -3 }} />
+              Registar Peso
+            </h4>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <div style={{ flex: 1 }}>
+                <input
+                  type="number" className="form-input" placeholder="Ex: 75.5"
+                  min="30" max="300" step="0.1"
+                  value={weightInput} onChange={(e) => setWeightInput(e.target.value)}
+                  style={{ fontSize: 16, fontWeight: 600 }}
+                />
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={handleAddWeight}
+                disabled={weightAdding || !weightInput}
+                style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}
+              >
+                {weightAdding ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : <Plus size={16} />}
+                kg
+              </button>
+            </div>
+            <input
+              type="text" className="form-input" placeholder="Notas (opcional)"
+              value={weightNotes} onChange={(e) => setWeightNotes(e.target.value)}
+              style={{ marginTop: 8, fontSize: 13 }}
+            />
+          </div>
+
+          {/* Weight Stats */}
+          {weightStats && (weightStats.current || weightStats.min || weightStats.max) && (
+            <div style={s.card}>
+              <h4 style={s.cardTitle}>Estatísticas</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                {weightStats.current && (
+                  <div style={s.weightStatItem}>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: "var(--primary)" }}>{weightStats.current}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Atual (kg)</span>
+                  </div>
+                )}
+                {weightStats.min && (
+                  <div style={s.weightStatItem}>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: "var(--p1)" }}>{weightStats.min}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Mínimo</span>
+                  </div>
+                )}
+                {weightStats.max && (
+                  <div style={s.weightStatItem}>
+                    <span style={{ fontSize: 22, fontWeight: 700, color: "var(--p4)" }}>{weightStats.max}</span>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>Máximo</span>
+                  </div>
+                )}
+              </div>
+              {weightStats.change != null && (
+                <div style={{ textAlign: "center", marginTop: 12, padding: "10px 0", borderTop: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: weightStats.change > 0 ? "var(--danger)" : weightStats.change < 0 ? "var(--p1)" : "var(--text-muted)" }}>
+                    {weightStats.change > 0 ? "+" : ""}{weightStats.change} kg desde o início
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Weight Evolution Chart */}
+          <div style={s.chartCard}>
+            <h4 style={s.cardTitle}>Evolução do Peso</h4>
+            {weightHistory.length > 1 ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={weightHistory.map(w => ({ date: w.date?.substring(5) || "", peso: w.weight_kg }))}>
+                  <defs>
+                    <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.05)" />
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                  <YAxis domain={["dataMin - 1", "dataMax + 1"]} tick={{ fontSize: 10, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="peso" name="Peso (kg)" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4, fill: "var(--primary)" }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p style={s.noData}>Regista pelo menos 2 pesos para ver o gráfico</p>
+            )}
+          </div>
+
+          {/* Weight History List */}
+          {weightHistory.length > 0 && (
+            <div style={s.card}>
+              <h4 style={s.cardTitle}>Histórico</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {weightHistory.slice().reverse().slice(0, 15).map((entry) => (
+                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{entry.weight_kg} kg</span>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 8 }}>{entry.date}</span>
+                    </div>
+                    {entry.notes && <span style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic" }}>{entry.notes}</span>}
+                    <button onClick={() => handleDeleteWeight(entry.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4 }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -803,6 +969,13 @@ const s = {
 
   /* No data */
   noData: { textAlign: "center", padding: "24px", fontSize: 13, color: "var(--text-muted)", fontWeight: 500 },
+
+  /* Weight stat */
+  weightStatItem: {
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+    padding: "14px 8px", background: "var(--card-bg)", borderRadius: "var(--radius-xs)",
+    border: "1px solid var(--border)", boxShadow: "var(--shadow)",
+  },
 
   /* Activity list */
   activityList: { display: "flex", flexDirection: "column", gap: 8 },

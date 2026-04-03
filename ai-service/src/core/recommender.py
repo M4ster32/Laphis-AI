@@ -564,30 +564,82 @@ def _build_daily_meals(profile: ProfileOut, target_cal: int, protein_g: int, dat
         ("jantar", 0.25, "🌙 Jantar", "20:00"),
     ]
 
+    # Determine if we need vegetarian substitutions
+    diet = getattr(profile, "diet_type", None) or "omnivoro"
+    needs_veggie = diet in ("vegetariano", "vegan")
+    needs_pesc = diet == "pescetariano"
+
+    # Parse allergies into a set for filtering
+    allergy_str = getattr(profile, "allergies", None) or ""
+    allergies = {a.strip().lower() for a in allergy_str.split(",") if a.strip()} if allergy_str else set()
+
     meals = []
     for i, (key, pct, label, time) in enumerate(dist):
         pool = _MEAL_TEMPLATES[key]
         idx = (seed + profile.id + i) % len(pool)
         tpl = pool[idx]
+        foods = list(tpl["foods"])
+
+        # Apply vegetarian/vegan substitutions
+        if needs_veggie:
+            foods = [_VEGGIE_SUBS.get(f, f) for f in foods]
+        elif needs_pesc:
+            # Pescetarian: replace meat but keep fish
+            meat_subs = {k: v for k, v in _VEGGIE_SUBS.items()
+                         if not any(fish in k.lower() for fish in ["salmão", "atum", "peixe"])}
+            foods = [meat_subs.get(f, f) for f in foods]
+
+        # Filter out allergy-triggering foods (simple keyword match)
+        if allergies:
+            allergy_map = {
+                "glúten": ["pão", "massa", "aveia", "panquecas", "tosta", "granola"],
+                "gluten": ["pão", "massa", "aveia", "panquecas", "tosta", "granola"],
+                "lactose": ["iogurte", "queijo", "leite"],
+                "frutos secos": ["amendoim", "frutos secos", "granola"],
+                "marisco": ["marisco", "camarão"],
+                "ovo": ["ovo", "ovos", "omelete"],
+                "soja": ["tofu", "soja", "tempeh"],
+            }
+            blocked_words = set()
+            for allergy in allergies:
+                for key_a, words in allergy_map.items():
+                    if allergy in key_a or key_a in allergy:
+                        blocked_words.update(words)
+            if blocked_words:
+                foods = [f for f in foods if not any(bw in f.lower() for bw in blocked_words)]
+                if not foods:
+                    foods = ["Alternativa personalizada (consultar nutricionista)"]
+
         meals.append({
             "type": label,
             "time": time,
-            "foods": list(tpl["foods"]),
+            "foods": foods,
             "calories": int(target_cal * pct),
             "protein_g": int(protein_g * pct),
         })
 
     water_l = max(2.0, round(profile.weight_kg * 0.033, 1))
+    diet_note = ""
+    if diet != "omnivoro":
+        diet_labels = {"vegetariano": "vegetariana", "vegan": "vegan", "pescetariano": "pescetariana"}
+        diet_note = f"🥗 Dieta {diet_labels.get(diet, diet)} aplicada"
+
+    tips = [
+        "Comer 1-2h antes do treino (carboidratos + proteína)",
+        "Pós-treino (30 min): proteína + carboidratos rápidos",
+        "Distribuir proteína ao longo do dia",
+    ]
+    if diet_note:
+        tips.insert(0, diet_note)
+    if allergies:
+        tips.append(f"⚠️ Alergias consideradas: {', '.join(allergies)}")
+
     return {
         "total_calories": target_cal,
         "total_protein_g": protein_g,
         "meals": meals,
         "hydration": f"💧 Beber {water_l}L de água ao longo do dia",
-        "tips": [
-            "Comer 1-2h antes do treino (carboidratos + proteína)",
-            "Pós-treino (30 min): proteína + carboidratos rápidos",
-            "Distribuir proteína ao longo do dia",
-        ],
+        "tips": tips,
     }
 
 

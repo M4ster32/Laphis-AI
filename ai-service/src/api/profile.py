@@ -69,6 +69,8 @@ def create_profile(
         existing.goal = payload.goal
         existing.level = payload.level
         existing.days_per_week = payload.days_per_week
+        existing.diet_type = payload.diet_type
+        existing.allergies = payload.allergies
         existing.avatar = payload.avatar
         db.commit()
         db.refresh(existing)
@@ -85,6 +87,8 @@ def create_profile(
         goal=payload.goal,
         level=payload.level,
         days_per_week=payload.days_per_week,
+        diet_type=payload.diet_type,
+        allergies=payload.allergies,
         avatar=payload.avatar,
     )
     db.add(db_profile)

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import jsPDF from "jspdf";
-import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed } from "lucide-react";
+import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
 
 export default function PlanDetail() {
   const { planId } = useParams();
@@ -30,10 +30,17 @@ export default function PlanDetail() {
   const [fbCompleted, setFbCompleted] = useState(50);
   const [fbSaving, setFbSaving] = useState(false);
 
+  // Adaptation suggestions state
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [respondingId, setRespondingId] = useState(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+
   useEffect(() => {
     loadPlan();
     loadCategories();
     loadFeedback();
+    loadSuggestions();
   }, [planId]);
 
   const loadPlan = async () => {
@@ -158,6 +165,88 @@ export default function PlanDetail() {
     } finally {
       setFbSaving(false);
     }
+  };
+
+  // ===== ADAPTATION SUGGESTIONS =====
+  const loadSuggestions = async () => {
+    try {
+      setSuggestionsLoading(true);
+      const data = await ApiService.getAdaptationSuggestions("pending");
+      // Filter to this plan only (or show all if no plan_id)
+      const filtered = Array.isArray(data)
+        ? data.filter(s => !s.plan_id || s.plan_id === parseInt(planId))
+        : [];
+      setSuggestions(filtered);
+    } catch (err) {
+      console.error("Erro ao carregar sugestões:", err);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  const handleRespondSuggestion = async (suggestionId, status) => {
+    try {
+      setRespondingId(suggestionId);
+      await ApiService.respondToSuggestion(suggestionId, status);
+      setSuggestions(prev => prev.filter(s => s.id !== suggestionId));
+    } catch (err) {
+      setError("Erro ao responder à sugestão");
+    } finally {
+      setRespondingId(null);
+    }
+  };
+
+  const handleTriggerAnalysis = async () => {
+    try {
+      setSuggestionsLoading(true);
+      await ApiService.triggerAnalysis();
+      await loadSuggestions();
+    } catch (err) {
+      setError("Erro ao analisar plano");
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  // ===== WEEKLY CALENDAR HELPERS =====
+  const getTrainingSections = () => {
+    if (!plan?.content_json) return [];
+    const cj = plan.content_json;
+    if (cj.training?.sections) return cj.training.sections;
+    if (cj.sections) return cj.sections;
+    return [];
+  };
+
+  const buildWeeklyCalendar = () => {
+    const sections = getTrainingSections();
+    const WEEKDAYS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+    const days = WEEKDAYS.map((name, idx) => ({ name, shortName: name.slice(0, 3), dayIndex: idx, section: null }));
+
+    // Try to map sections to days using header patterns like "Dia 1", "Segunda", etc.
+    sections.forEach((sec, idx) => {
+      const header = (sec.header || "").toLowerCase();
+      // Match "dia X" pattern
+      const diaMatch = header.match(/dia\s*(\d+)/);
+      if (diaMatch) {
+        const dayNum = parseInt(diaMatch[1]) - 1;
+        if (dayNum >= 0 && dayNum < 7) {
+          days[dayNum].section = sec;
+          return;
+        }
+      }
+      // Match weekday name
+      const dayIdx = WEEKDAYS.findIndex(d => header.includes(d.toLowerCase()));
+      if (dayIdx >= 0) {
+        days[dayIdx].section = sec;
+        return;
+      }
+      // Fallback: assign sequentially
+      if (idx < 7 && !days[idx].section) {
+        days[idx].section = sec;
+      }
+    });
+
+    return days;
   };
 
   // ===== PDF EXPORT =====
@@ -658,6 +747,151 @@ export default function PlanDetail() {
         )}
       </div>
 
+      {/* Adaptation Suggestions Section */}
+      <div style={s.feedbackCard}>
+        <div style={s.feedbackHeader}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Lightbulb size={18} strokeWidth={1.5} color="var(--primary)" />
+            <h3 style={s.feedbackTitle}>Sugestões de Adaptação</h3>
+          </div>
+          <button
+            style={s.feedbackToggle}
+            onClick={handleTriggerAnalysis}
+            disabled={suggestionsLoading}
+          >
+            <RefreshCw size={14} strokeWidth={1.5} style={{
+              display: "inline", verticalAlign: -2, marginRight: 4,
+              animation: suggestionsLoading ? "spin 1s linear infinite" : "none"
+            }} />
+            {suggestionsLoading ? "A analisar..." : "Analisar"}
+          </button>
+        </div>
+
+        {suggestions.length === 0 && !suggestionsLoading && (
+          <div style={s.emptyAdaptation}>
+            <Lightbulb size={28} strokeWidth={1.2} color="var(--text-muted)" />
+            <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--text-muted)" }}>
+              Sem sugestões pendentes. Clica em "Analisar" para verificar.
+            </p>
+          </div>
+        )}
+
+        {suggestions.map(sug => {
+          const typeLabelsAdapt = {
+            increase_volume: "↑ Volume",
+            decrease_intensity: "↓ Intensidade",
+            change_split: "Mudar split",
+            adjust_calories: "Ajustar calorias",
+            suggest_deload: "Deload",
+            level_up: "Subir nível",
+          };
+          const typeColors = {
+            increase_volume: "#2E7D32",
+            decrease_intensity: "#E65100",
+            change_split: "#1565C0",
+            adjust_calories: "#6A1B9A",
+            suggest_deload: "#F9A825",
+            level_up: "#00838F",
+          };
+          return (
+            <div key={sug.id} style={s.suggestionCard}>
+              <div style={s.suggestionTop}>
+                <span style={{
+                  ...s.suggestionBadge,
+                  background: (typeColors[sug.adaptation_type] || "var(--primary)") + "18",
+                  color: typeColors[sug.adaptation_type] || "var(--primary)",
+                }}>
+                  {typeLabelsAdapt[sug.adaptation_type] || sug.adaptation_type}
+                </span>
+                <span style={s.suggestionDate}>
+                  {sug.created_at ? new Date(sug.created_at).toLocaleDateString("pt-PT") : ""}
+                </span>
+              </div>
+              <p style={s.suggestionReason}>{sug.reason}</p>
+              {sug.suggestion_json && (
+                <div style={s.suggestionDetail}>
+                  {Object.entries(sug.suggestion_json).map(([k, v]) => (
+                    <span key={k} style={s.suggestionDetailItem}>
+                      <strong>{k}:</strong> {typeof v === "object" ? JSON.stringify(v) : String(v)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div style={s.suggestionActions}>
+                <button
+                  style={s.suggestionAccept}
+                  onClick={() => handleRespondSuggestion(sug.id, "accepted")}
+                  disabled={respondingId === sug.id}
+                >
+                  <Check size={15} strokeWidth={2} style={{ marginRight: 4 }} />
+                  Aceitar
+                </button>
+                <button
+                  style={s.suggestionReject}
+                  onClick={() => handleRespondSuggestion(sug.id, "rejected")}
+                  disabled={respondingId === sug.id}
+                >
+                  <X size={15} strokeWidth={2} style={{ marginRight: 4 }} />
+                  Rejeitar
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Weekly Calendar View — only for training/combined plans */}
+      {plan && (plan.type === "training" || plan.type === "combined") && (
+        <div style={s.feedbackCard}>
+          <div style={s.feedbackHeader}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Calendar size={18} strokeWidth={1.5} color="var(--primary)" />
+              <h3 style={s.feedbackTitle}>Calendário Semanal</h3>
+            </div>
+            <button style={s.feedbackToggle} onClick={() => setShowCalendar(v => !v)}>
+              {showCalendar ? "Esconder" : "Ver semana"}
+            </button>
+          </div>
+
+          {showCalendar && (() => {
+            const weekDays = buildWeeklyCalendar();
+            return (
+              <div style={s.calendarGrid}>
+                {weekDays.map((day, idx) => (
+                  <div key={idx} style={{
+                    ...s.calendarDay,
+                    background: day.section ? "var(--primary-bg)" : "var(--bg)",
+                    borderColor: day.section ? "var(--primary)" : "var(--border)",
+                    opacity: day.section ? 1 : 0.6,
+                  }}>
+                    <div style={s.calendarDayHeader}>
+                      <span style={s.calendarDayName}>{day.shortName}</span>
+                      {day.section && (
+                        <Dumbbell size={13} strokeWidth={1.5} color="var(--primary)" />
+                      )}
+                    </div>
+                    {day.section ? (
+                      <>
+                        <p style={s.calendarDayTitle}>
+                          {(day.section.header || "").replace(/^dia\s*\d+\s*[-–—:]\s*/i, "").trim() || "Treino"}
+                        </p>
+                        {day.section.items && (
+                          <span style={s.calendarDayCount}>
+                            {day.section.items.length} exercício{day.section.items.length !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <p style={s.calendarDayRest}>Descanso</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Delete/Archive Modal */}
       <Modal
         isOpen={showDelete}
@@ -781,4 +1015,79 @@ const s = {
     fontWeight: 500, padding: "5px 12px", cursor: "pointer", transition: "all 0.15s ease",
   },
   fbRange: { width: "100%", accentColor: "var(--primary)" },
+
+  // Adaptation suggestion styles
+  emptyAdaptation: {
+    display: "flex", flexDirection: "column", alignItems: "center",
+    padding: "20px 0", gap: 4, textAlign: "center",
+  },
+  suggestionCard: {
+    background: "var(--bg)", borderRadius: 12, padding: "14px 16px",
+    marginTop: 10, border: "1px solid var(--border-light)",
+    transition: "box-shadow 0.2s",
+  },
+  suggestionTop: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    marginBottom: 6,
+  },
+  suggestionBadge: {
+    fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 12,
+    textTransform: "uppercase", letterSpacing: 0.3,
+  },
+  suggestionDate: { fontSize: 11, color: "var(--text-muted)" },
+  suggestionReason: {
+    fontSize: 13, color: "var(--text)", lineHeight: 1.5, margin: "4px 0 8px",
+  },
+  suggestionDetail: {
+    display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10,
+  },
+  suggestionDetailItem: {
+    fontSize: 11, color: "var(--text-secondary)", background: "var(--card-bg)",
+    padding: "3px 8px", borderRadius: 6, border: "1px solid var(--border-light)",
+  },
+  suggestionActions: { display: "flex", gap: 8 },
+  suggestionAccept: {
+    display: "flex", alignItems: "center", background: "#E8F5E9",
+    color: "#2E7D32", border: "1px solid #A5D6A7", borderRadius: 8,
+    padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+    transition: "all 0.15s",
+  },
+  suggestionReject: {
+    display: "flex", alignItems: "center", background: "#FFEBEE",
+    color: "#C62828", border: "1px solid #EF9A9A", borderRadius: 8,
+    padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+    transition: "all 0.15s",
+  },
+
+  // Weekly calendar styles
+  calendarGrid: {
+    display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8,
+    marginTop: 12,
+  },
+  calendarDay: {
+    borderRadius: 10, padding: "10px 8px", border: "1.5px solid",
+    textAlign: "center", minHeight: 90, display: "flex",
+    flexDirection: "column", alignItems: "center", gap: 4,
+    transition: "transform 0.15s, box-shadow 0.15s",
+  },
+  calendarDayHeader: {
+    display: "flex", alignItems: "center", gap: 4, justifyContent: "center",
+    marginBottom: 2,
+  },
+  calendarDayName: {
+    fontSize: 11, fontWeight: 700, color: "var(--text-secondary)",
+    textTransform: "uppercase", letterSpacing: 0.5,
+  },
+  calendarDayTitle: {
+    fontSize: 11, fontWeight: 600, color: "var(--text)", margin: 0,
+    lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis",
+    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+  },
+  calendarDayCount: {
+    fontSize: 10, color: "var(--primary)", fontWeight: 600, marginTop: "auto",
+  },
+  calendarDayRest: {
+    fontSize: 11, color: "var(--text-muted)", fontStyle: "italic",
+    margin: "auto 0",
+  },
 };
