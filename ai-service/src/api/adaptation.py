@@ -1,12 +1,13 @@
 """
-API de Adaptação — Feedback de planos + Motor heurístico simples + Audit log
-Prepara a base para a futura camada de IA que fará adaptações automáticas.
+API de Adaptação — Feedback de planos + Motor heurístico + AI análise
+Combina heurísticas simples com IA (OpenAI) quando disponível.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import jwt
 import os
+import logging
 from ..core.db import get_db
 from ..core.models import (
     User, Profile, Plan, PlanFeedback, AdaptationLog, ProgressSnapshot,
@@ -16,6 +17,9 @@ from ..core.schemas import (
     PlanFeedbackIn, PlanFeedbackOut,
     AdaptationLogOut, AdaptationRespondIn,
 )
+from ..core.ai_engine import is_ai_available, ai_adaptation_analysis
+
+logger = logging.getLogger("laphis.adaptation")
 
 router = APIRouter(prefix="/adaptation", tags=["adaptation"])
 
@@ -190,17 +194,103 @@ def respond_to_suggestion(
 
 
 @router.post("/analyze", response_model=list[AdaptationLogOut])
-def trigger_analysis(token: str = None, db: Session = Depends(get_db)):
+async def trigger_analysis(token: str = None, db: Session = Depends(get_db)):
     """
-    Dispara uma análise manual completa — cria sugestões baseadas
-    nos dados recentes do utilizador. Pode ser chamado pelo frontend
-    ou futuramente por um cron job/scheduler.
+    Dispara uma análise completa — usa IA quando disponível,
+    com fallback para heurísticas. Cria sugestões baseadas
+    nos dados recentes do utilizador.
     """
     user_id = _get_user_id(token)
     profile = _get_profile(user_id, db)
 
+    # Tentar análise por IA primeiro
+    if is_ai_available():
+        try:
+            ai_suggestions = await _run_ai_analysis(profile, db)
+            if ai_suggestions:
+                return [AdaptationLogOut.model_validate(s) for s in ai_suggestions]
+        except Exception as e:
+            logger.warning("AI adaptation analysis failed, using heuristics: %s", e)
+
+    # Fallback para heurísticas
     new_suggestions = _run_heuristic_analysis(profile, db)
     return [AdaptationLogOut.model_validate(s) for s in new_suggestions]
+
+
+# ==================== MOTOR IA (OpenAI) ====================
+
+async def _run_ai_analysis(profile: Profile, db: Session) -> list:
+    """
+    Análise de adaptação via IA (OpenAI).
+    Retorna lista de AdaptationLog criados.
+    """
+    now = datetime.utcnow()
+    two_weeks_ago = (now - timedelta(days=14)).strftime("%Y-%m-%d")
+    one_week_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+
+    workouts_wk1 = (
+        db.query(WorkoutLog)
+        .filter(WorkoutLog.profile_id == profile.id, WorkoutLog.date >= one_week_ago)
+        .all()
+    )
+    workouts_wk2 = (
+        db.query(WorkoutLog)
+        .filter(
+            WorkoutLog.profile_id == profile.id,
+            WorkoutLog.date >= two_weeks_ago,
+            WorkoutLog.date < one_week_ago,
+        )
+        .all()
+    )
+
+    workout_data = {
+        "wk1_count": len(workouts_wk1),
+        "wk2_count": len(workouts_wk2),
+        "wk1_minutes": sum(w.duration_min or 0 for w in workouts_wk1),
+        "wk2_minutes": sum(w.duration_min or 0 for w in workouts_wk2),
+    }
+
+    # Buscar feedback mais recente
+    feedback_data = None
+    recent_fb = (
+        db.query(PlanFeedback)
+        .filter(PlanFeedback.profile_id == profile.id)
+        .order_by(PlanFeedback.created_at.desc())
+        .first()
+    )
+    if recent_fb:
+        feedback_data = {
+            "rating": recent_fb.rating,
+            "difficulty": recent_fb.difficulty_rating,
+            "effectiveness": recent_fb.effectiveness_rating,
+            "completed_pct": recent_fb.completed_pct,
+            "comment": recent_fb.comment,
+        }
+
+    # Chamar IA
+    ai_suggestions = await ai_adaptation_analysis(profile, workout_data, feedback_data)
+
+    # Persistir sugestões na BD
+    new_logs = []
+    for s in ai_suggestions:
+        log = AdaptationLog(
+            profile_id=profile.id,
+            trigger=s.get("trigger", "weekly_review"),
+            adaptation_type=s.get("adaptation_type", "general_advice"),
+            reason=s.get("reason", "Sugestão da IA"),
+            suggestion_json=s.get("suggestion_json", {}),
+            status="pending",
+        )
+        db.add(log)
+        new_logs.append(log)
+
+    if new_logs:
+        db.commit()
+        for log in new_logs:
+            db.refresh(log)
+
+    logger.info("AI adaptation analysis: %d suggestions for profile %d", len(new_logs), profile.id)
+    return new_logs
 
 
 # ==================== MOTOR HEURÍSTICO SIMPLES ====================

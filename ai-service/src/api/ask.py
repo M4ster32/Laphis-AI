@@ -1,11 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-import jwt, os
+import jwt, os, logging
 from ..core.db import get_db
 from ..core.models import Profile, ChatMessage, ChatSession, User
 from ..core.schemas import AskIn, AskOut, ProfileOut
 from ..core.recommender import recommend
+from ..core.ai_engine import is_ai_available, ai_chat
+
+logger = logging.getLogger("laphis.ask")
 
 router = APIRouter(prefix="/ask", tags=["ask"])
 
@@ -44,7 +47,7 @@ def _get_or_create_session(user_id: int, session_id: int | None, db: Session) ->
 
 
 @router.post("", response_model=AskOut)
-def ask(payload: AskIn, db: Session = Depends(get_db)):
+async def ask(payload: AskIn, db: Session = Depends(get_db)):
     profile = _load_profile(payload.profile_id, db)
 
     profile_out = ProfileOut(
@@ -59,11 +62,36 @@ def ask(payload: AskIn, db: Session = Depends(get_db)):
         days_per_week=profile.days_per_week,
     )
 
-    title, bullets = recommend(profile_out, payload.question)
-    ai_text = f"{title}\n\n" + "\n".join(f"• {b}" if b and not b.startswith("•") else b for b in bullets)
-
     session_id = getattr(payload, 'session_id', None)
     session = _get_or_create_session(profile.user_id, session_id, db)
+
+    # Buscar histórico de chat para contexto (últimas 8 mensagens da sessão)
+    chat_history = []
+    if session:
+        recent_msgs = (
+            db.query(ChatMessage)
+            .filter(ChatMessage.session_id == session.id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(8)
+            .all()
+        )
+        recent_msgs.reverse()
+        chat_history = [{"role": m.role, "content": m.content} for m in recent_msgs]
+
+    # Tentar IA real, fallback para recommender
+    ai_used = False
+    if is_ai_available():
+        try:
+            title, bullets = await ai_chat(profile, payload.question, chat_history)
+            ai_used = True
+            logger.info("AI chat response generated for profile %d", profile.id)
+        except Exception as e:
+            logger.warning("AI chat failed, falling back to recommender: %s", e)
+            title, bullets = recommend(profile_out, payload.question)
+    else:
+        title, bullets = recommend(profile_out, payload.question)
+
+    ai_text = f"{title}\n\n" + "\n".join(f"• {b}" if b and not b.startswith("•") else b for b in bullets)
 
     if session.title == "Nova conversa" and len(payload.question) > 3:
         session.title = payload.question[:80]
@@ -87,9 +115,15 @@ def ask(payload: AskIn, db: Session = Depends(get_db)):
     db.add(ai_msg)
     db.commit()
 
+    disclaimer = (
+        "Resposta gerada por IA — não substitui aconselhamento médico/nutricional."
+        if ai_used else
+        "Isto é uma sugestão geral e não substitui aconselhamento médico/nutricional."
+    )
+
     return AskOut(
         title=title,
         bullets=bullets,
-        disclaimer="Isto é uma sugestão geral e não substitui aconselhamento médico/nutricional.",
+        disclaimer=disclaimer,
         session_id=session.id,
     )

@@ -4,10 +4,20 @@ import sqlite3
 from pathlib import Path
 from sqlalchemy import text, inspect as sa_inspect
 
+# Carregar .env se existir
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
+except ImportError:
+    pass
+
 # 🔹 IMPORTAR MODELOS PRIMEIRO (necessário para SQLAlchemy descobrir as tabelas)
 # Isto DEVE ser feito antes de create_all() ser chamado
 from .core import models  # Importa Profile, WorkoutLog, MealLog, User, ChatMessage
 from .core.db import init_db, engine, Base
+from .core.ai_engine import is_ai_available, CHAT_MODEL
 
 # VERSION: 1.0.1 - Force redeploy
 from .api.health import router as health_router
@@ -84,6 +94,14 @@ def on_startup():
     print("\n🚀 Iniciando LAPHIS AI Service...")
     init_db()
     _migrate_db()
+    # Mostrar modo de IA
+    if is_ai_available():
+        print(f"  🤖 IA ATIVA — modelo: {CHAT_MODEL}")
+        print("     Chat, planos e adaptação usam OpenAI")
+    else:
+        print("  📋 Modo REGRAS — sem OPENAI_API_KEY")
+        print("     Chat e planos usam sistema de regras/templates")
+        print("     Para ativar IA: define OPENAI_API_KEY no .env")
     # Limpar sessões de chat expiradas
     from .core.db import SessionLocal
     from .api.chat import cleanup_expired_sessions

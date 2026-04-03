@@ -2,11 +2,13 @@
 API de Plano Diário Adaptativo
 Generate, retrieve and adjust daily plans (workout + meals).
 The user can adjust the plan in real-time with natural language constraints.
+Uses AI (OpenAI) when available, with fallback to rule-based recommender.
 """
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
+import logging
 
 from ..core.db import get_db
 from ..core.models import Profile, DailyPlan
@@ -17,6 +19,9 @@ from ..core.schemas import (
     ProfileOut,
 )
 from ..core.recommender import generate_daily_plan, adjust_daily_plan
+from ..core.ai_engine import is_ai_available, ai_daily_plan
+
+logger = logging.getLogger("laphis.daily_plan")
 
 router = APIRouter(prefix="/daily-plan", tags=["daily-plan"])
 
@@ -45,11 +50,12 @@ def _profile_to_out(profile: Profile) -> ProfileOut:
 
 
 @router.post("/generate", response_model=DailyPlanOut)
-def gen_daily_plan(payload: DailyPlanGenerateIn, db: Session = Depends(get_db)):
+async def gen_daily_plan(payload: DailyPlanGenerateIn, db: Session = Depends(get_db)):
     """
     Generate a daily plan for a specific date.
     If a plan already exists for that date, returns the existing one.
     Defaults to tomorrow if no date is provided.
+    Uses AI when OPENAI_API_KEY is available, else rule-based.
     """
     profile = _load_profile(payload.profile_id, db)
     target_date = payload.date or (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
@@ -63,9 +69,18 @@ def gen_daily_plan(payload: DailyPlanGenerateIn, db: Session = Depends(get_db)):
     if existing:
         return DailyPlanOut.model_validate(existing)
 
-    # Generate new plan via recommender
+    # Generate new plan — AI first, fallback to recommender
     profile_out = _profile_to_out(profile)
-    result = generate_daily_plan(profile_out, target_date)
+
+    if is_ai_available():
+        try:
+            result = await ai_daily_plan(profile, target_date)
+            logger.info("AI-generated daily plan for profile %d, date %s", profile.id, target_date)
+        except Exception as e:
+            logger.warning("AI daily plan failed, using recommender: %s", e)
+            result = generate_daily_plan(profile_out, target_date)
+    else:
+        result = generate_daily_plan(profile_out, target_date)
 
     plan = DailyPlan(
         profile_id=payload.profile_id,

@@ -1,10 +1,11 @@
 """
-API de Planos — CRUD + Geração via Recommender
+API de Planos — CRUD + Geração via AI (com fallback para Recommender)
 Endpoints para gerar, guardar, listar, editar e duplicar planos
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from datetime import datetime
+import logging
 from ..core.db import get_db
 from ..core.models import Profile, Plan
 from ..core.schemas import (
@@ -12,6 +13,9 @@ from ..core.schemas import (
     PlanOut, PlanListOut, ProfileOut,
 )
 from ..core.recommender import recommend
+from ..core.ai_engine import is_ai_available, ai_generate_plan
+
+logger = logging.getLogger("laphis.plans")
 
 router = APIRouter(prefix="/plans", tags=["plans"])
 
@@ -132,12 +136,23 @@ def _bullets_to_sections(bullets: list) -> list:
 # ==================== ENDPOINTS ====================
 
 @router.post("/generate", response_model=PlanOut)
-def generate_plan(payload: PlanGenerateIn, db: Session = Depends(get_db)):
+async def generate_plan(payload: PlanGenerateIn, db: Session = Depends(get_db)):
     """
-    Gera um plano via recommender e guarda automaticamente na BD.
+    Gera um plano via AI (OpenAI) ou recommender (fallback).
+    Guarda automaticamente na BD.
     """
     profile = _load_profile(payload.profile_id, db)
-    content = _generate_plan_content(profile, payload.type)
+
+    # Tentar geração via IA, fallback para recommender
+    if is_ai_available():
+        try:
+            content = await ai_generate_plan(profile, payload.type, payload.notes)
+            logger.info("AI-generated plan (%s) for profile %d", payload.type, profile.id)
+        except Exception as e:
+            logger.warning("AI plan generation failed, using recommender: %s", e)
+            content = _generate_plan_content(profile, payload.type)
+    else:
+        content = _generate_plan_content(profile, payload.type)
 
     type_labels = {"training": "Treino", "nutrition": "Nutrição", "combined": "Combinado"}
     title = f"Plano de {type_labels.get(payload.type, 'Treino')} — {profile.name}"
