@@ -25,9 +25,9 @@ class Profile(Base):
     goal = Column(String(50), nullable=False)  # "perder_gordura", "ganhar_massa", "manter"
     level = Column(String(50), nullable=False)  # "iniciante", "intermedio", "avancado"
     days_per_week = Column(Integer, nullable=False)
-    diet_type = Column(String(30), nullable=True)  # "omnivoro", "vegetariano", "vegan", "pescetariano"
+    diet_type = Column(String(100), nullable=True)  # texto livre ou predefinido
     allergies = Column(String(500), nullable=True)  # comma-separated: "glúten, lactose, frutos secos"
-    avatar = Column(String(255), nullable=True)  # preset_1..preset_10 ou URL custom
+    avatar = Column(Text, nullable=True)  # preset_1..preset_10, URL ou base64 data URL
 
     # Relacionamentos
     user = relationship("User", back_populates="profile")

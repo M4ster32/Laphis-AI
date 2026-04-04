@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
-  User, Smile, Heart, Star, Flame, Mountain, Music, Coffee, Zap, Crown, Plus, X, Check, ImagePlus,
+  User, Smile, Heart, Star, Flame, Mountain, Music, Coffee, Zap, Crown, Plus, X, Check, ImagePlus, Upload,
 } from "lucide-react";
 
 /**
@@ -98,12 +98,14 @@ export function AvatarDisplay({ avatar, name, size = 48, style = {} }) {
 }
 
 /**
- * Avatar picker grid — 10 presets + custom URL "+"
+ * Avatar picker grid — 10 presets + custom file upload / URL "+"
  */
 export default function AvatarPicker({ value, onChange }) {
   const [showCustom, setShowCustom] = useState(false);
   const [customUrl, setCustomUrl] = useState(isCustomAvatar(value) ? value : "");
   const [previewError, setPreviewError] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handlePresetSelect = (presetId) => {
     setShowCustom(false);
@@ -124,9 +126,39 @@ export default function AvatarPicker({ value, onChange }) {
     setShowCustom(false);
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size (max 2MB)
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Imagem demasiado grande. Máximo 2MB.");
+      return;
+    }
+
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      setCustomUrl(dataUrl);
+      onChange(dataUrl);
+      setPreviewError(false);
+      setUploading(false);
+      setShowCustom(true);
+    };
+    reader.onerror = () => {
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+  };
+
   return (
     <div style={s.wrapper}>
-      <label style={s.label}>Escolhe o teu avatar</label>
+      <label style={s.label}>Escolhe o teu avatar ou carrega uma foto</label>
 
       <div style={s.grid}>
         {PRESETS.map((preset) => {
@@ -161,7 +193,10 @@ export default function AvatarPicker({ value, onChange }) {
         {/* Custom "+" button */}
         <button
           type="button"
-          onClick={() => setShowCustom(!showCustom)}
+          onClick={() => {
+            if (!showCustom) fileInputRef.current?.click();
+            else setShowCustom(!showCustom);
+          }}
           style={{
             ...s.option,
             background: isCustomAvatar(value)
@@ -173,7 +208,7 @@ export default function AvatarPicker({ value, onChange }) {
                 ? "3px solid var(--primary)"
                 : "3px solid transparent",
           }}
-          title="Imagem personalizada"
+          title="Carregar foto"
         >
           {isCustomAvatar(value) ? (
             <img
@@ -182,8 +217,10 @@ export default function AvatarPicker({ value, onChange }) {
               style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12 }}
               onError={(e) => { e.target.style.display = "none"; }}
             />
+          ) : uploading ? (
+            <span className="spinner" style={{ width: 20, height: 20, borderWidth: 2 }} />
           ) : (
-            <ImagePlus
+            <Upload
               size={22}
               strokeWidth={1.5}
               color={showCustom ? "var(--primary)" : "var(--text-muted)"}
@@ -195,63 +232,53 @@ export default function AvatarPicker({ value, onChange }) {
             </div>
           )}
         </button>
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          style={{ display: "none" }}
+        />
       </div>
 
-      {/* Custom URL input panel */}
-      {showCustom && (
+      {/* Custom photo panel */}
+      {showCustom && isCustomAvatar(value) && (
         <div style={s.customPanel}>
-          <p style={s.customHint}>Cola a URL de uma imagem (JPG, PNG, etc.)</p>
-
           {/* Preview */}
-          {customUrl.trim() && !previewError && (
-            <div style={s.previewBox}>
-              <img
-                src={customUrl.trim()}
-                alt="Preview"
-                style={s.previewImg}
-                onError={() => setPreviewError(true)}
-                onLoad={() => setPreviewError(false)}
-              />
+          {value && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <div style={s.previewBox}>
+                <img
+                  src={value}
+                  alt="Preview"
+                  style={s.previewImg}
+                  onError={() => setPreviewError(true)}
+                  onLoad={() => setPreviewError(false)}
+                />
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--primary)" }}>Foto carregada ✓</span>
             </div>
           )}
-          {previewError && (
-            <p style={s.errorText}>Não foi possível carregar a imagem</p>
-          )}
-
-          <div style={s.customInputRow}>
-            <input
-              type="url"
-              className="form-input"
-              placeholder="https://exemplo.com/avatar.jpg"
-              value={customUrl}
-              onChange={(e) => {
-                setCustomUrl(e.target.value);
-                setPreviewError(false);
-              }}
-              style={{ flex: 1, fontSize: 13 }}
-            />
-          </div>
           <div style={s.customActions}>
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ padding: "8px 18px", fontSize: 13 }}
-              onClick={handleCustomConfirm}
-              disabled={!customUrl.trim() || previewError}
+              className="btn btn-ghost"
+              style={{ padding: "8px 14px", fontSize: 13 }}
+              onClick={() => fileInputRef.current?.click()}
             >
-              <Check size={14} strokeWidth={2} style={{ marginRight: 4, verticalAlign: -2 }} />
-              Confirmar
+              <Upload size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />
+              Trocar foto
             </button>
-            {isCustomAvatar(value) && (
-              <button
-                type="button"
-                style={s.clearBtn}
-                onClick={handleCustomClear}
-              >
-                <X size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />
-                Remover
-              </button>
-            )}
+            <button
+              type="button"
+              style={s.clearBtn}
+              onClick={handleCustomClear}
+            >
+              <X size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />
+              Remover
+            </button>
           </div>
         </div>
       )}

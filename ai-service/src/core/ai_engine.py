@@ -108,6 +108,9 @@ def _build_profile_context(profile) -> str:
         "perder_gordura": "Perder gordura",
         "ganhar_massa": "Ganhar massa muscular",
         "manter": "Manter forma",
+        "melhorar_saude": "Melhorar saúde geral",
+        "ganhar_resistencia": "Ganhar resistência",
+        "definicao": "Definição muscular",
     }
     goal = getattr(profile, "goal", None)
     if goal:

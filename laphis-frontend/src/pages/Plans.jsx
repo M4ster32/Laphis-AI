@@ -5,7 +5,7 @@ import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import GeneratePlanModal from "../components/GeneratePlanModal";
 import EmptyState from "../components/EmptyState";
-import { Tag, Plus, Archive, Copy, ChevronRight } from "lucide-react";
+import { Tag, Plus, Archive, Copy, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap } from "lucide-react";
 
 const CATEGORY_ICONS = ["T", "F", "N", "Z", "C", "M", "O", "R", "S", "P", "H", "E"];
 
@@ -14,6 +14,8 @@ export default function Plans() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useApp();
   const [plans, setPlans] = useState([]);
+  const [archivedPlans, setArchivedPlans] = useState([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null); // null = all
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@ export default function Plans() {
   useEffect(() => {
     if (profile) {
       loadPlans();
+      loadArchivedPlans();
       loadCategories();
     }
   }, [profile]);
@@ -58,8 +61,17 @@ export default function Plans() {
 
   // Reload when category changes
   useEffect(() => {
-    if (profile) loadPlans();
+    if (profile) { loadPlans(); loadArchivedPlans(); }
   }, [selectedCategory]);
+
+  const loadArchivedPlans = async () => {
+    try {
+      const resp = await ApiService.getPlans(profile.id, "archived", selectedCategory);
+      setArchivedPlans(Array.isArray(resp) ? resp : resp.plans || []);
+    } catch (err) {
+      console.error("Erro ao carregar arquivados:", err);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -88,6 +100,17 @@ export default function Plans() {
     try {
       await ApiService.updatePlan(planId, { status: "archived" });
       await loadPlans();
+      await loadArchivedPlans();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRestore = async (planId) => {
+    try {
+      await ApiService.updatePlan(planId, { status: "active" });
+      await loadPlans();
+      await loadArchivedPlans();
     } catch (err) {
       console.error(err);
     }
@@ -260,6 +283,63 @@ export default function Plans() {
             </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ====== ARCHIVED PLANS (COLLAPSIBLE) ====== */}
+      {archivedPlans.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            style={s.archivedToggle}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Archive size={15} strokeWidth={1.5} color="var(--text-muted)" />
+              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>
+                Arquivados
+              </span>
+              <span style={s.archivedBadge}>{archivedPlans.length}</span>
+            </div>
+            <ChevronDown
+              size={16}
+              color="var(--text-muted)"
+              style={{
+                transition: "transform 0.25s ease",
+                transform: showArchived ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            />
+          </button>
+
+          {showArchived && (
+            <div style={{ ...s.plansList, marginTop: 10, opacity: 0.85 }}>
+              {archivedPlans.map((plan) => {
+                const typeColors = { training: "var(--primary)", nutrition: "var(--p2)", combined: "var(--p3)" };
+                return (
+                  <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid var(--border)` }} onClick={() => navigate(`/plans/${plan.id}`)}>
+                    <div style={s.planTop}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ ...s.planTitle, color: "var(--text-muted)" }}>{plan.title || "Plano sem título"}</h4>
+                        <p style={s.planMeta}>
+                          {typeLabels[plan.type] || plan.type}
+                          {" · "}
+                          {new Date(plan.created_at).toLocaleDateString("pt-PT")}
+                        </p>
+                      </div>
+                      <ChevronRight size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                    </div>
+                    <div style={s.planActions} onClick={(e) => e.stopPropagation()}>
+                      <button style={s.planActionBtn} onClick={() => handleRestore(plan.id)} title="Restaurar">
+                        <RotateCcw size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Restaurar
+                      </button>
+                      <button style={s.planActionBtn} onClick={() => handleDuplicate(plan.id)} title="Duplicar">
+                        <Copy size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Duplicar
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -456,6 +536,20 @@ const s = {
 
   /* Loader + Empty */
   loaderArea: { display: "flex", justifyContent: "center", padding: 40 },
+
+  /* Archived toggle */
+  archivedToggle: {
+    width: "100%", display: "flex", justifyContent: "space-between",
+    alignItems: "center", padding: "12px 16px",
+    background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
+    border: "1px solid var(--border)", cursor: "pointer",
+    boxShadow: "var(--shadow)", transition: "background 0.15s",
+  },
+  archivedBadge: {
+    padding: "2px 8px", borderRadius: 10,
+    background: "var(--border)", fontSize: 11,
+    fontWeight: 700, color: "var(--text-muted)",
+  },
   emptyState: {
     textAlign: "center", padding: "48px 20px",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 10,

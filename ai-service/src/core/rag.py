@@ -335,6 +335,9 @@ def _build_user_context(user_data: dict) -> str:
             "perder_gordura": "Perder gordura",
             "ganhar_massa": "Ganhar massa muscular",
             "manter": "Manter composição atual",
+            "melhorar_saude": "Melhorar saúde geral",
+            "ganhar_resistencia": "Ganhar resistência",
+            "definicao": "Definição muscular",
         }
         parts.append(f"Objetivo: {goals_map.get(user_data['goal'], user_data['goal'])}")
     if user_data.get("level"):

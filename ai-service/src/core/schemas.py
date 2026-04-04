@@ -2,10 +2,9 @@ from pydantic import BaseModel, Field, EmailStr
 from typing import Literal, Optional, List, Any
 from datetime import datetime
 
-Goal = Literal["perder_gordura", "ganhar_massa", "manter"]
+Goal = Literal["perder_gordura", "ganhar_massa", "manter", "melhorar_saude", "ganhar_resistencia", "definicao"]
 Level = Literal["iniciante", "intermedio", "avancado"]
 Sex = Literal["masculino", "feminino", "outro"]
-DietType = Literal["omnivoro", "vegetariano", "vegan", "pescetariano"]
 
 # ==================== AUTH SCHEMAS ====================
 
@@ -55,9 +54,9 @@ class ProfileIn(BaseModel):
     goal: Goal
     level: Level
     days_per_week: int = Field(ge=1, le=7)
-    diet_type: Optional[DietType] = None
+    diet_type: Optional[str] = Field(default=None, max_length=100)
     allergies: Optional[str] = Field(default=None, max_length=500)
-    avatar: Optional[str] = Field(default=None, max_length=255)
+    avatar: Optional[str] = Field(default=None, max_length=500000)
 
 class ProfileOut(ProfileIn):
     id: int

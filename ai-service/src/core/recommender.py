@@ -9,7 +9,7 @@ def _calc_bmi(profile: ProfileOut) -> float:
 
 
 def _goal_label(goal: str) -> str:
-    return {"perder_gordura": "perder gordura", "ganhar_massa": "ganhar massa muscular", "manter": "manter a forma"}.get(goal, goal)
+    return {"perder_gordura": "perder gordura", "ganhar_massa": "ganhar massa muscular", "manter": "manter a forma", "melhorar_saude": "melhorar a saúde", "ganhar_resistencia": "ganhar resistência", "definicao": "definição muscular"}.get(goal, goal)
 
 
 def _is_greeting(q: str) -> bool:

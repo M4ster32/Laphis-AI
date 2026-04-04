@@ -20,6 +20,7 @@ const DIET_OPTIONS = [
   { value: "vegetariano", label: "Vegetariano", desc: "Sem carne nem peixe" },
   { value: "vegan", label: "Vegan", desc: "100% vegetal" },
   { value: "pescetariano", label: "Pescetariano", desc: "Sem carne, com peixe" },
+  { value: "_custom", label: "Outro", desc: "Escreve a tua dieta" },
 ];
 
 const ALLERGY_PRESETS = [
@@ -48,8 +49,13 @@ export default function Profile() {
     allergies: "", avatar: null,
   });
 
+  const [customDiet, setCustomDiet] = useState("");
+
   useEffect(() => {
     if (profile) {
+      const knownDiets = ["omnivoro", "vegetariano", "vegan", "pescetariano"];
+      const dt = profile.diet_type || "omnivoro";
+      const isKnown = knownDiets.includes(dt);
       setFormData({
         name: profile.name || "",
         age: String(profile.age || ""),
@@ -59,10 +65,11 @@ export default function Profile() {
         goal: profile.goal || "",
         level: profile.level || "",
         days_per_week: String(profile.days_per_week || "3"),
-        diet_type: profile.diet_type || "omnivoro",
+        diet_type: isKnown ? dt : "_custom",
         allergies: profile.allergies || "",
         avatar: profile.avatar || null,
       });
+      if (!isKnown) setCustomDiet(dt);
     }
   }, [profile]);
 
@@ -121,6 +128,7 @@ export default function Profile() {
     try {
       setLoading(true);
       setError(null);
+      const dietValue = formData.diet_type === "_custom" ? (customDiet.trim() || null) : (formData.diet_type || null);
       const payload = {
         name: formData.name.trim(),
         age: parseInt(formData.age),
@@ -130,7 +138,7 @@ export default function Profile() {
         goal: formData.goal,
         level: formData.level,
         days_per_week: parseInt(formData.days_per_week) || 3,
-        diet_type: formData.diet_type || null,
+        diet_type: dietValue,
         allergies: formData.allergies || null,
         avatar: formData.avatar || null,
       };
@@ -150,10 +158,11 @@ export default function Profile() {
 
   const handleLogout = async () => { await ApiService.logout(); navigate("/login"); };
 
-  const goalLabels = { perder_gordura: "Perder Gordura", ganhar_massa: "Ganhar Massa", manter: "Manter Forma" };
+  const goalLabels = { perder_gordura: "Perder Gordura", ganhar_massa: "Ganhar Massa", manter: "Manter Forma", melhorar_saude: "Melhorar Saúde", ganhar_resistencia: "Resistência", definicao: "Definição" };
   const sexLabels = { masculino: "Masculino", feminino: "Feminino", outro: "Outro" };
   const levelLabels = { iniciante: "Iniciante", intermedio: "Intermédio", avancado: "Avançado" };
-  const dietLabels = { omnivoro: "Omnívoro", vegetariano: "Vegetariano", vegan: "Vegan", pescetariano: "Pescetariano" };
+  const KNOWN_DIETS = { omnivoro: "Omnívoro", vegetariano: "Vegetariano", vegan: "Vegan", pescetariano: "Pescetariano" };
+  const getDietLabel = (dt) => KNOWN_DIETS[dt] || dt || "Omnívoro";
 
   const memberSince = (() => {
     const d = profile?.created_at ? new Date(profile.created_at) : new Date();
@@ -270,6 +279,9 @@ export default function Profile() {
                       { value: "perder_gordura", label: "Perder Gordura", icon: "🔥" },
                       { value: "ganhar_massa", label: "Ganhar Massa", icon: "💪" },
                       { value: "manter", label: "Manter Forma", icon: "⚖️" },
+                      { value: "melhorar_saude", label: "Melhorar Saúde", icon: "❤️" },
+                      { value: "ganhar_resistencia", label: "Resistência", icon: "🏃" },
+                      { value: "definicao", label: "Definição", icon: "🎯" },
                     ].map((opt) => (
                       <button key={opt.value} type="button" onClick={() => handleChange("goal", opt.value)} style={{
                         ...s.optionCard,
@@ -324,7 +336,7 @@ export default function Profile() {
                   <label className="form-label"><Leaf size={14} style={{ marginRight: 4, verticalAlign: -2 }} />Tipo de Dieta</label>
                   <div style={s.dietGrid}>
                     {DIET_OPTIONS.map((opt) => (
-                      <button key={opt.value} type="button" onClick={() => handleChange("diet_type", opt.value)} style={{
+                      <button key={opt.value} type="button" onClick={() => { handleChange("diet_type", opt.value); if (opt.value !== "_custom") setCustomDiet(""); }} style={{
                         ...s.dietCard,
                         borderColor: formData.diet_type === opt.value ? "var(--primary)" : "var(--border)",
                         background: formData.diet_type === opt.value ? "var(--primary-bg)" : "var(--card-bg)",
@@ -334,6 +346,9 @@ export default function Profile() {
                       </button>
                     ))}
                   </div>
+                  {formData.diet_type === "_custom" && (
+                    <input type="text" className="form-input" placeholder="Ex: Só como carne, sem hidratos, etc." value={customDiet} onChange={(e) => setCustomDiet(e.target.value)} disabled={loading} style={{ marginTop: 10, fontSize: 13 }} />
+                  )}
                 </div>
                 <div className="form-group">
                   <label className="form-label"><AlertTriangle size={14} style={{ marginRight: 4, verticalAlign: -2 }} />Alergias / Intolerâncias</label>
@@ -404,7 +419,7 @@ export default function Profile() {
           { label: "Objetivo", value: goalLabels[profile?.goal] || profile?.goal },
           { label: "Nível", value: levelLabels[profile?.level] || profile?.level },
           { label: "Treino", value: `${profile?.days_per_week}x por semana` },
-          { label: "Dieta", value: dietLabels[profile?.diet_type] || "Omnívoro" },
+          { label: "Dieta", value: getDietLabel(profile?.diet_type) },
           ...(profile?.allergies ? [{ label: "Alergias", value: profile.allergies }] : []),
         ].map((item, i, arr) => (
           <div key={item.label}>
