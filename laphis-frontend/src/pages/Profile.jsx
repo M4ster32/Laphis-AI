@@ -51,11 +51,6 @@ export default function Profile() {
 
   const [customDiet, setCustomDiet] = useState("");
 
-  // Ao entrar na página, garante que o perfil está carregado
-  useEffect(() => {
-    loadMyProfile();
-  }, []);
-
   useEffect(() => {
     if (profile) {
       const knownDiets = ["omnivoro", "vegetariano", "vegan", "pescetariano"];
@@ -75,7 +70,6 @@ export default function Profile() {
         avatar: profile.avatar || null,
       });
       if (!isKnown) setCustomDiet(dt);
-      setEditing(false);
     }
   }, [profile]);
 

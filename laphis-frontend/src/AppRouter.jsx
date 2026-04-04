@@ -24,8 +24,7 @@ import DailyPlan from "./pages/DailyPlan";
 // Route protection component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('authToken');
-  if (!token) return <Navigate to="/login" replace />;
-  return children;
+  return token ? children : <Navigate to="/login" replace />;
 };
 
 export default function AppRouter() {
