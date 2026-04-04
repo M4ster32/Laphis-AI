@@ -13,7 +13,7 @@ case "${1:-start}" in
     
     # Backend
     echo "  [1/2] Iniciando Backend (FastAPI)..."
-    cd "$LAPHIS_DIR" && nohup bash -c 'source .venv/bin/activate && cd ai-service && python -m uvicorn src.main:app --reload --port 8000' > "$BACKEND_LOG" 2>&1 &
+    cd "$LAPHIS_DIR" && nohup "$LAPHIS_DIR/ai-service/venv/bin/python" run_backend.py > "$BACKEND_LOG" 2>&1 &
     BACKEND_PID=$!
     echo "  ✅ Backend iniciado (PID: $BACKEND_PID)"
     
@@ -31,7 +31,7 @@ case "${1:-start}" in
     echo ""
     echo "URLs:"
     echo "  🔙 Backend:  http://localhost:8000"
-    echo "  📱 Frontend: http://localhost:5174"
+    echo "  📱 Frontend: http://localhost:5173"
     echo "  📚 Docs:     http://localhost:8000/docs"
     echo ""
     echo "Logs:"

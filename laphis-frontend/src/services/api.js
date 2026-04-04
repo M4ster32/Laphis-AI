@@ -68,6 +68,11 @@ class ApiService {
       if (response.status === 401) {
         localStorage.removeItem("authToken");
         localStorage.removeItem("userEmail");
+        // Redirecionar para login se sessão expirou
+        if (window.location.pathname !== "/login" && window.location.pathname !== "/register") {
+          window.location.href = "/login";
+          return fallback !== undefined ? fallback : null;
+        }
       }
       if (fallback !== undefined) return fallback;
       const data = await response.json().catch(() => ({}));
