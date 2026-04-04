@@ -46,6 +46,44 @@ def get_db() -> Session:
         db.close()
 
 
+def _run_migrations(engine_ref) -> None:
+    """
+    Migrar colunas em falta nas tabelas existentes.
+    SQLAlchemy create_all() cria tabelas novas mas NÃO altera tabelas existentes.
+    Esta função deteta colunas que faltam e adiciona-as.
+    """
+    from sqlalchemy import text as sa_text
+    inspector = inspect(engine_ref)
+    is_sqlite = "sqlite" in str(engine_ref.url)
+
+    for table in Base.metadata.sorted_tables:
+        table_name = table.name
+        if not inspector.has_table(table_name):
+            continue
+
+        existing_cols = {c["name"] for c in inspector.get_columns(table_name)}
+        for col in table.columns:
+            if col.name in existing_cols:
+                continue
+            # Determinar tipo SQL
+            col_type = col.type.compile(engine_ref.dialect)
+            nullable = "NULL" if col.nullable else "NOT NULL"
+            default = ""
+            if col.default is not None:
+                default = f" DEFAULT {col.default.arg!r}" if hasattr(col.default, 'arg') else ""
+            elif col.nullable:
+                default = " DEFAULT NULL"
+
+            stmt = f'ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type} {nullable}{default}'
+            try:
+                with engine_ref.begin() as conn:
+                    conn.execute(sa_text(stmt))
+                print(f"  ✅ Migração: {table_name}.{col.name} ({col_type}) adicionada")
+            except Exception as e:
+                # Coluna pode já existir em certos edge cases
+                print(f"  ⚠️  Migração {table_name}.{col.name}: {e}")
+
+
 def init_db() -> None:
     """
     Inicializar a base de dados (criar tabelas)
@@ -53,6 +91,9 @@ def init_db() -> None:
     """
     # Criar todas as tabelas
     Base.metadata.create_all(bind=engine)
+
+    # Migrar colunas em falta em tabelas existentes
+    _run_migrations(engine)
     
     # Log detalhado
     print("\n" + "="*60)
