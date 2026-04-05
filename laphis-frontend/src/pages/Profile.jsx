@@ -121,6 +121,8 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Se não está no último passo, avançar em vez de submeter
+    if (step < 3) { handleNext(); return; }
     for (let s = 1; s <= 2; s++) {
       const err = validateStep(s);
       if (err) { setStep(s); return setError(err); }
