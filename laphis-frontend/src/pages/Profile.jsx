@@ -119,10 +119,8 @@ export default function Profile() {
 
   const handleBack = () => { setError(null); setStep(step - 1); };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    // Se não está no último passo, avançar em vez de submeter
-    if (step < 3) { handleNext(); return; }
+  const handleSubmit = async () => {
+    if (loading) return;
     for (let s = 1; s <= 2; s++) {
       const err = validateStep(s);
       if (err) { setStep(s); return setError(err); }
@@ -222,7 +220,7 @@ export default function Profile() {
           {error && <div className="alert alert-error"><span className="alert-icon">⚠️</span><span>{error}</span></div>}
           {success && <div className="alert alert-success"><span className="alert-icon">✓</span><span>{success}</span></div>}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => e.preventDefault()}>
             {/* ===== STEP 1: Personal Data ===== */}
             {step === 1 && (
               <>
@@ -385,7 +383,7 @@ export default function Profile() {
                   Seguinte <ChevronRight size={16} />
                 </button>
               ) : (
-                <button type="submit" disabled={loading} className="btn btn-primary" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <button type="button" onClick={handleSubmit} disabled={loading} className="btn btn-primary" style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   {loading ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> A guardar...</> : (profile ? "Guardar Alterações" : "Criar Perfil")}
                 </button>
               )}
