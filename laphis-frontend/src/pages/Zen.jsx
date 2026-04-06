@@ -3,11 +3,12 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import { Wind, Zap, Heart, Plus, Trash2 } from "lucide-react";
 
-// ===== WEB AUDIO — AMBIENT SOUND ENGINE =====
+// ===== WEB AUDIO — AMBIENT SOUND ENGINE (v2) =====
 class AmbientAudio {
   constructor() {
     this.ctx = null;
-    this.sources = [];
+    this.nodes = [];       // all AudioNodes to disconnect on stop
+    this.timers = [];      // setInterval / setTimeout ids
     this.masterGain = null;
     this.active = false;
   }
@@ -21,145 +22,312 @@ class AmbientAudio {
 
   stop() {
     this.active = false;
-    this.sources.forEach((n) => {
+    this.timers.forEach((id) => { clearTimeout(id); clearInterval(id); });
+    this.timers = [];
+    this.nodes.forEach((n) => {
       try { n.stop?.(); } catch {}
       try { n.disconnect?.(); } catch {}
     });
-    this.sources = [];
+    this.nodes = [];
     if (this.masterGain) {
       try { this.masterGain.disconnect(); } catch {}
       this.masterGain = null;
     }
   }
 
-  _noise(type = "brown") {
+  /* ---------- noise buffer generators ---------- */
+  _noiseBuf(type, seconds = 8) {
     const sr = this.ctx.sampleRate;
-    const bufSize = sr * 4; // 4 seconds for smoother looping
-    const buf = this.ctx.createBuffer(2, bufSize, sr); // stereo
+    const len = sr * seconds;
+    const buf = this.ctx.createBuffer(2, len, sr);
     for (let ch = 0; ch < 2; ch++) {
-      const data = buf.getChannelData(ch);
-      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-      for (let i = 0; i < bufSize; i++) {
-        const white = Math.random() * 2 - 1;
+      const d = buf.getChannelData(ch);
+      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
         if (type === "brown") {
-          b0 = (b0 + 0.02 * white) / 1.02;
-          data[i] = b0 * 3.5;
+          b0 = (b0 + 0.02 * w) / 1.02;
+          d[i] = b0 * 3.5;
         } else if (type === "pink") {
-          b0 = 0.99886 * b0 + white * 0.0555179;
-          b1 = 0.99332 * b1 + white * 0.0750759;
-          b2 = 0.96900 * b2 + white * 0.1538520;
-          b3 = 0.86650 * b3 + white * 0.3104856;
-          b4 = 0.55000 * b4 + white * 0.5329522;
-          b5 = -0.7616 * b5 - white * 0.0168980;
-          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
-          b6 = white * 0.115926;
-        } else {
-          data[i] = white;
-        }
+          b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+          b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+          b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+          d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
+          b6=w*0.115926;
+        } else { d[i] = w; }
+      }
+      /* crossfade loop seam (last 0.05 s blends into start) */
+      const fade = Math.min(Math.floor(sr * 0.05), len);
+      for (let i = 0; i < fade; i++) {
+        const t = i / fade;
+        d[len - fade + i] = d[len - fade + i] * (1 - t) + d[i] * t;
       }
     }
-    const src = this.ctx.createBufferSource();
-    src.buffer = buf;
-    src.loop = true;
-    return src;
+    return buf;
   }
 
+  _src(buf) {
+    const s = this.ctx.createBufferSource();
+    s.buffer = buf; s.loop = true;
+    this.nodes.push(s);
+    return s;
+  }
+
+  _filter(type, freq, q) {
+    const f = this.ctx.createBiquadFilter();
+    f.type = type; f.frequency.value = freq;
+    if (q !== undefined) f.Q.value = q;
+    this.nodes.push(f);
+    return f;
+  }
+
+  _gain(v) {
+    const g = this.ctx.createGain(); g.gain.value = v;
+    this.nodes.push(g);
+    return g;
+  }
+
+  _lfo(freq, amount, target) {
+    const osc = this.ctx.createOscillator();
+    osc.type = "sine"; osc.frequency.value = freq;
+    const g = this.ctx.createGain(); g.gain.value = amount;
+    osc.connect(g).connect(target);
+    osc.start();
+    this.nodes.push(osc, g);
+  }
+
+  /* ---------- play ---------- */
   play(key) {
     this.stop();
     if (key === "silence") return;
-
-    try {
-      this._ensure();
-    } catch (e) {
-      console.warn("Web Audio not available:", e);
-      return;
-    }
-
+    try { this._ensure(); } catch { return; }
     this.active = true;
 
-    // Master gain with proper fade-in
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
-    this.masterGain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime + 2);
+    this.masterGain.gain.linearRampToValueAtTime(0.30, this.ctx.currentTime + 3);
     this.masterGain.connect(this.ctx.destination);
-
     const mg = this.masterGain;
 
-    if (key === "rain") {
-      const src = this._noise("pink");
-      const hp = this.ctx.createBiquadFilter();
-      hp.type = "highpass"; hp.frequency.value = 800;
-      const lp = this.ctx.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.value = 9000;
-      src.connect(hp).connect(lp).connect(mg);
-      src.start();
-      this.sources.push(src, hp, lp);
-    } else if (key === "ocean") {
-      const src = this._noise("brown");
-      const lp = this.ctx.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.value = 500;
-      const lfo = this.ctx.createOscillator();
-      lfo.type = "sine"; lfo.frequency.value = 0.07;
-      const lfoG = this.ctx.createGain();
-      lfoG.gain.value = 350;
-      lfo.connect(lfoG).connect(lp.frequency);
-      src.connect(lp).connect(mg);
-      lfo.start(); src.start();
-      this.sources.push(src, lp, lfo, lfoG);
-    } else if (key === "forest") {
-      const src = this._noise("pink");
-      const bp = this.ctx.createBiquadFilter();
-      bp.type = "bandpass"; bp.frequency.value = 2500; bp.Q.value = 0.4;
-      const g2 = this.ctx.createGain(); g2.gain.value = 0.5;
-      src.connect(bp).connect(g2).connect(mg);
-      src.start();
-      const src2 = this._noise("brown");
-      const lp = this.ctx.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.value = 500;
-      const g3 = this.ctx.createGain(); g3.gain.value = 0.35;
-      src2.connect(lp).connect(g3).connect(mg);
-      src2.start();
-      this.sources.push(src, bp, g2, src2, lp, g3);
-    } else if (key === "fire") {
-      const src = this._noise("brown");
-      const lp = this.ctx.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.value = 400;
-      const g2 = this.ctx.createGain(); g2.gain.value = 0.75;
-      src.connect(lp).connect(g2).connect(mg);
-      src.start();
-      const crackle = this._noise("white");
-      const bp = this.ctx.createBiquadFilter();
-      bp.type = "bandpass"; bp.frequency.value = 3500; bp.Q.value = 1.5;
-      const cg = this.ctx.createGain(); cg.gain.value = 0.06;
-      crackle.connect(bp).connect(cg).connect(mg);
-      crackle.start();
-      this.sources.push(src, lp, g2, crackle, bp, cg);
-    } else if (key === "wind") {
-      const src = this._noise("brown");
-      const bp = this.ctx.createBiquadFilter();
-      bp.type = "bandpass"; bp.frequency.value = 500; bp.Q.value = 0.6;
-      const lfo = this.ctx.createOscillator();
-      lfo.type = "sine"; lfo.frequency.value = 0.12;
-      const lfoG = this.ctx.createGain(); lfoG.gain.value = 350;
-      lfo.connect(lfoG).connect(bp.frequency);
-      src.connect(bp).connect(mg);
-      lfo.start(); src.start();
-      this.sources.push(src, bp, lfo, lfoG);
-    }
+    const builders = { rain: this._rain, ocean: this._ocean, forest: this._forest, fire: this._fire, wind: this._wind };
+    (builders[key] || (() => {})).call(this, mg);
   }
 
+  /* ---- RAIN: layered rainfall ---- */
+  _rain(mg) {
+    // Layer 1 — steady drizzle (pink noise, bandpassed 1-6 kHz)
+    const drizzle = this._src(this._noiseBuf("pink", 10));
+    const hp1 = this._filter("highpass", 1000);
+    const lp1 = this._filter("lowpass", 6000);
+    const g1 = this._gain(0.45);
+    drizzle.connect(hp1).connect(lp1).connect(g1).connect(mg);
+    drizzle.start();
+
+    // Layer 2 — deep rumble (brown noise, very low)
+    const rumble = this._src(this._noiseBuf("brown", 10));
+    const lp2 = this._filter("lowpass", 250);
+    const g2 = this._gain(0.25);
+    rumble.connect(lp2).connect(g2).connect(mg);
+    rumble.start();
+
+    // Layer 3 — droplet texture (white noise, narrow band, subtle)
+    const drops = this._src(this._noiseBuf("white", 6));
+    const bp = this._filter("bandpass", 4000, 2.0);
+    const g3 = this._gain(0.04);
+    this._lfo(0.3, 0.03, g3.gain); // subtle pulsing
+    drops.connect(bp).connect(g3).connect(mg);
+    drops.start();
+
+    // Slow intensity swell
+    this._lfo(0.05, 0.08, g1.gain);
+  }
+
+  /* ---- OCEAN: rolling waves ---- */
+  _ocean(mg) {
+    // Layer 1 — deep wave body
+    const wave = this._src(this._noiseBuf("brown", 12));
+    const lp = this._filter("lowpass", 400);
+    const g1 = this._gain(0.5);
+    this._lfo(0.06, 200, lp.frequency); // slow sweep
+    this._lfo(0.06, 0.25, g1.gain);     // volume swell
+    wave.connect(lp).connect(g1).connect(mg);
+    wave.start();
+
+    // Layer 2 — wave crest wash (pink noise, highpassed)
+    const wash = this._src(this._noiseBuf("pink", 10));
+    const hp = this._filter("highpass", 600);
+    const lp2 = this._filter("lowpass", 4000);
+    const g2 = this._gain(0.12);
+    this._lfo(0.06, 0.10, g2.gain); // sync with wave
+    wash.connect(hp).connect(lp2).connect(g2).connect(mg);
+    wash.start();
+
+    // Layer 3 — distant foam hiss
+    const foam = this._src(this._noiseBuf("pink", 8));
+    const bp = this._filter("bandpass", 3000, 0.5);
+    const g3 = this._gain(0.05);
+    foam.connect(bp).connect(g3).connect(mg);
+    foam.start();
+  }
+
+  /* ---- FOREST: rustling + birds ---- */
+  _forest(mg) {
+    // Layer 1 — gentle wind through leaves (pink, bandpassed)
+    const leaves = this._src(this._noiseBuf("pink", 10));
+    const bp1 = this._filter("bandpass", 2000, 0.3);
+    const g1 = this._gain(0.18);
+    this._lfo(0.08, 0.06, g1.gain);
+    leaves.connect(bp1).connect(g1).connect(mg);
+    leaves.start();
+
+    // Layer 2 — low forest ambiance
+    const amb = this._src(this._noiseBuf("brown", 10));
+    const lp = this._filter("lowpass", 350);
+    const g2 = this._gain(0.15);
+    amb.connect(lp).connect(g2).connect(mg);
+    amb.start();
+
+    // Layer 3 — subtle high rustle
+    const rustle = this._src(this._noiseBuf("white", 6));
+    const bp2 = this._filter("bandpass", 5000, 1.5);
+    const g3 = this._gain(0.02);
+    this._lfo(0.15, 0.015, g3.gain);
+    rustle.connect(bp2).connect(g3).connect(mg);
+    rustle.start();
+
+    // Birdsong — periodic gentle sine chirps
+    this._scheduleBirds(mg);
+  }
+
+  _scheduleBirds(mg) {
+    const chirp = () => {
+      if (!this.active) return;
+      const t = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      const baseFreq = 1800 + Math.random() * 1400;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(baseFreq, t);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * (1.1 + Math.random() * 0.4), t + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, t + 0.16);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.03 + Math.random() * 0.02, t + 0.02);
+      g.gain.linearRampToValueAtTime(0, t + 0.15 + Math.random() * 0.1);
+      osc.connect(g).connect(mg);
+      osc.start(t);
+      osc.stop(t + 0.3);
+      this.nodes.push(osc, g);
+      // Sometimes do a double chirp
+      if (Math.random() > 0.5) {
+        const id = setTimeout(chirp, 120 + Math.random() * 80);
+        this.timers.push(id);
+      }
+    };
+    // Random bird every 2-6 seconds
+    const loop = () => {
+      if (!this.active) return;
+      chirp();
+      const id = setTimeout(loop, 2000 + Math.random() * 4000);
+      this.timers.push(id);
+    };
+    const id = setTimeout(loop, 1500);
+    this.timers.push(id);
+  }
+
+  /* ---- FIRE: warm crackle ---- */
+  _fire(mg) {
+    // Layer 1 — deep warm body
+    const body = this._src(this._noiseBuf("brown", 10));
+    const lp = this._filter("lowpass", 350);
+    const g1 = this._gain(0.45);
+    this._lfo(0.1, 0.08, g1.gain);
+    body.connect(lp).connect(g1).connect(mg);
+    body.start();
+
+    // Layer 2 — mid crackle
+    const mid = this._src(this._noiseBuf("pink", 8));
+    const bp = this._filter("bandpass", 1200, 0.8);
+    const g2 = this._gain(0.08);
+    this._lfo(0.25, 0.04, g2.gain);
+    mid.connect(bp).connect(g2).connect(mg);
+    mid.start();
+
+    // Layer 3 — random pops/crackles via scheduled clicks
+    this._scheduleCrackles(mg);
+  }
+
+  _scheduleCrackles(mg) {
+    const pop = () => {
+      if (!this.active) return;
+      const t = this.ctx.currentTime;
+      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.03, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.15));
+      }
+      const s = this.ctx.createBufferSource(); s.buffer = buf;
+      const bp = this._filter("bandpass", 2000 + Math.random() * 3000, 1.0);
+      const g = this._gain(0.06 + Math.random() * 0.06);
+      s.connect(bp).connect(g).connect(mg);
+      s.start(t);
+      this.nodes.push(s);
+    };
+    const loop = () => {
+      if (!this.active) return;
+      pop();
+      // Burst of 1-3 crackles
+      const burst = Math.floor(Math.random() * 3);
+      for (let i = 0; i < burst; i++) {
+        const id = setTimeout(pop, 30 + Math.random() * 80);
+        this.timers.push(id);
+      }
+      const id = setTimeout(loop, 200 + Math.random() * 600);
+      this.timers.push(id);
+    };
+    const id = setTimeout(loop, 500);
+    this.timers.push(id);
+  }
+
+  /* ---- WIND: gentle gusts ---- */
+  _wind(mg) {
+    // Layer 1 — low howl
+    const low = this._src(this._noiseBuf("brown", 12));
+    const bp1 = this._filter("bandpass", 300, 0.4);
+    const g1 = this._gain(0.35);
+    this._lfo(0.04, 180, bp1.frequency);
+    this._lfo(0.04, 0.15, g1.gain);
+    low.connect(bp1).connect(g1).connect(mg);
+    low.start();
+
+    // Layer 2 — mid whistle
+    const mid = this._src(this._noiseBuf("pink", 10));
+    const bp2 = this._filter("bandpass", 1200, 0.6);
+    const g2 = this._gain(0.12);
+    this._lfo(0.07, 500, bp2.frequency);
+    this._lfo(0.07, 0.06, g2.gain);
+    mid.connect(bp2).connect(g2).connect(mg);
+    mid.start();
+
+    // Layer 3 — high breeze texture
+    const high = this._src(this._noiseBuf("white", 8));
+    const hp = this._filter("highpass", 3000);
+    const lp = this._filter("lowpass", 7000);
+    const g3 = this._gain(0.03);
+    this._lfo(0.1, 0.02, g3.gain);
+    high.connect(hp).connect(lp).connect(g3).connect(mg);
+    high.start();
+  }
+
+  /* ---------- fade out ---------- */
   fadeOut() {
-    if (!this.ctx || !this.masterGain || !this.active) {
-      this.stop();
-      return;
-    }
+    if (!this.ctx || !this.masterGain || !this.active) { this.stop(); return; }
     try {
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
-      this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.5);
-      setTimeout(() => this.stop(), 1600);
-    } catch {
-      this.stop();
-    }
+      const now = this.ctx.currentTime;
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+      this.masterGain.gain.linearRampToValueAtTime(0, now + 2);
+      const id = setTimeout(() => this.stop(), 2200);
+      this.timers.push(id);
+    } catch { this.stop(); }
   }
 }
 
