@@ -16,8 +16,7 @@
 
 /* ---------- HEADER ---------- */
 .layout-header {
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 100;
   padding: 12px 20px;
   padding-top: max(12px, env(safe-area-inset-top));
@@ -108,7 +107,7 @@
 .layout-main {
   flex: 1 1 0;
   min-height: 0;
-  padding: 16px 16px 100px;
+  padding: 16px 16px 24px;
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
   overflow-y: auto;
@@ -125,7 +124,7 @@
 /* Full-height variant — used by Chat and other viewport-filling pages */
 .layout-main--fill {
   overflow: hidden;
-  padding-bottom: 80px;
+  padding-bottom: 8px;
   display: flex;
   flex-direction: column;
 }
@@ -144,10 +143,7 @@ body[style*="overflow: hidden"] .layout-main {
 
 /* ---------- BOTTOM NAV ---------- */
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   z-index: 200;
   background-color: var(--nav-bg);
   border-top: 1px solid var(--nav-border);
@@ -160,22 +156,9 @@ body[style*="overflow: hidden"] .layout-main {
   padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
 }
 
-/* When a modal overlay is open, hide the nav so it can't block anything */
-body[style*="overflow: hidden"] .bottom-nav {
-  display: none;
-}
+/* Modal overlay covers everything via z-index:9999 */
 
-/* Extend nav background below into safe-area / gesture bar */
-.bottom-nav::after {
-  content: '';
-  position: absolute;
-  bottom: -50px;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background-color: inherit;
-  z-index: -1;
-}
+/* safe-area extension handled by padding-bottom env() */
 
 .nav-tab {
   display: flex;
@@ -677,7 +660,7 @@ body[style*="overflow: hidden"] .bottom-nav {
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 380px) {
-  .layout-main { padding: 12px 12px 100px; }
+  .layout-main { padding: 12px 12px 20px; }
   .layout-header { padding: 10px 14px; }
   .nav-tab { padding: 6px 8px; font-size: 18px; }
   .nav-tab-label { font-size: 9px; }
@@ -686,17 +669,17 @@ body[style*="overflow: hidden"] .bottom-nav {
 }
 
 @media (max-width: 340px) {
-  .layout-main { padding: 10px 10px 100px; }
+  .layout-main { padding: 10px 10px 16px; }
   .nav-tab { padding: 4px 6px; font-size: 16px; }
   .header-brand { font-size: 12px; }
 }
 
 @media (min-width: 768px) {
-  .layout-main { padding: 24px 20px 100px; }
+  .layout-main { padding: 24px 20px 24px; }
 }
 
 @media (min-width: 1200px) {
-  .layout-main { max-width: 700px; padding: 32px 24px 100px; }
+  .layout-main { max-width: 700px; padding: 32px 24px 24px; }
 }
 
 /* ---------- MOBILE OVERFLOW FIXES ---------- */

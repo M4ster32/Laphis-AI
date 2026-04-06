@@ -409,16 +409,16 @@ const s = {
 
   /* Sidebar */
   overlay: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)",
-    zIndex: 90, animation: "fadeIn 0.2s ease",
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+    zIndex: 300, animation: "fadeIn 0.2s ease",
   },
   sidebar: {
     position: "fixed", top: 0, left: 0, bottom: 0,
     width: 280, background: "var(--bg-surface)",
-    borderRight: "1px solid var(--border)", zIndex: 100,
+    zIndex: 310,
     display: "flex", flexDirection: "column",
-    transition: "transform 0.25s ease", overflowY: "auto",
-    boxShadow: "4px 0 16px rgba(0,0,0,0.15)",
+    overflowY: "auto",
+    boxShadow: "6px 0 24px rgba(0,0,0,0.25)",
   },
   sidebarHeader: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -473,7 +473,7 @@ const s = {
   /* Header */
   chatHeader: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "12px 0 16px",
+    padding: "12px 0 16px", flexShrink: 0,
   },
   headerLeft: { display: "flex", alignItems: "center", gap: 8 },
   menuBtn: {
@@ -506,7 +506,7 @@ const s = {
 
   /* Messages */
   messagesArea: {
-    flex: 1, overflowY: "auto", paddingBottom: 8,
+    flex: "1 1 0", minHeight: 0, overflowY: "auto", paddingBottom: 8,
     display: "flex", flexDirection: "column", gap: 10,
   },
   userBubbleWrap: { display: "flex", justifyContent: "flex-end" },
@@ -568,7 +568,7 @@ const s = {
   },
 
   /* Input */
-  inputArea: { padding: "12px 0 4px", borderTop: "1px solid var(--border-light)" },
+  inputArea: { padding: "12px 0 4px", borderTop: "1px solid var(--border-light)", flexShrink: 0 },
   inputRow: { display: "flex", alignItems: "flex-end", gap: 8 },
   textInput: {
     flex: 1, border: "1px solid var(--border)", borderRadius: 20,
