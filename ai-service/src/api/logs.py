@@ -167,6 +167,77 @@ def create_log(
         )
 
 
+@router.put("/{log_id}", response_model=UnifiedLogOut)
+def update_log(
+    log_id: int,
+    payload: UnifiedLogIn,
+    token: str = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Atualizar um registo existente (treino ou refeição)
+    """
+    user_id = _get_user_id(token)
+    profile_id = _get_profile_id(user_id, db)
+
+    if payload.log_type == "treino":
+        record = (
+            db.query(WorkoutLog)
+            .filter(WorkoutLog.id == log_id, WorkoutLog.profile_id == profile_id)
+            .first()
+        )
+        if not record:
+            raise HTTPException(status_code=404, detail="Registo de treino não encontrado")
+        if payload.description is not None:
+            record.description = payload.description
+        if payload.duration_min is not None:
+            record.duration_min = payload.duration_min
+        if payload.calories is not None:
+            record.calories = payload.calories
+        if payload.notes is not None:
+            record.notes = payload.notes
+        db.commit()
+        db.refresh(record)
+        return UnifiedLogOut(
+            id=record.id,
+            log_type="treino",
+            description=record.description,
+            duration_min=record.duration_min,
+            calories=record.calories,
+            notes=record.notes,
+            date=record.date,
+            created_at=record.created_at if hasattr(record, "created_at") else None,
+        )
+    else:
+        record = (
+            db.query(MealLog)
+            .filter(MealLog.id == log_id, MealLog.profile_id == profile_id)
+            .first()
+        )
+        if not record:
+            raise HTTPException(status_code=404, detail="Registo de refeição não encontrado")
+        if payload.meal_type is not None:
+            record.meal = payload.meal_type
+        if payload.foods is not None:
+            record.foods = payload.foods
+        if payload.calories is not None:
+            record.calories = payload.calories
+        if payload.notes is not None:
+            record.notes = payload.notes
+        db.commit()
+        db.refresh(record)
+        return UnifiedLogOut(
+            id=record.id,
+            log_type="refeicao",
+            calories=record.calories,
+            notes=record.notes,
+            meal_type=record.meal,
+            foods=record.foods,
+            date=record.date,
+            created_at=record.created_at if hasattr(record, "created_at") else None,
+        )
+
+
 @router.delete("/{log_id}")
 def delete_log(
     log_id: int,

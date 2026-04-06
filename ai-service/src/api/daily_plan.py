@@ -46,6 +46,8 @@ def _profile_to_out(profile: Profile) -> ProfileOut:
         goal=profile.goal,
         level=profile.level,
         days_per_week=profile.days_per_week,
+        diet_type=getattr(profile, 'diet_type', None),
+        allergies=getattr(profile, 'allergies', None),
     )
 
 

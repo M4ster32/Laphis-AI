@@ -191,6 +191,20 @@ class ApiService {
     );
   }
 
+  /**
+   * Update an existing log entry (workout or meal).
+   * @param {number|string} logId
+   * @param {Object} data - Must include log_type and fields to update
+   * @returns {Promise<Object>}
+   */
+  static async updateLog(logId, data) {
+    return this._request(this._withToken(`/logs/${logId}`), {
+      method: "PUT",
+      body: data,
+      errorMsg: "Erro ao atualizar registo",
+    });
+  }
+
   // ==================== AUTH ====================
 
   /**

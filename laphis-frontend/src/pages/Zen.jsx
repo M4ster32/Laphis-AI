@@ -3,6 +3,168 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import { Wind, Zap, Heart, Plus, Trash2 } from "lucide-react";
 
+// ===== WEB AUDIO — AMBIENT SOUND ENGINE =====
+class AmbientAudio {
+  constructor() {
+    this.ctx = null;
+    this.sources = [];
+    this.masterGain = null;
+    this.active = false;
+  }
+
+  _ensure() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === "suspended") this.ctx.resume();
+  }
+
+  stop() {
+    this.active = false;
+    this.sources.forEach((n) => {
+      try { n.stop?.(); } catch {}
+      try { n.disconnect?.(); } catch {}
+    });
+    this.sources = [];
+    if (this.masterGain) {
+      try { this.masterGain.disconnect(); } catch {}
+      this.masterGain = null;
+    }
+  }
+
+  _noise(type = "brown") {
+    const sr = this.ctx.sampleRate;
+    const bufSize = sr * 4; // 4 seconds for smoother looping
+    const buf = this.ctx.createBuffer(2, bufSize, sr); // stereo
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buf.getChannelData(ch);
+      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+      for (let i = 0; i < bufSize; i++) {
+        const white = Math.random() * 2 - 1;
+        if (type === "brown") {
+          b0 = (b0 + 0.02 * white) / 1.02;
+          data[i] = b0 * 3.5;
+        } else if (type === "pink") {
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+          b6 = white * 0.115926;
+        } else {
+          data[i] = white;
+        }
+      }
+    }
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    return src;
+  }
+
+  play(key) {
+    this.stop();
+    if (key === "silence") return;
+
+    try {
+      this._ensure();
+    } catch (e) {
+      console.warn("Web Audio not available:", e);
+      return;
+    }
+
+    this.active = true;
+
+    // Master gain with proper fade-in
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    this.masterGain.gain.linearRampToValueAtTime(0.4, this.ctx.currentTime + 2);
+    this.masterGain.connect(this.ctx.destination);
+
+    const mg = this.masterGain;
+
+    if (key === "rain") {
+      const src = this._noise("pink");
+      const hp = this.ctx.createBiquadFilter();
+      hp.type = "highpass"; hp.frequency.value = 800;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 9000;
+      src.connect(hp).connect(lp).connect(mg);
+      src.start();
+      this.sources.push(src, hp, lp);
+    } else if (key === "ocean") {
+      const src = this._noise("brown");
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 500;
+      const lfo = this.ctx.createOscillator();
+      lfo.type = "sine"; lfo.frequency.value = 0.07;
+      const lfoG = this.ctx.createGain();
+      lfoG.gain.value = 350;
+      lfo.connect(lfoG).connect(lp.frequency);
+      src.connect(lp).connect(mg);
+      lfo.start(); src.start();
+      this.sources.push(src, lp, lfo, lfoG);
+    } else if (key === "forest") {
+      const src = this._noise("pink");
+      const bp = this.ctx.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 2500; bp.Q.value = 0.4;
+      const g2 = this.ctx.createGain(); g2.gain.value = 0.5;
+      src.connect(bp).connect(g2).connect(mg);
+      src.start();
+      const src2 = this._noise("brown");
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 500;
+      const g3 = this.ctx.createGain(); g3.gain.value = 0.35;
+      src2.connect(lp).connect(g3).connect(mg);
+      src2.start();
+      this.sources.push(src, bp, g2, src2, lp, g3);
+    } else if (key === "fire") {
+      const src = this._noise("brown");
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 400;
+      const g2 = this.ctx.createGain(); g2.gain.value = 0.75;
+      src.connect(lp).connect(g2).connect(mg);
+      src.start();
+      const crackle = this._noise("white");
+      const bp = this.ctx.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 3500; bp.Q.value = 1.5;
+      const cg = this.ctx.createGain(); cg.gain.value = 0.06;
+      crackle.connect(bp).connect(cg).connect(mg);
+      crackle.start();
+      this.sources.push(src, lp, g2, crackle, bp, cg);
+    } else if (key === "wind") {
+      const src = this._noise("brown");
+      const bp = this.ctx.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 500; bp.Q.value = 0.6;
+      const lfo = this.ctx.createOscillator();
+      lfo.type = "sine"; lfo.frequency.value = 0.12;
+      const lfoG = this.ctx.createGain(); lfoG.gain.value = 350;
+      lfo.connect(lfoG).connect(bp.frequency);
+      src.connect(bp).connect(mg);
+      lfo.start(); src.start();
+      this.sources.push(src, bp, lfo, lfoG);
+    }
+  }
+
+  fadeOut() {
+    if (!this.ctx || !this.masterGain || !this.active) {
+      this.stop();
+      return;
+    }
+    try {
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
+      this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 1.5);
+      setTimeout(() => this.stop(), 1600);
+    } catch {
+      this.stop();
+    }
+  }
+}
+
+const ambientAudio = new AmbientAudio();
+
 const BREATHING_PATTERNS = [
   { name: "Relaxar", label: "4-7-8", inhale: 4, hold: 7, exhale: 8 },
   { name: "Energizar", label: "4-4-4", inhale: 4, hold: 4, exhale: 4 },
@@ -76,6 +238,7 @@ export default function Zen() {
     return () => {
       clearInterval(timerRef.current);
       clearInterval(breathRef.current);
+      ambientAudio.stop();
     };
   }, []);
 
@@ -146,10 +309,14 @@ export default function Zen() {
     const totalSeconds = timerMinutes * 60;
     setMeditationTime(totalSeconds);
 
+    // Start ambient sound
+    ambientAudio.play(selectedSound);
+
     timerRef.current = setInterval(() => {
       setMeditationTime((prev) => {
         if (prev <= 1) {
           clearInterval(timerRef.current);
+          ambientAudio.fadeOut();
           setIsSessionActive(false);
           setShowComplete(true);
           return 0;
@@ -157,10 +324,11 @@ export default function Zen() {
         return prev - 1;
       });
     }, 1000);
-  }, [timerMinutes]);
+  }, [timerMinutes, selectedSound]);
 
   const stopMeditation = useCallback(() => {
     clearInterval(timerRef.current);
+    ambientAudio.fadeOut();
     setIsSessionActive(false);
     const elapsed = timerMinutes * 60 - meditationTime;
     if (elapsed > 10) {
@@ -372,7 +540,7 @@ export default function Zen() {
 
     return (
       <div style={s.page}>
-        <button style={s.backBtn} onClick={() => { stopMeditation(); setActiveView("home"); }}>
+        <button style={s.backBtn} onClick={() => { stopMeditation(); ambientAudio.stop(); setActiveView("home"); }}>
           ← Voltar
         </button>
 

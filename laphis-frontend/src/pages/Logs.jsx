@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
-import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame, Search } from "lucide-react";
+import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame, Search, Pencil } from "lucide-react";
 import Modal from "../components/Modal";
 
 const TABS = [
@@ -22,6 +22,7 @@ export default function Logs() {
   const [success, setSuccess] = useState(null);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
 
   // Form state
   const [form, setForm] = useState({
@@ -52,6 +53,21 @@ export default function Logs() {
   const resetForm = () => {
     setForm({ description: "", duration_min: "", calories: "", notes: "", meal_type: "almoco", foods: "" });
     setError(null);
+    setEditTarget(null);
+  };
+
+  const handleEdit = (log) => {
+    setEditTarget(log);
+    setTab(log.log_type);
+    setForm({
+      description: log.description || "",
+      duration_min: log.duration_min != null ? String(log.duration_min) : "",
+      calories: log.calories != null ? String(log.calories) : "",
+      notes: log.notes || "",
+      meal_type: log.meal_type || "almoco",
+      foods: log.foods || "",
+    });
+    setShowForm(true);
   };
 
   const handleSubmit = async (e) => {
@@ -78,11 +94,15 @@ export default function Logs() {
             notes: form.notes.trim() || null,
           };
 
-      await ApiService.createLog(payload);
+      if (editTarget) {
+        await ApiService.updateLog(editTarget.id, payload);
+      } else {
+        await ApiService.createLog(payload);
+      }
       await loadLogs();
       resetForm();
       setShowForm(false);
-      setSuccess("Registo guardado! ✓");
+      setSuccess(editTarget ? "Registo atualizado! ✓" : "Registo guardado! ✓");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       setError(err.message || "Erro ao guardar");
@@ -224,7 +244,9 @@ export default function Logs() {
       {showForm && (
         <div style={s.formCard}>
           <h3 style={s.formTitle}>
-            {tab === "treino" ? "Novo Treino" : "Nova Refeição"}
+            {editTarget
+              ? (tab === "treino" ? "Editar Treino" : "Editar Refeição")
+              : (tab === "treino" ? "Novo Treino" : "Nova Refeição")}
           </h3>
 
           {error && (
@@ -327,7 +349,7 @@ export default function Logs() {
             <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
               {saving ? (
                 <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> A guardar...</>
-              ) : "Guardar Registo"}
+              ) : editTarget ? "Atualizar Registo" : "Guardar Registo"}
             </button>
           </form>
         </div>
@@ -394,9 +416,14 @@ export default function Logs() {
                     {log.date || (log.created_at ? new Date(log.created_at).toLocaleDateString("pt-PT") : "—")}
                   </p>
                 </div>
-                <button style={s.deleteBtn} onClick={() => setDeleteTarget(log)} title="Apagar">
-                  <Trash2 size={14} strokeWidth={1.5} />
-                </button>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button style={s.editBtn} onClick={() => handleEdit(log)} title="Editar">
+                    <Pencil size={14} strokeWidth={1.5} />
+                  </button>
+                  <button style={s.deleteBtn} onClick={() => setDeleteTarget(log)} title="Apagar">
+                    <Trash2 size={14} strokeWidth={1.5} />
+                  </button>
+                </div>
               </div>
 
               <div style={s.logMeta}>
@@ -553,6 +580,12 @@ const s = {
     borderRadius: 10, padding: "4px 8px", fontSize: 14,
     cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
     boxShadow: "var(--shadow)", color: "var(--text-muted)",
+  },
+  editBtn: {
+    background: "var(--card-bg)", border: g.border,
+    borderRadius: 10, padding: "4px 8px", fontSize: 14,
+    cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
+    boxShadow: "var(--shadow)", color: "var(--primary)",
   },
   logMeta: {
     display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10,
