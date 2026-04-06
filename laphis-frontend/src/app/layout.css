@@ -6,11 +6,11 @@
 .layout-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: hidden;
   background: var(--bg);
 }
 
@@ -106,16 +106,40 @@
 
 /* ---------- MAIN CONTENT ---------- */
 .layout-main {
-  flex: 1;
-  padding: 16px 16px 160px;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 16px 16px 100px;
   padding-left: max(16px, env(safe-area-inset-left));
   padding-right: max(16px, env(safe-area-inset-right));
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   position: relative;
   z-index: 1;
   max-width: 600px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Full-height variant — used by Chat and other viewport-filling pages */
+.layout-main--fill {
+  overflow: hidden;
+  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-main--fill > .page-transition {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Prevent background scroll when a modal overlay is open */
+body[style*="overflow: hidden"] .layout-main {
+  overflow: hidden !important;
 }
 
 /* ---------- BOTTOM NAV ---------- */
@@ -653,7 +677,7 @@ body[style*="overflow: hidden"] .bottom-nav {
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 380px) {
-  .layout-main { padding: 12px 12px 160px; }
+  .layout-main { padding: 12px 12px 100px; }
   .layout-header { padding: 10px 14px; }
   .nav-tab { padding: 6px 8px; font-size: 18px; }
   .nav-tab-label { font-size: 9px; }
@@ -662,17 +686,17 @@ body[style*="overflow: hidden"] .bottom-nav {
 }
 
 @media (max-width: 340px) {
-  .layout-main { padding: 10px 10px 160px; }
+  .layout-main { padding: 10px 10px 100px; }
   .nav-tab { padding: 4px 6px; font-size: 16px; }
   .header-brand { font-size: 12px; }
 }
 
 @media (min-width: 768px) {
-  .layout-main { padding: 24px 20px 160px; }
+  .layout-main { padding: 24px 20px 100px; }
 }
 
 @media (min-width: 1200px) {
-  .layout-main { max-width: 700px; padding: 32px 24px 160px; }
+  .layout-main { max-width: 700px; padding: 32px 24px 100px; }
 }
 
 /* ---------- MOBILE OVERFLOW FIXES ---------- */

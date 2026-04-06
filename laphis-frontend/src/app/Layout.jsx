@@ -41,7 +41,7 @@ export default function Layout() {
       </header>
 
       {/* Main content — keyed on pathname for page-enter animation */}
-      <main className="layout-main">
+      <main className={`layout-main${isChatActive ? " layout-main--fill" : ""}`}>
         <div className="page-transition" key={location.pathname}>
           <Outlet />
         </div>

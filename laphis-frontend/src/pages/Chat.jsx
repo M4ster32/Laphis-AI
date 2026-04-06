@@ -403,7 +403,7 @@ export default function Chat() {
 
 const s = {
   page: {
-    display: "flex", flexDirection: "column", height: "calc(100vh - 130px)",
+    display: "flex", flexDirection: "column", flex: "1 1 0", minHeight: 0,
     animation: "fadeUp 0.3s ease", position: "relative", overflow: "hidden",
   },
 
