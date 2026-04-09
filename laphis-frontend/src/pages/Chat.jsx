@@ -4,7 +4,67 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
-import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu } from "lucide-react";
+import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check } from "lucide-react";
+
+/* Detect if message content looks like a training/nutrition plan */
+function looksLikePlan(text) {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  const planKeywords = [
+    "plano", "treino", "exercício", "exercicio", "série", "serie",
+    "repetição", "repeticao", "reps", "sets", "nutrição", "nutricao",
+    "alimentar", "dieta", "refeição", "refeicao", "calorias", "kcal",
+    "proteína", "proteina", "pequeno-almoço", "almoço", "jantar",
+    "snack", "dia 1", "dia 2", "dia 3", "segunda", "terça", "quarta",
+    "quinta", "sexta", "sábado", "domingo",
+  ];
+  const matches = planKeywords.filter((kw) => lower.includes(kw));
+  return matches.length >= 3;
+}
+
+/* Render basic markdown: **bold**, *italic*, bullet lists */
+function renderMarkdown(text) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return lines.map((line, i) => {
+    // Process inline formatting
+    let parts = [];
+    // Replace **bold** and *italic* with spans
+    const regex = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*)/g;
+    let lastIndex = 0;
+    let match;
+    const raw = line;
+    while ((match = regex.exec(raw)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(raw.slice(lastIndex, match.index));
+      }
+      if (match[2]) {
+        // ***bold italic***
+        parts.push(<strong key={`${i}-${match.index}`}><em>{match[2]}</em></strong>);
+      } else if (match[3]) {
+        // **bold**
+        parts.push(<strong key={`${i}-${match.index}`}>{match[3]}</strong>);
+      } else if (match[4]) {
+        // *italic*
+        parts.push(<em key={`${i}-${match.index}`}>{match[4]}</em>);
+      }
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < raw.length) {
+      parts.push(raw.slice(lastIndex));
+    }
+    if (parts.length === 0) parts.push("");
+
+    // Blank line → small spacer
+    if (raw.trim() === "") return <div key={i} style={{ height: 6 }} />;
+
+    return (
+      <div key={i} style={{ marginBottom: 2 }}>
+        {parts}
+      </div>
+    );
+  });
+}
 
 const SUGGESTIONS = [
   "Cria um plano semanal de treino",
@@ -324,16 +384,28 @@ export default function Chat() {
         {messages.map((msg, i) => (
           <div key={i} style={msg.role === "user" ? s.userBubbleWrap : s.assistantBubbleWrap}>
             <div style={msg.role === "user" ? s.userBubble : s.assistantBubble}>
-              <div style={s.msgContent}>{msg.content}</div>
-              {msg.role === "assistant" && !msg.content.startsWith("Erro") && (
+              <div style={s.msgContent}>
+                {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
+              </div>
+              {msg.role === "assistant" && !msg.content.startsWith("Erro") && looksLikePlan(msg.content) && (
                 <div style={s.msgActions}>
                   <button
-                    style={s.actionBtn}
-                    onClick={() => handleSaveAsPlan(msg.content)}
+                    style={{
+                      ...s.actionBtn,
+                      ...(savingPlan === msg.content ? { opacity: 0.6, cursor: "wait" } : {}),
+                      ...(saveSuccess && saveSuccess.startsWith("✅") && savingPlan === null
+                        ? { background: "var(--primary-bg)", borderColor: "var(--primary)", color: "var(--primary)" }
+                        : {}),
+                    }}
+                    onClick={(e) => { e.stopPropagation(); handleSaveAsPlan(msg.content); }}
                     disabled={savingPlan === msg.content}
                     title="Guardar como plano"
                   >
-                    <Save size={14} strokeWidth={1.5} /> Guardar
+                    {savingPlan === msg.content ? (
+                      <><span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> A guardar...</>
+                    ) : (
+                      <><Save size={14} strokeWidth={1.5} /> Guardar Plano</>
+                    )}
                   </button>
                 </div>
               )}

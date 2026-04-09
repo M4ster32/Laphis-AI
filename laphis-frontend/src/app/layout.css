@@ -124,7 +124,7 @@
 /* Full-height variant — used by Chat and other viewport-filling pages */
 .layout-main--fill {
   overflow: hidden;
-  padding: 0;
+  padding: 4px;
   display: flex;
   flex-direction: column;
 }
