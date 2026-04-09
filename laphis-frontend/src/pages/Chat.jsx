@@ -24,45 +24,71 @@ function looksLikePlan(text) {
   return (hasStructure || hasList) && hasMultipleLines;
 }
 
-/* Render basic markdown: **bold**, *italic*, bullet lists */
+/* Inline formatting: **bold**, *italic*, ***bold italic*** */
+function inlineFormat(text, lineKey) {
+  const regex = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*)/g;
+  let parts = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    if (match[2]) parts.push(<strong key={`${lineKey}-b${match.index}`}><em>{match[2]}</em></strong>);
+    else if (match[3]) parts.push(<strong key={`${lineKey}-b${match.index}`}>{match[3]}</strong>);
+    else if (match[4]) parts.push(<em key={`${lineKey}-i${match.index}`}>{match[4]}</em>);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.length === 0 ? text : parts;
+}
+
+/* Render markdown: headings, bullet/numbered lists, bold, italic */
 function renderMarkdown(text) {
   if (!text) return null;
   const lines = text.split("\n");
   return lines.map((line, i) => {
-    // Process inline formatting
-    let parts = [];
-    // Replace **bold** and *italic* with spans
-    const regex = /(\*\*\*(.+?)\*\*\*|\*\*(.+?)\*\*|\*(.+?)\*)/g;
-    let lastIndex = 0;
-    let match;
-    const raw = line;
-    while ((match = regex.exec(raw)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(raw.slice(lastIndex, match.index));
-      }
-      if (match[2]) {
-        // ***bold italic***
-        parts.push(<strong key={`${i}-${match.index}`}><em>{match[2]}</em></strong>);
-      } else if (match[3]) {
-        // **bold**
-        parts.push(<strong key={`${i}-${match.index}`}>{match[3]}</strong>);
-      } else if (match[4]) {
-        // *italic*
-        parts.push(<em key={`${i}-${match.index}`}>{match[4]}</em>);
-      }
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < raw.length) {
-      parts.push(raw.slice(lastIndex));
-    }
-    if (parts.length === 0) parts.push("");
+    const trimmed = line.trim();
 
-    // Blank line → small spacer
-    if (raw.trim() === "") return <div key={i} style={{ height: 6 }} />;
+    // Blank line → spacer
+    if (trimmed === "") return <div key={i} style={{ height: 6 }} />;
 
+    // Headings: # ## ### ####
+    const hMatch = trimmed.match(/^(#{1,4})\s+(.+)/);
+    if (hMatch) {
+      const lvl = hMatch[1].length;
+      const sz = { 1: 18, 2: 16, 3: 15, 4: 14 };
+      return (
+        <div key={i} style={{ fontSize: sz[lvl], fontWeight: 700, marginTop: lvl <= 2 ? 12 : 8, marginBottom: 4, color: "var(--text)" }}>
+          {inlineFormat(hMatch[2], i)}
+        </div>
+      );
+    }
+
+    // Bullet lists: - , * , •
+    const bMatch = trimmed.match(/^[-*•]\s+(.+)/);
+    if (bMatch) {
+      return (
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 3, paddingLeft: 4 }}>
+          <span style={{ color: "var(--primary)", fontWeight: 700, flexShrink: 0 }}>•</span>
+          <span>{inlineFormat(bMatch[1], i)}</span>
+        </div>
+      );
+    }
+
+    // Numbered lists: 1. 2) etc
+    const nMatch = trimmed.match(/^(\d+)[.)\s]\s*(.+)/);
+    if (nMatch) {
+      return (
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 3, paddingLeft: 4 }}>
+          <span style={{ color: "var(--primary)", fontWeight: 600, flexShrink: 0, minWidth: 16 }}>{nMatch[1]}.</span>
+          <span>{inlineFormat(nMatch[2], i)}</span>
+        </div>
+      );
+    }
+
+    // Regular paragraph line
     return (
       <div key={i} style={{ marginBottom: 2 }}>
-        {parts}
+        {inlineFormat(trimmed, i)}
       </div>
     );
   });
@@ -233,11 +259,49 @@ export default function Chat() {
       const type = lower.includes("nutri") || lower.includes("alimentar") || lower.includes("dieta") || lower.includes("calor")
         ? (lower.includes("treino") || lower.includes("exerc") ? "combined" : "nutrition")
         : "training";
-      await ApiService.generatePlan(profile.id, type, content);
-      setSaveSuccess("✅ Plano guardado com sucesso! Vai a Planos para ver.");
+
+      // Extract title from first heading or first line
+      const allLines = content.split("\n").filter(l => l.trim());
+      const headingLine = allLines.find(l => /^#{1,4}\s+/.test(l.trim()));
+      let title = headingLine
+        ? headingLine.replace(/^#{1,4}\s+/, "").trim()
+        : (allLines[0] || "Plano do Chat").slice(0, 100);
+
+      // Build structured sections from the text
+      const sections = [];
+      let cur = { header: "", items: [] };
+      for (const line of content.split("\n")) {
+        const t = line.trim();
+        if (!t) {
+          if (cur.items.length || cur.header) { sections.push(cur); cur = { header: "", items: [] }; }
+          continue;
+        }
+        if (/^#{1,4}\s+/.test(t)) {
+          if (cur.items.length || cur.header) sections.push(cur);
+          cur = { header: t.replace(/^#{1,4}\s+/, ""), items: [] };
+        } else if (/^[-*•]\s+/.test(t)) {
+          cur.items.push(t.replace(/^[-*•]\s+/, ""));
+        } else if (/^\d+[.)\s]\s*/.test(t)) {
+          cur.items.push(t.replace(/^\d+[.)\s]\s*/, ""));
+        } else {
+          cur.items.push(t);
+        }
+      }
+      if (cur.items.length || cur.header) sections.push(cur);
+
+      await ApiService.savePlan({
+        profile_id: profile.id,
+        type,
+        title,
+        content_json: { type, title, sections, source: "chat" },
+        notes: "Guardado a partir do Chat",
+      });
+
+      setSaveSuccess("✅ Plano guardado! Vai a Planos para ver.");
       setTimeout(() => setSaveSuccess(null), 5000);
     } catch (err) {
-      setSaveSuccess("❌ Erro ao guardar plano: " + (err.message || "tenta novamente"));
+      console.error("Erro ao guardar plano:", err);
+      setSaveSuccess("❌ Erro ao guardar: " + (err.message || "tenta novamente"));
       setTimeout(() => setSaveSuccess(null), 4000);
     } finally {
       setSavingPlan(null);
@@ -405,6 +469,8 @@ export default function Chat() {
                   >
                     {savingPlan === msg.content ? (
                       <><span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> A guardar...</>
+                    ) : saveSuccess && saveSuccess.startsWith("✅") ? (
+                      <><Check size={14} strokeWidth={2} /> Guardado!</>
                     ) : (
                       <><Save size={14} strokeWidth={1.5} /> Guardar Plano</>
                     )}
