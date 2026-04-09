@@ -8,18 +8,20 @@ import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, Chevr
 
 /* Detect if message content looks like a training/nutrition plan */
 function looksLikePlan(text) {
-  if (!text) return false;
+  if (!text || text.length < 200) return false;
   const lower = text.toLowerCase();
-  const planKeywords = [
-    "plano", "treino", "exercício", "exercicio", "série", "serie",
-    "repetição", "repeticao", "reps", "sets", "nutrição", "nutricao",
-    "alimentar", "dieta", "refeição", "refeicao", "calorias", "kcal",
-    "proteína", "proteina", "pequeno-almoço", "almoço", "jantar",
-    "snack", "dia 1", "dia 2", "dia 3", "segunda", "terça", "quarta",
-    "quinta", "sexta", "sábado", "domingo",
-  ];
-  const matches = planKeywords.filter((kw) => lower.includes(kw));
-  return matches.length >= 3;
+
+  // Must be about training or nutrition
+  const isFitness = /treino|exerc[ií]cio|s[eé]rie|reps|sets|supino|agachamento|deadlift|press|curl/.test(lower);
+  const isNutrition = /nutri[cç][aã]o|dieta|refei[cç][aã]o|caloria|kcal|prote[ií]na|pequeno[- ]almo[cç]o|almo[cç]o|jantar|snack|alimentar/.test(lower);
+  if (!isFitness && !isNutrition) return false;
+
+  // Must have structural plan indicators (days, numbered items, bullet points)
+  const hasStructure = /dia \d|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado|domingo/i.test(text);
+  const hasList = (text.match(/^[\s]*[-•●\d][.)\s]/gm) || []).length >= 3;
+  const hasMultipleLines = text.split("\n").filter(l => l.trim()).length >= 6;
+
+  return (hasStructure || hasList) && hasMultipleLines;
 }
 
 /* Render basic markdown: **bold**, *italic*, bullet lists */
@@ -545,7 +547,7 @@ const s = {
   /* Header */
   chatHeader: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "12px 0 16px", flexShrink: 0,
+    padding: "12px 14px 16px", flexShrink: 0,
   },
   headerLeft: { display: "flex", alignItems: "center", gap: 8 },
   menuBtn: {
@@ -578,7 +580,7 @@ const s = {
 
   /* Messages */
   messagesArea: {
-    flex: "1 1 0", minHeight: 0, overflowY: "auto", paddingBottom: 8,
+    flex: "1 1 0", minHeight: 0, overflowY: "auto", padding: "0 14px 8px",
     display: "flex", flexDirection: "column", gap: 10,
   },
   userBubbleWrap: { display: "flex", justifyContent: "flex-end" },
@@ -640,7 +642,7 @@ const s = {
   },
 
   /* Input */
-  inputArea: { padding: "12px 0 4px", borderTop: "1px solid var(--border-light)", flexShrink: 0 },
+  inputArea: { padding: "12px 14px 8px", borderTop: "1px solid var(--border-light)", flexShrink: 0 },
   inputRow: { display: "flex", alignItems: "flex-end", gap: 8 },
   textInput: {
     flex: 1, border: "1px solid var(--border)", borderRadius: 20,
