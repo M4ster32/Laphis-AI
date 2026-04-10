@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import jwt, os, logging
 from ..core.db import get_db
-from ..core.models import Profile, ChatMessage, ChatSession, User
+from ..core.models import Profile, ChatMessage, ChatSession, User, AdaptationLog
 from ..core.schemas import AskIn, AskOut, ProfileOut
 from ..core.recommender import recommend
 from ..core.ai_engine import is_ai_available, ai_chat
@@ -78,11 +78,29 @@ async def ask(payload: AskIn, db: Session = Depends(get_db)):
         recent_msgs.reverse()
         chat_history = [{"role": m.role, "content": m.content} for m in recent_msgs]
 
+    # Buscar sugestões de adaptação pendentes para contexto
+    pending_suggestions = (
+        db.query(AdaptationLog)
+        .filter(AdaptationLog.profile_id == profile.id, AdaptationLog.status == "pending")
+        .order_by(AdaptationLog.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    adaptation_ctx = ""
+    if pending_suggestions:
+        lines = ["SUGESTÕES DE ADAPTAÇÃO PENDENTES (baseadas no progresso do utilizador):"]
+        for i, s in enumerate(pending_suggestions, 1):
+            lines.append(f"{i}. [{s.adaptation_type}] {s.reason}")
+        lines.append("\nSe a pergunta do utilizador for sobre progresso, adaptação ou sugestões, "
+                     "apresenta estas sugestões de forma natural e amigável. "
+                     "Caso contrário, responde normalmente à pergunta.")
+        adaptation_ctx = "\n".join(lines)
+
     # Tentar IA real, fallback para recommender
     ai_used = False
     if is_ai_available():
         try:
-            title, bullets = await ai_chat(profile, payload.question, chat_history)
+            title, bullets = await ai_chat(profile, payload.question, chat_history, adaptation_ctx)
             ai_used = True
             logger.info("AI chat response generated for profile %d", profile.id)
         except Exception as e:
@@ -90,6 +108,30 @@ async def ask(payload: AskIn, db: Session = Depends(get_db)):
             title, bullets = recommend(profile_out, payload.question)
     else:
         title, bullets = recommend(profile_out, payload.question)
+
+    # Se o recommender respondeu mas há sugestões pendentes e a pergunta é sobre progresso/adaptação,
+    # enriquecer a resposta com as sugestões
+    q_lower = payload.question.lower()
+    progress_keywords = ["progresso", "adaptação", "adaptacao", "sugestão", "sugestões", "sugestoes",
+                         "analisa", "análise", "melhorar", "evolução", "evolucao"]
+    if not ai_used and pending_suggestions and any(kw in q_lower for kw in progress_keywords):
+        name = getattr(profile, "name", "").split()[0] if getattr(profile, "name", "") else "atleta"
+        title = f"📊 Sugestões de Adaptação — {name}"
+        bullets = [
+            f"Com base no teu progresso, tenho {len(pending_suggestions)} sugestão(ões) para ti:",
+            "",
+        ]
+        for s in pending_suggestions:
+            type_label = {
+                "increase_volume": "📈 Aumentar volume",
+                "decrease_intensity": "📉 Reduzir intensidade",
+                "change_split": "🔄 Alterar plano",
+                "level_up": "⬆️ Subir de nível",
+                "general_advice": "💡 Conselho geral",
+            }.get(s.adaptation_type, "💡 Sugestão")
+            bullets.append(f"{type_label}: {s.reason}")
+            bullets.append("")
+        bullets.append("Pergunta-me mais detalhes sobre qualquer uma destas sugestões!")
 
     ai_text = f"{title}\n\n" + "\n".join(f"• {b}" if b and not b.startswith("•") else b for b in bullets)
 

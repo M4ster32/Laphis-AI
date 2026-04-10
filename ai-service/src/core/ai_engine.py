@@ -185,6 +185,7 @@ async def ai_chat(
     profile,
     question: str,
     chat_history: list[dict] = None,
+    adaptation_ctx: str = "",
 ) -> tuple[str, list[str]]:
     """
     Gera resposta de chat via OpenAI.
@@ -193,15 +194,19 @@ async def ai_chat(
     profile_ctx = _build_profile_context(profile)
     nutrition = _calc_nutrition(profile)
 
+    system_content = (
+        f"PERFIL DO UTILIZADOR:\n{profile_ctx}\n\n"
+        f"DADOS NUTRICIONAIS:\n"
+        f"- TDEE: ~{nutrition['tdee']} cal/dia\n"
+        f"- Calorias alvo: ~{nutrition['target_cal']} cal/dia\n"
+        f"- Proteína recomendada: ~{nutrition['protein_g']}g/dia"
+    )
+    if adaptation_ctx:
+        system_content += f"\n\n{adaptation_ctx}"
+
     messages = [
         {"role": "system", "content": CHAT_SYSTEM},
-        {"role": "system", "content": (
-            f"PERFIL DO UTILIZADOR:\n{profile_ctx}\n\n"
-            f"DADOS NUTRICIONAIS:\n"
-            f"- TDEE: ~{nutrition['tdee']} cal/dia\n"
-            f"- Calorias alvo: ~{nutrition['target_cal']} cal/dia\n"
-            f"- Proteína recomendada: ~{nutrition['protein_g']}g/dia"
-        )},
+        {"role": "system", "content": system_content},
     ]
 
     # Incluir histórico de chat para contexto conversacional

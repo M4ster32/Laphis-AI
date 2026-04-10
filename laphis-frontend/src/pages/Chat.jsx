@@ -4,7 +4,7 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
-import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check } from "lucide-react";
+import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check, Zap } from "lucide-react";
 
 /* Detect if message content looks like a training/nutrition plan */
 function looksLikePlan(text) {
@@ -99,6 +99,7 @@ const SUGGESTIONS = [
   "Sugere exercícios para costas",
   "O que devo comer pós-treino?",
   "Como melhorar a minha postura?",
+  "Analisa o meu progresso",
 ];
 
 function daysLeft(expiresAt) {
@@ -122,6 +123,7 @@ export default function Chat() {
   const [editTitle, setEditTitle] = useState("");
   const [savingPlan, setSavingPlan] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(null);
+  const [pendingSuggestions, setPendingSuggestions] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -143,6 +145,13 @@ export default function Chat() {
   }, []);
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
+
+  // Fetch pending adaptation suggestions
+  useEffect(() => {
+    ApiService.getAdaptationSuggestions("pending")
+      .then(data => setPendingSuggestions(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   const loadSession = async (sessionId) => {
     try {
@@ -437,6 +446,15 @@ export default function Chat() {
             <div style={s.welcomeAvatar}>AI</div>
             <h3 style={s.welcomeTitle}>Olá {profile?.name?.split(" ")[0]}</h3>
             <p style={s.welcomeText}>Sou o teu Coach AI. Pergunta-me sobre treino, nutrição ou planos.</p>
+            {pendingSuggestions.length > 0 && (
+              <button
+                style={s.adaptTip}
+                onClick={() => sendMessage("Quais são as tuas sugestões de adaptação para mim?")}
+              >
+                <Zap size={16} color="var(--accent, #8B7DB5)" />
+                <span>Tenho <strong>{pendingSuggestions.length}</strong> {pendingSuggestions.length === 1 ? "sugestão" : "sugestões"} para ti com base no teu progresso</span>
+              </button>
+            )}
             <div style={s.suggestionsGrid}>
               {SUGGESTIONS.map((text, i) => (
                 <button key={i} style={s.suggestionBtn} onClick={() => sendMessage(text)}>
@@ -698,6 +716,15 @@ const s = {
   suggestionsGrid: {
     display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
     width: "100%", maxWidth: 360, marginTop: 16,
+  },
+  adaptTip: {
+    display: "flex", alignItems: "center", gap: 10, width: "100%", maxWidth: 360,
+    padding: "12px 16px", borderRadius: "var(--radius-sm)", marginTop: 12,
+    background: "var(--card-bg)", border: "1px solid var(--accent, #8B7DB5)",
+    boxShadow: "var(--shadow)", cursor: "pointer",
+    fontSize: 13, color: "var(--text-secondary)", textAlign: "left",
+    fontWeight: 500, lineHeight: 1.4, fontFamily: "inherit",
+    transition: "border-color 0.15s, background 0.15s",
   },
   suggestionBtn: {
     padding: "14px 12px", borderRadius: "var(--radius-sm)",

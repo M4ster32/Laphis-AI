@@ -6,7 +6,7 @@ import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
 import jsPDF from "jspdf";
-import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, Check, X, Zap } from "lucide-react";
+import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight } from "lucide-react";
 import {
  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
  Tooltip, ResponsiveContainer,
@@ -49,10 +49,6 @@ export default function Dashboard() {
  const [insightsLoading, setInsightsLoading] = useState(false);
  const [weeklySummary, setWeeklySummary] = useState(null);
  const [summaryLoading, setSummaryLoading] = useState(false);
- const [adaptSuggestions, setAdaptSuggestions] = useState([]);
- const [adaptLoading, setAdaptLoading] = useState(false);
- const [respondingId, setRespondingId] = useState(null);
-
 
 
  useEffect(() => {
@@ -72,7 +68,7 @@ export default function Dashboard() {
  setWaterData(water || { glasses: 0, ml_total: 0, goal_glasses: 8, percentage: 0 });
  setZenStats(zen || {});
  // Load insights separately (non-blocking)
- ApiService.getProgressInsights().then(data => setInsights(data)).catch(() => {}); ApiService.getWeeklySummary().then(data => setWeeklySummary(data)).catch(() => {}); ApiService.getAdaptationSuggestions("pending").then(data => setAdaptSuggestions(Array.isArray(data) ? data : [])).catch(() => {}); } catch (err) {
+ ApiService.getProgressInsights().then(data => setInsights(data)).catch(() => {}); ApiService.getWeeklySummary().then(data => setWeeklySummary(data)).catch(() => {}); } catch (err) {
  console.error("Error loading dashboard:", err);
  } finally {
  setLoading(false);
@@ -116,32 +112,6 @@ export default function Dashboard() {
  }
  };
 
- const handleRespondSuggestion = async (id, status) => {
- try {
-  setRespondingId(id);
-  await ApiService.respondToSuggestion(id, status);
-  setAdaptSuggestions(prev => prev.filter(s => s.id !== id));
-  toast.success(status === "accepted" ? "Sugestão aceite!" : "Sugestão rejeitada");
- } catch (err) {
-  toast.error("Erro ao responder");
- } finally {
-  setRespondingId(null);
- }
- };
-
- const handleTriggerAnalysis = async () => {
- try {
-  setAdaptLoading(true);
-  await ApiService.triggerAnalysis();
-  const data = await ApiService.getAdaptationSuggestions("pending");
-  setAdaptSuggestions(Array.isArray(data) ? data : []);
-  if (!data || data.length === 0) toast.success("Tudo em ordem — sem sugestões!");
- } catch (err) {
-  toast.error("Erro na análise");
- } finally {
-  setAdaptLoading(false);
- }
- };
 
  const handleRefreshSummary = async () => {
  try {
@@ -421,51 +391,6 @@ export default function Dashboard() {
   </div>
   <ChevronRight size={18} color="var(--primary)" />
  </div>
-
- {/* ====== RF-04: ADAPTATION SUGGESTIONS ====== */}
- {adaptSuggestions.length > 0 && (
-  <div style={s.adaptCard}>
-   <div style={s.adaptHeader}>
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-     <Zap size={18} color="var(--accent, #8B7DB5)" strokeWidth={2} />
-     <h4 style={s.adaptTitle}>Sugestões de Adaptação</h4>
-    </div>
-    <span style={s.adaptBadge}>{adaptSuggestions.length}</span>
-   </div>
-   {adaptSuggestions.slice(0, 3).map((sug) => (
-    <div key={sug.id} style={s.adaptItem}>
-     <p style={s.adaptReason}>{sug.reason}</p>
-     <div style={s.adaptActions}>
-      <button
-       style={s.adaptAccept}
-       onClick={() => handleRespondSuggestion(sug.id, "accepted")}
-       disabled={respondingId === sug.id}
-      >
-       <Check size={14} /> Aceitar
-      </button>
-      <button
-       style={s.adaptReject}
-       onClick={() => handleRespondSuggestion(sug.id, "rejected")}
-       disabled={respondingId === sug.id}
-      >
-       <X size={14} /> Ignorar
-      </button>
-     </div>
-    </div>
-   ))}
-  </div>
- )}
-
- {/* Analyze button — only shown when no suggestions */}
- {adaptSuggestions.length === 0 && (
-  <button style={s.analyzeBtn} onClick={handleTriggerAnalysis} disabled={adaptLoading}>
-   {adaptLoading ? (
-    <><RefreshCw size={14} className="spin" /> A analisar...</>
-   ) : (
-    <><Zap size={14} /> Analisar o meu progresso</>
-   )}
-  </button>
- )}
 
  {/* ====== RESUMO SEMANAL (unified) ====== */}
  <div style={s.summaryCard}>
@@ -954,47 +879,4 @@ const s = {
  },
  dpTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
  dpText: { fontSize: 12, color: "var(--text-secondary)", margin: "2px 0 0" },
-
- /* Adaptation Suggestions */
- adaptCard: {
-  background: "var(--card-bg)", borderRadius: "var(--radius)",
-  padding: "16px", boxShadow: "var(--shadow)", border: "1px solid var(--accent, #8B7DB5)",
-  marginBottom: 16,
- },
- adaptHeader: {
-  display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12,
- },
- adaptTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
- adaptBadge: {
-  background: "var(--accent, #8B7DB5)", color: "#fff", fontSize: 11, fontWeight: 700,
-  borderRadius: 12, padding: "2px 8px", minWidth: 20, textAlign: "center",
- },
- adaptItem: {
-  padding: "12px 0", borderTop: "1px solid var(--border)",
- },
- adaptReason: {
-  fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, margin: "0 0 10px",
- },
- adaptActions: {
-  display: "flex", gap: 8,
- },
- adaptAccept: {
-  display: "flex", alignItems: "center", gap: 4, padding: "6px 14px",
-  borderRadius: 8, background: "var(--primary)", color: "#fff", border: "none",
-  fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "opacity 0.15s",
- },
- adaptReject: {
-  display: "flex", alignItems: "center", gap: 4, padding: "6px 14px",
-  borderRadius: 8, background: "var(--card-bg)", color: "var(--text-muted)",
-  border: "1px solid var(--border)", fontSize: 12, fontWeight: 600,
-  cursor: "pointer", transition: "opacity 0.15s",
- },
- analyzeBtn: {
-  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-  width: "100%", padding: "12px", borderRadius: "var(--radius-sm)",
-  background: "var(--card-bg)", border: "1px solid var(--border)",
-  color: "var(--text-secondary)", fontSize: 13, fontWeight: 600,
-  cursor: "pointer", marginBottom: 16, boxShadow: "var(--shadow)",
-  transition: "background 0.15s",
- },
 };
