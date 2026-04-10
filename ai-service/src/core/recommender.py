@@ -266,22 +266,92 @@ def recommend(profile: ProfileOut, question: str) -> Tuple[str, List[str]]:
 
         protein_g = int(profile.weight_kg * 1.8)
 
-        return f"🥗 Plano Nutricional — {name}", [
+        # ===== RF-09: Personalização por dieta e alergias =====
+        diet = getattr(profile, "diet_type", None) or "omnivoro"
+        allergy_str = getattr(profile, "allergies", None) or ""
+        allergies = {a.strip().lower() for a in allergy_str.split(",") if a.strip()} if allergy_str else set()
+
+        # Meal examples per diet type
+        _MEAL_EXAMPLES = {
+            "omnivoro": {
+                "pa": "Ovos mexidos (3) + pão integral + fruta",
+                "almoco": "Frango grelhado + arroz + legumes",
+                "lanche": "Iogurte grego + banana + granola",
+                "jantar": "Peixe + batata-doce + salada",
+            },
+            "vegetariano": {
+                "pa": "Tofu mexido + pão integral + abacate",
+                "almoco": "Lentilhas estufadas + arroz integral + legumes",
+                "lanche": "Iogurte de soja + banana + frutos secos",
+                "jantar": "Grão-de-bico assado + quinoa + salada",
+            },
+            "vegan": {
+                "pa": "Papas de aveia com leite vegetal + sementes + fruta",
+                "almoco": "Bowl de tofu + arroz + edamame + legumes",
+                "lanche": "Batido proteico vegetal + frutos secos",
+                "jantar": "Seitan grelhado + batata-doce + espinafres",
+            },
+            "pescetariano": {
+                "pa": "Ovos mexidos (3) + pão integral + fruta",
+                "almoco": "Salmão grelhado + arroz + legumes",
+                "lanche": "Iogurte grego + banana + granola",
+                "jantar": "Atum + quinoa + salada",
+            },
+        }
+        meals = _MEAL_EXAMPLES.get(diet, _MEAL_EXAMPLES["omnivoro"])
+
+        # Apply allergy filter to meal descriptions
+        _ALLERGY_SWAPS = {
+            "glúten": {"pão integral": "tosta de arroz", "pão": "tosta de arroz", "granola": "frutos secos", "aveia": "arroz tufado"},
+            "gluten": {"pão integral": "tosta de arroz", "pão": "tosta de arroz", "granola": "frutos secos", "aveia": "arroz tufado"},
+            "lactose": {"iogurte grego": "iogurte de soja", "iogurte": "iogurte sem lactose", "queijo": "queijo sem lactose"},
+            "ovo": {"ovos mexidos (3)": "tofu mexido", "ovos": "tofu mexido"},
+            "frutos secos": {"frutos secos": "sementes de abóbora", "granola": "sementes", "amendoim": "sementes de girassol"},
+            "soja": {"tofu": "seitan", "soja": "grão-de-bico", "edamame": "ervilhas"},
+            "marisco": {"camarão": "peixe branco"},
+        }
+
+        if allergies:
+            for allergy in allergies:
+                swaps = _ALLERGY_SWAPS.get(allergy, {})
+                for key in meals:
+                    for orig, sub in swaps.items():
+                        meals[key] = meals[key].replace(orig, sub).replace(orig.capitalize(), sub.capitalize())
+
+        diet_labels = {"omnivoro": "Omnívora", "vegetariano": "Vegetariana", "vegan": "Vegan", "pescetariano": "Pescetariana"}
+        diet_label = diet_labels.get(diet, diet.capitalize())
+
+        bullets = [
             f"📊 Metabolismo basal (BMR): ~{int(bmr)} cal",
             f"📊 Gasto total diário (TDEE): ~{tdee} cal",
             f"🎯 {cal_note}",
             f"💪 Proteína recomendada: ~{protein_g}g/dia ({round(protein_g/4)}g por refeição, 4 refeições)",
+        ]
+
+        if diet != "omnivoro":
+            bullets.append(f"🥗 Dieta: {diet_label}")
+        if allergies:
+            bullets.append(f"⚠️ Alergias consideradas: {', '.join(a.capitalize() for a in sorted(allergies))}")
+
+        bullets += [
             "",
-            "🍽️ Exemplo de dia:",
-            f"• Pequeno-almoço: Ovos mexidos (3) + pão integral + fruta ({int(target_cal*0.25)} cal)",
-            f"• Almoço: Frango grelhado + arroz + legumes ({int(target_cal*0.35)} cal)",
-            f"• Lanche: Iogurte grego + banana + granola ({int(target_cal*0.15)} cal)",
-            f"• Jantar: Peixe + batata-doce + salada ({int(target_cal*0.25)} cal)",
+            f"🍽️ Exemplo de dia ({diet_label}):",
+            f"• Pequeno-almoço: {meals['pa']} ({int(target_cal*0.25)} cal)",
+            f"• Almoço: {meals['almoco']} ({int(target_cal*0.35)} cal)",
+            f"• Lanche: {meals['lanche']} ({int(target_cal*0.15)} cal)",
+            f"• Jantar: {meals['jantar']} ({int(target_cal*0.25)} cal)",
             "",
             "💧 Água: 2-3L por dia, mais nos dias de treino.",
             "⏰ Antes do treino (1-2h): carboidratos + proteína",
             "⏰ Depois do treino (30min): proteína + carboidratos rápidos",
         ]
+
+        if diet == "vegan":
+            bullets.append("💡 Vegan: garante vitamina B12 (suplemento), ferro e cálcio de fontes vegetais.")
+        elif diet == "vegetariano":
+            bullets.append("💡 Vegetariano: inclui ovos e laticínios para completar aminoácidos.")
+
+        return f"🥗 Plano Nutricional — {name}", bullets
 
     # ==================== MOTIVAÇÃO ====================
     if any(w in q for w in ["motivação", "motivacao", "desistir", "difícil", "dificil",
