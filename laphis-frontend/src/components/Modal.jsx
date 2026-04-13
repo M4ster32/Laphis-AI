@@ -76,11 +76,11 @@ const s = {
     backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
     display: "flex", alignItems: "flex-end", justifyContent: "center",
     animation: "fadeIn 0.2s ease",
-    padding: 0,
+    paddingTop: "env(safe-area-inset-top, 16px)",
   },
   modal: {
     background: "var(--bg-surface)", borderRadius: "24px 24px 0 0",
-    width: "100%", maxWidth: 500, maxHeight: "90vh",
+    width: "100%", maxWidth: 500, maxHeight: "85vh",
     display: "flex", flexDirection: "column",
     animation: "slideUp 0.3s ease",
     boxShadow: "0 -8px 40px rgba(0, 0, 0, 0.4)",
