@@ -651,14 +651,16 @@ const s = {
   },
   coachRow: { display: "flex", alignItems: "center", gap: 10 },
   coachAvatar: {
-    width: 38, height: 38, borderRadius: 10,
+    width: 40, height: 40, borderRadius: 12,
     background: "var(--gradient-primary)", color: "#fff",
     display: "flex", alignItems: "center", justifyContent: "center",
     fontSize: 13, fontWeight: 800, letterSpacing: -0.5,
+    boxShadow: "0 2px 8px var(--btn-primary-shadow)",
   },
   coachName: {
-    fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0,
+    fontSize: 15, fontWeight: 800, color: "var(--text)", margin: 0,
     maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+    letterSpacing: "-0.02em",
   },
   coachStatus: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
 
@@ -671,13 +673,13 @@ const s = {
   assistantBubbleWrap: { display: "flex", justifyContent: "flex-start" },
   userBubble: {
     background: "var(--gradient-primary)", color: "white",
-    borderRadius: "18px 18px 4px 18px", padding: "12px 16px",
+    borderRadius: "20px 20px 6px 20px", padding: "13px 18px",
     maxWidth: "80%", fontSize: 14, lineHeight: 1.55, fontWeight: 500,
-    boxShadow: "0 1px 4px var(--btn-primary-shadow)",
+    boxShadow: "0 2px 8px var(--btn-primary-shadow)",
   },
   assistantBubble: {
     background: "var(--card-bg)", color: "var(--text)",
-    borderRadius: "18px 18px 18px 4px", padding: "12px 16px",
+    borderRadius: "20px 20px 20px 6px", padding: "13px 18px",
     maxWidth: "85%", fontSize: 14, lineHeight: 1.55, fontWeight: 500,
     boxShadow: "var(--shadow)", border: "1px solid var(--border)",
   },
@@ -702,16 +704,17 @@ const s = {
   },
 
   welcomeBox: {
-    textAlign: "center", padding: "40px 10px",
+    textAlign: "center", padding: "48px 10px 32px",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
   },
   welcomeAvatar: {
-    width: 56, height: 56, borderRadius: 16,
+    width: 60, height: 60, borderRadius: 18,
     background: "var(--gradient-primary)", color: "#fff",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 18, fontWeight: 800, marginBottom: 4,
+    fontSize: 20, fontWeight: 800, marginBottom: 4,
+    boxShadow: "0 4px 16px var(--btn-primary-shadow)",
   },
-  welcomeTitle: { fontSize: 19, fontWeight: 700, color: "var(--text)", margin: 0 },
+  welcomeTitle: { fontSize: 21, fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
   welcomeText: { fontSize: 14, color: "var(--text-secondary)", maxWidth: 300, lineHeight: 1.5, margin: 0 },
   suggestionsGrid: {
     display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
@@ -727,30 +730,31 @@ const s = {
     transition: "border-color 0.15s, background 0.15s",
   },
   suggestionBtn: {
-    padding: "14px 12px", borderRadius: "var(--radius-sm)",
+    padding: "14px 14px", borderRadius: "var(--radius-sm)",
     background: "var(--card-bg)", border: "1px solid var(--border)",
     fontSize: 12, color: "var(--text-secondary)", cursor: "pointer",
-    textAlign: "left", fontWeight: 500, lineHeight: 1.4,
-    transition: "border-color 0.15s", boxShadow: "var(--shadow)",
+    textAlign: "left", fontWeight: 600, lineHeight: 1.4,
+    transition: "transform 0.15s var(--ease-spring), border-color 0.15s, box-shadow 0.15s",
+    boxShadow: "var(--shadow)",
   },
 
   /* Input */
   inputArea: { padding: "12px 14px 8px", borderTop: "1px solid var(--border-light)", flexShrink: 0 },
-  inputRow: { display: "flex", alignItems: "flex-end", gap: 8 },
+  inputRow: { display: "flex", alignItems: "flex-end", gap: 10 },
   textInput: {
-    flex: 1, border: "1px solid var(--border)", borderRadius: 20,
-    padding: "12px 18px", fontSize: 14, fontFamily: "inherit",
+    flex: 1, border: "1.5px solid var(--border)", borderRadius: 22,
+    padding: "13px 18px", fontSize: 14, fontFamily: "inherit",
     background: "var(--card-bg)", color: "var(--text)",
     resize: "none", outline: "none", lineHeight: 1.4, maxHeight: 100,
-    transition: "border-color 0.2s",
+    transition: "border-color 0.15s, box-shadow 0.15s",
   },
   sendBtn: {
-    width: 44, height: 44, borderRadius: "50%",
+    width: 46, height: 46, borderRadius: "50%",
     background: "var(--gradient-primary)", color: "white",
     border: "none", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center",
-    transition: "opacity 0.15s",
-    boxShadow: "0 2px 8px var(--btn-primary-shadow)",
+    transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
+    boxShadow: "0 4px 12px var(--btn-primary-shadow)",
   },
 
   emptyState: {

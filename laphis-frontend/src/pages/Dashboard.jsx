@@ -661,31 +661,31 @@ const s = {
 
  /* Greeting */
  greeting: { marginBottom: 20, paddingTop: 4 },
- greetingSub: { fontSize: 14, color: "var(--text-muted)", fontWeight: 500, margin: "0 0 2px" },
- greetingName: { fontSize: 24, fontWeight: 700, color: "var(--text)", margin: 0 },
+ greetingSub: { fontSize: 13, color: "var(--text-muted)", fontWeight: 500, margin: "0 0 2px", letterSpacing: "0.02em" },
+ greetingName: { fontSize: 26, fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em" },
  greetingAvatar: {
- width: 48, height: 48, borderRadius: 16,
+ width: 50, height: 50, borderRadius: 16,
  background: "var(--gradient-primary)", color: "#fff",
- fontSize: 20, fontWeight: 700,
+ fontSize: 20, fontWeight: 800,
  display: "flex", alignItems: "center", justifyContent: "center",
- boxShadow: "var(--btn-primary-shadow)", flexShrink: 0,
+ boxShadow: "0 4px 12px var(--btn-primary-shadow)", flexShrink: 0,
  },
 
  /* Stats Row */
  statsRow: {
  display: "flex", alignItems: "center", gap: 0,
  background: "var(--card-bg)", borderRadius: "var(--radius)",
-  padding: "14px 2px", boxShadow: "var(--shadow)",
+  padding: "16px 4px", boxShadow: "var(--shadow)",
   border: "1px solid var(--border)", marginBottom: 16,
   width: "100%", boxSizing: "border-box", overflow: "hidden",
  },
  statItem: {
-  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
   minWidth: 0, overflow: "hidden",
  },
- statValue: { fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap" },
- statLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
- statDivider: { width: 1, height: 28, background: "var(--border)" },
+ statValue: { fontSize: 18, fontWeight: 800, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", letterSpacing: "-0.02em" },
+ statLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" },
+ statDivider: { width: 1, height: 28, background: "var(--border)", opacity: 0.6 },
 
  /* Two Column */
  twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16, width: "100%", boxSizing: "border-box" },
@@ -734,14 +734,14 @@ const s = {
  },
 
  /* Quick Actions */
- actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 20, width: "100%", boxSizing: "border-box" },
+ actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20, width: "100%", boxSizing: "border-box" },
  actionBtn: {
-  padding: "12px 4px", borderRadius: "var(--radius-sm)",
+  padding: "14px 4px", borderRadius: "var(--radius-sm)",
   background: "var(--card-bg)", border: "1px solid var(--border)",
   boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 10,
   fontWeight: 600, color: "var(--text-secondary)", textAlign: "center",
-  transition: "background 0.15s",
-  display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+  transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s, background 0.15s",
+  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
   minWidth: 0, overflow: "hidden",
  },
 
@@ -866,10 +866,10 @@ const s = {
  /* Daily Plan Card */
  dailyPlanCard: {
  display: "flex", alignItems: "center", justifyContent: "space-between",
- padding: "14px 16px", borderRadius: "var(--radius-sm)",
- background: "var(--card-bg)", border: "1px solid var(--primary)",
- cursor: "pointer", marginBottom: 16, boxShadow: "var(--shadow)",
- transition: "opacity 0.15s",
+ padding: "16px 18px", borderRadius: "var(--radius)",
+ background: "var(--card-bg)", border: "1.5px solid var(--primary)",
+ cursor: "pointer", marginBottom: 16, boxShadow: "var(--shadow-md)",
+ transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
  },
  dpLeft: { display: "flex", alignItems: "center", gap: 12 },
  dpIcon: {

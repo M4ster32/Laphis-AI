@@ -5,20 +5,25 @@
 
 /* ---------- SHARED DESIGN TOKENS ---------- */
 :root {
-  /* Radii */
-  --radius: 16px;
-  --radius-sm: 12px;
-  --radius-xs: 8px;
+  /* Radii — rounder = more modern */
+  --radius: 20px;
+  --radius-sm: 14px;
+  --radius-xs: 10px;
   --radius-pill: 50px;
 
   /* Typography */
   --font-heading: 'Clash Display', 'SF Pro Display', -apple-system, sans-serif;
   --font-body: 'Satoshi', 'SF Pro Text', -apple-system, sans-serif;
 
-  /* Timing */
-  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* Timing — snappier interactions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Glassmorphism */
+  --glass-blur: 16px;
+  --glass-saturation: 1.2;
 
   /* Danger */
   --danger: #C94040;
@@ -74,13 +79,13 @@
   --border-light: rgba(115, 97, 80, 0.12);
   --glass-border: rgba(115, 97, 80, 0.15);
 
-  /* Shadows */
-  --shadow: 0 1px 3px rgba(90, 65, 40, 0.08), 0 1px 2px rgba(90, 65, 40, 0.05);
-  --shadow-md: 0 2px 8px rgba(90, 65, 40, 0.10), 0 1px 3px rgba(90, 65, 40, 0.06);
-  --shadow-lg: 0 4px 16px rgba(90, 65, 40, 0.12), 0 2px 6px rgba(90, 65, 40, 0.06);
-  --shadow-xl: 0 8px 30px rgba(90, 65, 40, 0.15), 0 4px 10px rgba(90, 65, 40, 0.08);
-  --shadow-inner: inset 0 1px 2px rgba(90, 65, 40, 0.06);
-  --shadow-glow: none;
+  /* Shadows — modern layered depth */
+  --shadow: 0 1px 2px rgba(90, 65, 40, 0.06), 0 2px 6px rgba(90, 65, 40, 0.08);
+  --shadow-md: 0 2px 4px rgba(90, 65, 40, 0.06), 0 4px 12px rgba(90, 65, 40, 0.10);
+  --shadow-lg: 0 4px 8px rgba(90, 65, 40, 0.06), 0 8px 24px rgba(90, 65, 40, 0.12);
+  --shadow-xl: 0 8px 16px rgba(90, 65, 40, 0.08), 0 16px 48px rgba(90, 65, 40, 0.16);
+  --shadow-inner: inset 0 1px 3px rgba(90, 65, 40, 0.08);
+  --shadow-glow: 0 0 20px rgba(115, 97, 80, 0.15);
 
   /* Cards */
   --card-bg: #F2E0D0;
@@ -188,13 +193,13 @@
   --border-light: rgba(26, 175, 173, 0.06);
   --glass-border: rgba(26, 175, 173, 0.10);
 
-  /* Shadows */
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.30), 0 1px 2px rgba(0, 0, 0, 0.20);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.30), 0 2px 6px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 8px 30px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.20);
-  --shadow-inner: inset 0 1px 2px rgba(0, 0, 0, 0.20);
-  --shadow-glow: none;
+  /* Shadows — modern layered depth */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 2px 6px rgba(0, 0, 0, 0.16);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.20), 0 4px 12px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.20), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-xl: 0 8px 16px rgba(0, 0, 0, 0.24), 0 16px 48px rgba(0, 0, 0, 0.32);
+  --shadow-inner: inset 0 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-glow: 0 0 20px rgba(26, 175, 173, 0.15);
 
   /* Cards */
   --card-bg: #1B2928;
@@ -298,9 +303,10 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
   color: var(--text);
+  font-weight: 800;
 }
 
 a {
@@ -333,12 +339,12 @@ input, textarea, select { font-family: var(--font-body); }
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -362,6 +368,16 @@ input, textarea, select { font-family: var(--font-body); }
 @keyframes countUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ---------- UTILITY CLASSES ---------- */
