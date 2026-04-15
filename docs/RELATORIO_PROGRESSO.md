@@ -3,48 +3,67 @@
 **Projeto**: LAPHIS — Coach de Fitness e Nutrição com Inteligência Artificial  
 **Autor**: *(preencher nome)*  
 **Data**: 15 de abril de 2026  
-**Tipo**: Relatório intermédio de construção (não é produto final)
+**Tipo**: Relatório intermédio (versão de construção)
 
 ---
 
-## 1. Resumo do Projeto
+## 1. O que é o LAPHIS
 
-O LAPHIS é uma aplicação web responsiva de coaching personalizado de fitness e nutrição. A aplicação funciona como um personal trainer digital disponível 24/7, capaz de gerar planos de treino e nutrição adaptados ao perfil, objetivos e preferências de cada utilizador.
+Basicamente, o LAPHIS é uma app web que funciona como um personal trainer e nutricionista virtual. A ideia surgiu porque hoje em dia ter um PT ou nutricionista custa bastante, e a maioria das apps que existem dão planos genéricos que não têm em conta o perfil de cada pessoa.
 
-**Problema identificado:**
-- Personal trainers e nutricionistas têm custos elevados
-- Planos genéricos não consideram o perfil individual
-- Falta de acompanhamento contínuo e acessível
+O que o LAPHIS faz:
+- Tem um chat com IA que gera planos de treino e nutrição personalizados
+- Adapta os planos conforme o progresso do utilizador
+- Permite registar treinos, refeições, água e peso
+- Mostra um dashboard com as métricas todas
+- Exporta relatórios em PDF
+- Tem um modo de meditação com sons ambiente
 
-**Solução proposta:**
-- App web com chat inteligente que gera planos personalizados
-- Dashboard com métricas e acompanhamento em tempo real
-- Sistema de registos (treinos, refeições, água, peso)
-- Adaptação automática dos planos com base no progresso
+A app está online e a funcionar em https://laphis.vercel.app
 
 ---
 
-## 2. Stack Tecnológica
+## 2. Números do Projeto
 
-| Camada | Tecnologia | Versão |
+| Métrica | Valor |
+|---------|-------|
+| Linhas de código (frontend) | ~13 500 |
+| Linhas de código (backend) | ~6 900 |
+| Total de código | ~20 400 linhas |
+| Commits no Git | 98 |
+| Período de desenvolvimento | 22 Jan – 15 Abr 2026 (~12 semanas) |
+| Páginas no frontend | 16 |
+| Routers na API | 17 |
+| Tabelas na base de dados | 16 |
+| Requisitos funcionais feitos | 11 de 12 (92%) |
+
+---
+
+## 3. Tecnologias Usadas
+
+Escolhi estas tecnologias com base no que já conhecia e no que fazia mais sentido para o projeto:
+
+| Camada | Tecnologia | Porquê |
 |--------|-----------|--------|
-| **Frontend** | React | 19.2 |
-| **Bundler** | Vite | 8 (beta) |
-| **Routing** | React Router | 7.13 |
-| **Ícones** | Lucide React | 0.577 |
-| **Gráficos** | Recharts | 3.8 |
-| **Exportação PDF** | jsPDF + AutoTable | 4.2 / 5.0 |
-| **Backend** | FastAPI (Python) | 0.104 |
-| **ORM** | SQLAlchemy | 2.0 |
-| **Base de Dados** | PostgreSQL (produção) / SQLite (dev) | — |
-| **Autenticação** | JWT (PyJWT) + Argon2 | HS256, 30 dias |
-| **IA** | OpenAI API (GPT) + Motor de regras fallback | — |
-| **Deploy Frontend** | Vercel | Auto-deploy |
-| **Deploy Backend** | Render | Auto-deploy |
+| **Frontend** | React 19 + Vite 8 | É o que tenho mais experiência, e o Vite é muito rápido para development |
+| **Routing** | React Router 7 | Standard para React, suporta rotas protegidas |
+| **Gráficos** | Recharts | Fácil de usar com React e fica bem no mobile |
+| **PDF** | jsPDF + AutoTable | Para exportar os relatórios sem precisar de backend |
+| **Ícones** | Lucide React | Leves e consistentes, tipo Feather Icons mas com mais opções |
+| **Backend** | FastAPI (Python) | Mais rápido que Django/Flask, documentação automática, async |
+| **ORM** | SQLAlchemy 2.0 | Standard para Python, suporta vários tipos de DB |
+| **Base de Dados** | SQLite (dev) / PostgreSQL (prod) | SQLite para não complicar em local, PostgreSQL em produção para ser robusto |
+| **Auth** | JWT + Argon2 | JWT para ser stateless, Argon2 porque é mais seguro que bcrypt |
+| **IA** | OpenAI API + fallback de regras | GPT para respostas naturais, motor de regras quando a API não está disponível |
+| **Deploy** | Vercel (front) + Render (back) | Ambos têm tier gratuito e fazem deploy automático |
+
+**Nota sobre o CSS**: Optei por CSS puro com custom properties em vez de Tailwind ou Bootstrap. Deu mais trabalho, mas tenho controlo total sobre o design e não carrego dependências desnecessárias.
 
 ---
 
-## 3. Arquitetura
+## 4. Arquitetura
+
+O projeto segue uma arquitetura de 3 camadas clássica:
 
 ```
 ┌─────────────────┐     HTTPS/JSON      ┌─────────────────┐     SQLAlchemy     ┌──────────────┐
@@ -57,212 +76,247 @@ O LAPHIS é uma aplicação web responsiva de coaching personalizado de fitness 
 └─────────────────┘                      └─────────────────┘                    └──────────────┘
 ```
 
+O frontend e o backend estão no mesmo repositório (monorepo) mas fazem deploy separadamente. O frontend no Vercel e o backend + base de dados no Render. Cada vez que faço push para o branch main, ambos fazem deploy automático.
+
 **Fluxo de autenticação:**
-1. Registo com email → código de verificação de 6 dígitos
-2. Login → JWT token (válido 30 dias, guardado em `localStorage`)
-3. Passwords hasheadas com Argon2 (mais seguro que bcrypt)
-4. Auto-logout em caso de token expirado/inválido (HTTP 401)
+1. O utilizador regista-se com email → recebe código de verificação de 6 dígitos
+2. Depois do login recebe um JWT token válido por 30 dias
+3. As passwords são hasheadas com Argon2 (escolhi em vez de bcrypt porque é mais recente e resistente a ataques GPU)
+4. Se o token expirar, a app faz auto-logout e redireciona para o login
 
 ---
 
-## 4. Base de Dados — 16 Tabelas
+## 5. Base de Dados
 
-| Tabela | Descrição |
-|--------|-----------|
-| `users` | Autenticação, verificação email, reset password |
-| `profiles` | Dados pessoais, objetivos, nível, dieta, alergias |
-| `workout_logs` | Registos de exercício (data, duração, calorias) |
+A base de dados tem 16 tabelas. Comecei com 6 e fui adicionando conforme as funcionalidades cresciam.
+
+| Tabela | Para que serve |
+|--------|---------------|
+| `users` | Dados de autenticação, código de verificação, reset de password |
+| `profiles` | Info pessoal (idade, peso, altura, objetivos, nível, dieta, alergias) |
+| `workout_logs` | Registos de treinos (data, duração, calorias, notas) |
 | `meal_logs` | Registos de refeições (tipo, alimentos, calorias, proteína) |
-| `water_logs` | Hidratação diária (copos, ml total) |
-| `weight_entries` | Histórico de peso corporal |
-| `categories` | Categorias de planos definidas pelo utilizador |
-| `chat_sessions` | Conversas com o coach (com expiração) |
-| `chat_messages` | Mensagens individuais (role, conteúdo, sessão) |
-| `weekly_reports` | Resumos semanais automáticos |
-| `plans` | Planos de treino/nutrição (conteúdo JSON, estado) |
-| `zen_sessions` | Sessões de meditação/respiração (humor antes/depois) |
-| `progress_snapshots` | Snapshots periódicos de métricas |
-| `plan_ratings` | Avaliações de planos (dificuldade, eficácia) |
-| `adaptation_logs` | Decisões de adaptação automática |
-| `daily_adaptive_plans` | Planos diários adaptativos (treino + refeições) |
+| `water_logs` | Hidratação diária (copos e ml) |
+| `weight_entries` | Histórico de peso ao longo do tempo |
+| `categories` | Categorias de planos criadas pelo utilizador |
+| `chat_sessions` | Conversas com o coach (expiram ao fim de X tempo) |
+| `chat_messages` | Cada mensagem individual (quem enviou, conteúdo, sessão) |
+| `weekly_reports` | Resumos semanais gerados automaticamente |
+| `plans` | Planos de treino e nutrição guardados (conteúdo em JSON) |
+| `zen_sessions` | Sessões de meditação (com humor antes e depois) |
+| `progress_snapshots` | Foto do progresso em determinado momento (peso, treinos, calorias) |
+| `plan_ratings` | Avaliações dos planos (dificuldade, eficácia, etc.) |
+| `adaptation_logs` | Quando a IA sugere mudanças ao plano e a resposta do utilizador |
+| `daily_adaptive_plans` | Plano do dia gerado dinamicamente (treino + refeições em JSON) |
+
+O backend faz auto-migração no startup — se faltar alguma coluna na base de dados, ele adiciona sozinho sem precisar de recriar nada.
 
 ---
 
-## 5. Funcionalidades Implementadas
+## 6. Funcionalidades — Estado Atual
 
-### 5.1 Requisitos Funcionais
+### 6.1 Requisitos Funcionais
 
-| RF | Descrição | Estado |
-|----|-----------|--------|
-| RF-01 | Registo e autenticação com verificação de email | ✅ Completo |
-| RF-02 | Perfil do utilizador (wizard 3 passos, IMC automático) | ✅ Completo |
-| RF-03 | Chat com Coach IA (planos personalizados) | ✅ Completo |
-| RF-04 | Adaptação automática de planos (via chat) | ✅ Completo |
-| RF-05 | Dashboard com métricas e resumo semanal | ✅ Completo |
-| RF-06 | Registo de treinos e refeições | ✅ Completo |
-| RF-07 | Planos guardáveis (CRUD, filtros, arquivo) | ✅ Completo |
-| RF-08 | Registo de água e peso | ✅ Completo |
-| RF-09 | Preferências alimentares e alergias | ✅ Completo |
-| RF-10 | Relatórios com exportação PDF | ✅ Completo |
-| RF-11 | Integração com wearables | ❌ Não iniciado |
-| RF-12 | Modo Zen (meditação e sons ambiente) | ✅ Completo |
+| RF | O que é | Estado | Notas |
+|----|---------|--------|-------|
+| RF-01 | Registo e autenticação com verificação de email | ✅ Feito | JWT + Argon2 + código 6 dígitos |
+| RF-02 | Perfil do utilizador | ✅ Feito | Wizard de 3 passos, calcula IMC automático |
+| RF-03 | Chat com Coach IA | ✅ Feito | OpenAI GPT + fallback regras |
+| RF-04 | Adaptação automática de planos | ✅ Feito | A IA analisa progresso e sugere mudanças |
+| RF-05 | Dashboard com métricas | ✅ Feito | 4 cards de stats, resumo semanal, ações rápidas |
+| RF-06 | Registo de treinos e refeições | ✅ Feito | Com pesquisa, filtros, paginação |
+| RF-07 | Planos guardáveis | ✅ Feito | CRUD completo, filtros, arquivo, duplicar |
+| RF-08 | Registo de água e peso | ✅ Feito | Tracking diário com histórico |
+| RF-09 | Preferências alimentares e alergias | ✅ Feito | Integrado no perfil e nas recomendações da IA |
+| RF-10 | Relatórios com exportação PDF | ✅ Feito | Gráficos Recharts + export com jsPDF |
+| RF-11 | Integração com wearables | ❌ Por fazer | Depende de APIs externas (Fitbit, etc.) |
+| RF-12 | Modo Zen (meditação) | ✅ Feito | Sons ambiente, respiração guiada, tracking de humor |
 
-**11 de 12 requisitos funcionais implementados.**
+**11 de 12 feitos (92%).** O RF-11 (wearables) não foi implementado porque depende de APIs externas e requer hardware para testar.
 
-### 5.2 Páginas do Frontend (16 rotas)
+### 6.2 Páginas
 
-| Página | Rota | Função |
-|--------|------|--------|
-| Home | `/` | Landing page |
+São 16 páginas no total. As 6 primeiras são públicas (login, registo, etc.) e as restantes 10 são protegidas — só se acede com login.
+
+| Página | Rota | O que faz |
+|--------|------|-----------|
+| Home | `/` | Landing page com explicação do que é a app |
 | Login | `/login` | Autenticação |
-| Registo | `/register` | Criação de conta |
-| Verificar Email | `/verify-email` | Código de 6 dígitos |
-| Esqueci Password | `/forgot-password` | Recuperação |
-| Reset Password | `/reset-password` | Nova password |
-| Dashboard | `/dashboard` | Métricas, resumo, ações rápidas |
-| Chat | `/chat` | Conversa com o Coach IA |
-| Planos | `/plans` | Lista de planos guardados |
-| Detalhe Plano | `/plans/:id` | Ver plano completo |
-| Registos | `/logs` | Treinos e refeições |
+| Registo | `/register` | Criar conta |
+| Verificar Email | `/verify-email` | Inserir código de 6 dígitos |
+| Esqueci Password | `/forgot-password` | Pedir reset da password |
+| Reset Password | `/reset-password` | Definir nova password |
+| Dashboard | `/dashboard` | Painel principal com stats, resumo semanal, quick actions |
+| Chat | `/chat` | Conversa com o coach (a funcionalidade principal) |
+| Planos | `/plans` | Lista dos planos guardados com filtros |
+| Detalhe Plano | `/plans/:id` | Ver um plano completo |
+| Registos | `/logs` | Treinos e refeições registados |
 | Relatórios | `/reports` | Gráficos e exportação PDF |
-| Perfil | `/profile` | Editar dados pessoais |
-| Definições | `/settings` | Tema, preferências |
-| Zen | `/zen` | Meditação guiada, sons ambiente |
-| Peso | `/weight` | Histórico de peso |
+| Perfil | `/profile` | Editar dados pessoais e preferências |
+| Definições | `/settings` | Mudar tema (light/dark) e outras preferências |
+| Zen | `/zen` | Meditação guiada com sons ambiente |
+| Peso | `/weight` | Histórico de pesagens |
 
-### 5.3 API Backend (17 routers, 40+ endpoints)
+### 6.3 API — Endpoints Principais
 
-**Routers registados:**
-`health`, `auth`, `profile`, `logs`, `ask`, `plans`, `chat`, `categories`, `zen`, `reports`, `water`, `weight`, `progress`, `adaptation`, `rag_ingest`, `rag_ask`, `daily_plan`
+O backend tem 17 routers que servem mais de 40 endpoints. Aqui ficam os mais importantes:
 
-**Exemplos de endpoints:**
-
-| Método | Endpoint | Descrição |
+| Método | Endpoint | O que faz |
 |--------|----------|-----------|
-| POST | `/api/auth/register` | Registo |
-| POST | `/api/auth/login` | Login (retorna JWT) |
-| GET | `/api/profile` | Obter perfil |
-| POST | `/api/ask` | Enviar mensagem ao coach |
-| GET | `/api/plans` | Listar planos |
+| POST | `/api/auth/register` | Criar conta |
+| POST | `/api/auth/login` | Login (devolve JWT) |
+| POST | `/api/auth/verify-email` | Verificar código de email |
+| GET/PUT | `/api/profile` | Ver ou atualizar perfil |
+| POST | `/api/ask` | Enviar mensagem ao coach IA |
+| GET/POST | `/api/plans` | Listar ou criar planos |
 | POST | `/api/logs/workout` | Registar treino |
 | POST | `/api/logs/meal` | Registar refeição |
-| GET | `/api/reports/weekly` | Relatório semanal |
-| POST | `/api/water` | Registar água |
-| GET | `/api/weight` | Histórico de peso |
+| GET | `/api/reports/weekly` | Pedir relatório semanal |
+| POST/GET | `/api/water` | Registar ou ver água do dia |
+| GET/POST | `/api/weight` | Histórico de peso |
+| POST | `/api/zen/session` | Registar sessão de meditação |
 
 ---
 
-## 6. Sistema de IA — Duas Camadas
+## 7. Como Funciona a IA
 
-### Camada 1: OpenAI (modo principal)
-- Usa GPT via API da OpenAI
-- System prompt personalizado com o perfil do utilizador
-- Contexto de adaptação injetado automaticamente (progresso, sugestões pendentes)
-- Gera planos de treino e nutrição em linguagem natural
+Esta é provavelmente a parte mais interessante do projeto. O sistema de IA tem duas camadas:
 
-### Camada 2: Motor de Regras (fallback)
-- Ativo quando a API OpenAI não está disponível ou falha
-- `recommender.py` com 850+ linhas de lógica
-- Deteção de palavras-chave no pedido do utilizador
-- Cálculo automático de TDEE, macros e splits de treino
-- Refeições personalizadas por tipo de dieta e alergias
-- 3 camadas de decisão: categoria → objetivo → nível de experiência
+### Camada 1 — OpenAI GPT (modo principal)
 
----
+Quando o utilizador envia uma mensagem no chat, o backend faz o seguinte:
+1. Vai buscar o perfil completo do utilizador (peso, altura, objetivo, nível, dieta, alergias)
+2. Verifica se há sugestões de adaptação pendentes (baseadas no progresso)
+3. Monta um system prompt com toda essa informação
+4. Envia para a API da OpenAI e devolve a resposta
 
-## 7. Design System
+Basicamente a IA sabe tudo sobre o utilizador e responde de forma personalizada. Se o utilizador pedir "um plano de treino para esta semana", a IA vai gerar um plano tendo em conta se é iniciante ou avançado, se quer perder peso ou ganhar massa, etc.
 
-### Abordagem
-- **CSS puro** com Custom Properties (sem Tailwind/Bootstrap)
-- **Mobile-first** — desenhado para telemóvel, adapta para desktop
-- **Temas**: Light (Clean White) + Dark (Warm Charcoal)
-- **Glassmorphism** no header e navegação (backdrop-filter + transparência)
+### Camada 2 — Motor de Regras (fallback)
 
-### Tokens de Design
-- Radii: 20px / 14px / 10px / 50px (pill)
-- Transições: 180ms com `cubic-bezier(0.16, 1, 0.3, 1)`
-- Sombras: 4 níveis (sm / md / lg / xl) com camadas
-- Tipografia: Weight 800 headings, letter-spacing -0.035em
+Se a API da OpenAI não estiver disponível (ou se não houver chave API configurada), o sistema usa um motor de regras que escrevi com ~850 linhas de Python. Funciona assim:
+1. Deteta palavras-chave na mensagem (treino, dieta, peso, etc.)
+2. Cruza com o objetivo e nível do utilizador
+3. Calcula TDEE e macros automaticamente
+4. Gera recomendações baseadas em regras que defini
 
-### Componentes Reutilizáveis
-- `Button` — 4 variantes (primary, secondary, outline, ghost) × 3 tamanhos
-- `Card` — container com sombra e hover
-- `Form` — inputs com glow ring no focus
-- `Modal` — bottom-sheet responsivo (max 85vh)
-- `Toast` — notificações (success, error, warning, info)
-- `Skeleton` — loading placeholders animados
+Não é tão natural como o GPT, mas garante que a app funciona sempre, mesmo sem IA.
 
 ---
 
-## 8. Segurança
+## 8. Design e Interface
 
-| Medida | Implementação |
-|--------|---------------|
-| Hashing de passwords | Argon2 (argon2-cffi) |
-| Autenticação | JWT HS256, expiração 30 dias |
-| Verificação de email | Código de 6 dígitos por email |
-| Proteção SQL Injection | ORM (SQLAlchemy) — sem queries raw |
-| CORS | Configurado para domínios específicos |
-| Auto-logout | Redireciona ao login em 401 |
-| Validação de dados | Pydantic v2 em todos os endpoints |
+### Decisões de Design
+
+Fiz o design todo em CSS puro, sem frameworks. Uso CSS Custom Properties (variáveis) para poder trocar o tema inteiro mudando apenas os valores das variáveis num ficheiro.
+
+A app tem dois temas:
+- **Light** — Fundo branco limpo com toques de beje
+- **Dark** — Cinza escuro quente (não é preto puro, que cansa a vista)
+
+### Mobile-First
+
+A app foi desenhada primeiro para telemóvel e depois adaptada para desktop. Tem navegação por tabs em baixo (tipo Instagram) em vez de sidebar, porque é mais natural no mobile.
+
+### Componentes
+
+Criei componentes reutilizáveis para manter consistência:
+- **Button** — 4 variantes (primary, secondary, outline, ghost) em 3 tamanhos
+- **Card** — Container com sombra e animação no hover
+- **Form** — Inputs com borda que brilha no focus
+- **Modal** — Abre por baixo tipo bottom-sheet, responsivo
+- **Toast** — Notificações temporárias (sucesso, erro, aviso, info)
+- **Skeleton** — Placeholders animados enquanto carrega
+
+Também apliquei glassmorphism no header e na navegação (efeito de vidro fosco com `backdrop-filter`), e as animações usam spring curves para parecerem mais naturais.
 
 ---
 
-## 9. Deploy e Infraestrutura
+## 9. Segurança
 
-| Componente | Plataforma | URL |
-|------------|-----------|-----|
+| O quê | Como |
+|-------|------|
+| Passwords | Hasheadas com Argon2 (resistente a ataques com GPU) |
+| Autenticação | JWT com HS256, expira ao fim de 30 dias |
+| Verificação de email | Código de 6 dígitos enviado por email (SMTP em prod, consola em dev) |
+| SQL Injection | Uso ORM (SQLAlchemy), nunca faço queries SQL diretamente |
+| CORS | Só aceita pedidos dos domínios configurados |
+| Sessões expiradas | Auto-redirect para login quando recebe 401 |
+| Validação | Pydantic v2 valida todos os dados de entrada em todos os endpoints |
+
+---
+
+## 10. Deploy
+
+| Componente | Onde está | URL |
+|------------|----------|-----|
 | Frontend | Vercel | https://laphis.vercel.app |
 | Backend | Render | *(URL do Render)* |
-| Base de Dados | PostgreSQL (Render) | Interno |
-| Repositório | GitHub | github.com/M4ster32/Laphis |
+| Base de Dados | PostgreSQL no Render | Acesso interno |
+| Código | GitHub | github.com/M4ster32/Laphis |
 
-- Deploy automático em cada `git push` para `main`
-- Frontend e backend em repositório único (monorepo)
-- Backend faz auto-migração de colunas em falta no startup
+O deploy é automático — cada vez que faço `git push` para o branch `main`, o Vercel recompila o frontend e o Render reinicia o backend. Não preciso de fazer nada manualmente.
 
----
-
-## 10. Histórico de Desenvolvimento (resumo dos commits)
-
-| Fase | O que foi feito |
-|------|----------------|
-| **Fase 0** | Correção do estado inicial (imports partidos, duplicações, bcrypt→Argon2) |
-| **Fase 1** | Fixes críticos — backend funcional, DB recreada, CORS corrigido |
-| **Fase 2** | Redesign mobile-first completo — design system CSS, layout bottom tabs |
-| **Fase 3** | Acesso LAN — testar no telemóvel via Wi-Fi |
-| **Fase 4** | Motor de IA — recommender.py (250+ linhas), chat persistente |
-| **Fase 5** | Planos guardáveis — CRUD completo, filtros, guardar do chat |
-| **Fase 6** | Error handling — NetworkError, tokens expirados, auto-logout |
-| **Integração IA** | OpenAI GPT integrado — chat, planos, adaptação, daily plan |
-| **RF-04/RF-09** | Adaptação automática + preferências alimentares |
-| **UX Polish** | Perfil wizard, pesquisa em registos, PDF, validação, empty states |
-| **Design Premium** | Glassmorphism, sombras layered, spring animations, tipografia bold |
-| **Paleta Final** | Clean White + Warm Charcoal (minimal com toque beje) |
+Tudo está num monorepo (frontend e backend no mesmo repositório). O backend em produção usa PostgreSQL, mas em desenvolvimento local uso SQLite para ser mais simples.
 
 ---
 
-## 11. O Que Falta / Próximos Passos
+## 11. Problemas que Encontrei
 
-| Prioridade | Item | Esforço |
-|------------|------|---------|
-| Baixa | RF-11 — Integração com wearables (Fitbit, Apple Health) | Alto |
-| Média | Testes automatizados (pytest + Vitest) | Médio |
-| Média | PWA (Progressive Web App) — funcionar offline | Médio |
-| Baixa | Docker para deploy simplificado | Baixo |
-| Baixa | Rate limiting nos endpoints | Baixo |
-| Futuro | App nativa (React Native) | Alto |
+Ao longo do desenvolvimento encontrei vários problemas que tive de resolver:
 
----
-
-## 12. Conclusão
-
-O LAPHIS encontra-se num estado avançado de desenvolvimento, com **11 de 12 requisitos funcionais implementados** e em produção (acessível via https://laphis.vercel.app). A aplicação está funcional end-to-end: um utilizador pode registar-se, preencher o perfil, conversar com o coach IA, receber planos personalizados, registar o seu progresso e visualizar relatórios.
-
-O foco atual tem sido no **polish da experiência de utilizador** — design system moderno, responsividade, feedback visual — e na **robustez** — error handling, auto-migração da base de dados, fallback quando a IA não está disponível.
-
-O único requisito funcional em falta (RF-11, wearables) depende de APIs externas e será abordado numa fase posterior caso haja tempo.
+| Problema | Como resolvi |
+|----------|-------------|
+| bcrypt não compilava no sistema | Troquei para Argon2, que além de funcionar melhor é mais seguro |
+| Modal cortado no topo em telemóveis | Usei `100dvh` (dynamic viewport height) em vez de `100vh` |
+| Formulário de perfil fazia auto-submit | Separei os event handlers e adicionei `preventDefault` |
+| Chat perdia contexto entre mensagens | Implementei sessões de chat com histórico persistente |
+| App crashava com token expirado | Adicionei interceptor que deteta 401 e redireciona ao login |
+| IA indisponível quando API falha | Criei motor de regras fallback com 850 linhas de lógica |
+| Scroll indesejado em certas páginas | Reestruturei o layout com `overflow: hidden` no root e scroll individual por página |
+| Base de dados perdia colunas novas | Implementei auto-migração no startup do backend |
+| CORS bloqueava pedidos em desenvolvimento | Configurei CORS dinâmico baseado no ambiente (dev vs prod) |
 
 ---
 
-*Documento gerado a 15/04/2026 — versão de construção, não final.*
+## 12. Fases de Desenvolvimento
+
+| Fase | O que fiz | Quando |
+|------|----------|--------|
+| Setup inicial | Limpeza do código, correção de imports partidos, troca bcrypt→Argon2 | Jan 2026 |
+| Backend funcional | DB recriada, CORS corrigido, endpoints a funcionar | Jan-Fev |
+| Redesign mobile-first | Design system CSS completo, layout com bottom tabs | Fev |
+| Motor de IA | Recommender.py (motor de regras), chat persistente | Fev-Mar |
+| Planos guardáveis | CRUD de planos, filtros, guardar do chat, arquivo | Mar |
+| Error handling | NetworkError, tokens expirados, auto-logout, validação | Mar |
+| Integração OpenAI | GPT integrado no chat, planos, adaptação, daily plan | Mar-Abr |
+| RF-04/RF-09 | Adaptação automática + preferências alimentares | Abr |
+| UX polish | Perfil wizard, pesquisa em registos, PDF, empty states | Abr |
+| Design premium | Glassmorphism, sombras, animações spring, tipografia | Abr |
+| Paleta final | Clean White + Warm Charcoal (minimal com toque beje) | Abr |
+
+---
+
+## 13. O Que Falta
+
+| Item | Prioridade | Porquê |
+|------|-----------|--------|
+| RF-11 — Wearables (Fitbit, etc.) | Baixa | Precisa de APIs externas e hardware para testar |
+| Testes automatizados | Média | Ainda não escrevi testes, estive focado nas funcionalidades |
+| PWA (funcionar offline) | Média | Seria útil mas não é crítico para a entrega |
+| Docker | Baixa | Simplifica o setup mas não é obrigatório |
+| Rate limiting | Baixa | Proteção extra contra abuso, mas com poucos utilizadores não é urgente |
+
+---
+
+## 14. Conclusão
+
+Neste momento o LAPHIS tem 11 de 12 requisitos funcionais implementados e está em produção. A app funciona end-to-end: uma pessoa pode registar-se, preencher o perfil, falar com o coach, receber planos personalizados, registar o progresso e ver relatórios.
+
+O único requisito que falta (wearables) depende de APIs externas e vai ser tratado se houver tempo. O foco agora é polir a experiência, corrigir bugs que possam aparecer e preparar a entrega final.
+
+O projeto tem quase 100 commits e mais de 20 mil linhas de código entre frontend e backend, o que reflete bastante trabalho ao longo das últimas 12 semanas.
+
+---
+
+*Relatório escrito a 15/04/2026 — versão de construção.*
