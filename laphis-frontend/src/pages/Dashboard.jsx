@@ -644,25 +644,25 @@ export default function Dashboard() {
 
 // ===== STYLES =====
 const s = {
- page: { animation: "fadeUp 0.3s ease" },
+ page: { animation: "fadeUp 0.3s ease", display: "flex", flexDirection: "column", gap: 20 },
 
  /* Onboarding */
  onboardCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "40px 24px 32px", boxShadow: "var(--shadow-md)",
- border: "1px solid var(--border)", textAlign: "center",
+ padding: "48px 24px 36px", boxShadow: "var(--shadow-lg)",
+ border: "var(--card-border)", textAlign: "center",
  },
- onboardTitle: { fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },
- onboardDesc: { fontSize: 15, color: "var(--text-secondary)", margin: "0 0 28px", lineHeight: 1.6 },
- onboardFeatures: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 28, textAlign: "left" },
- onboardFeature: { display: "flex", alignItems: "center", gap: 12, padding: "10px 0" },
+ onboardTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 12px", letterSpacing: "-0.03em" },
+ onboardDesc: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "0 0 32px", lineHeight: 1.7 },
+ onboardFeatures: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 32, textAlign: "left" },
+ onboardFeature: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0" },
  onboardDot: { width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", flexShrink: 0 },
- onboardFeatureText: { fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" },
+ onboardFeatureText: { fontSize: "var(--text-body)", fontWeight: 500, color: "var(--text-secondary)" },
 
- /* Greeting */
- greeting: { marginBottom: 20, paddingTop: 4 },
- greetingSub: { fontSize: 13, color: "var(--text-muted)", fontWeight: 500, margin: "0 0 2px", letterSpacing: "0.02em" },
- greetingName: { fontSize: 26, fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em" },
+ /* Greeting — HERO level focal point */
+ greeting: { marginBottom: 4, paddingTop: 4 },
+ greetingSub: { fontSize: "var(--text-caption)", color: "var(--text-muted)", fontWeight: 500, margin: "0 0 2px", letterSpacing: "0.04em", textTransform: "uppercase" },
+ greetingName: { fontSize: 28, fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.15 },
  greetingAvatar: {
  width: 50, height: 50, borderRadius: 16,
  background: "var(--gradient-primary)", color: "#fff",
@@ -671,44 +671,43 @@ const s = {
  boxShadow: "0 4px 12px var(--btn-primary-shadow)", flexShrink: 0,
  },
 
- /* Stats Row */
+ /* Stats Row — key data, high emphasis */
  statsRow: {
  display: "flex", alignItems: "center", gap: 0,
  background: "var(--card-bg)", borderRadius: "var(--radius)",
-  padding: "16px 4px", boxShadow: "var(--shadow)",
-  border: "1px solid var(--border)", marginBottom: 16,
-  width: "100%", boxSizing: "border-box", overflow: "hidden",
+  padding: "18px 4px", boxShadow: "var(--shadow)",
+  border: "var(--card-border)", width: "100%", boxSizing: "border-box", overflow: "hidden",
  },
  statItem: {
-  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
   minWidth: 0, overflow: "hidden",
  },
- statValue: { fontSize: 18, fontWeight: 800, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", letterSpacing: "-0.02em" },
- statLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" },
- statDivider: { width: 1, height: 28, background: "var(--border)", opacity: 0.6 },
+ statValue: { fontSize: 22, fontWeight: 800, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", letterSpacing: "-0.03em" },
+ statLabel: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" },
+ statDivider: { width: 1, height: 32, background: "var(--border-light)", opacity: 0.8 },
 
  /* Two Column */
- twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16, width: "100%", boxSizing: "border-box" },
+ twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, width: "100%", boxSizing: "border-box" },
 
  /* Water */
  waterCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "14px", boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+ padding: "16px", boxShadow: "var(--shadow)", border: "var(--card-border)",
  display: "flex", flexDirection: "column",
  },
- waterHeader: { marginBottom: 8, display: "flex", alignItems: "center", gap: 8 },
- sectionLabel: { fontSize: 13, fontWeight: 600, color: "var(--text)" },
- waterBody: { display: "flex", flexDirection: "column", alignItems: "center", gap: 8, flex: 1 },
+ waterHeader: { marginBottom: 10, display: "flex", alignItems: "center", gap: 8 },
+ sectionLabel: { fontSize: "var(--text-h3)", fontWeight: 600, color: "var(--text)" },
+ waterBody: { display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flex: 1 },
  waterRing: { position: "relative", width: 88, height: 88 },
  waterRingText: {
  position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
  textAlign: "center", display: "flex", flexDirection: "column",
  },
- waterCount: { fontSize: 20, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
- waterGoal: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
+ waterCount: { fontSize: 22, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
+ waterGoal: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500 },
  waterControls: { display: "flex", gap: 8 },
  waterBtn: {
- width: 32, height: 32, borderRadius: "50%", border: "1px solid var(--border)",
+ width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--border)",
  background: "var(--card-bg)", fontSize: 16, fontWeight: 600, cursor: "pointer",
  color: "var(--text-secondary)", display: "flex", alignItems: "center", justifyContent: "center",
  transition: "background 0.15s",
@@ -720,163 +719,162 @@ const s = {
  /* Zen Summary */
  zenSummary: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "14px", boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+ padding: "16px", boxShadow: "var(--shadow)", border: "var(--card-border)",
  display: "flex", flexDirection: "column",
  },
- zenStatRow: { display: "flex", gap: 16, marginTop: 12, flex: 1 },
- zenStat: { display: "flex", flexDirection: "column", gap: 2 },
- zenStatNum: { fontSize: 20, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
- zenStatText: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
+ zenStatRow: { display: "flex", gap: 20, marginTop: 14, flex: 1 },
+ zenStat: { display: "flex", flexDirection: "column", gap: 3 },
+ zenStatNum: { fontSize: 22, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
+ zenStatText: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em" },
  zenLink: {
- marginTop: "auto", paddingTop: 10, background: "none", border: "none",
- color: "var(--primary)", fontSize: 13, fontWeight: 600, cursor: "pointer",
- textAlign: "left", padding: "8px 0 0",
+ marginTop: "auto", paddingTop: 12, background: "none", border: "none",
+ color: "var(--primary)", fontSize: "var(--text-body)", fontWeight: 600, cursor: "pointer",
+ textAlign: "left", padding: "10px 0 0",
  },
 
- /* Quick Actions */
- actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 20, width: "100%", boxSizing: "border-box" },
+ /* Quick Actions — tertiary level */
+ actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, width: "100%", boxSizing: "border-box" },
  actionBtn: {
-  padding: "14px 4px", borderRadius: "var(--radius-sm)",
-  background: "var(--card-bg)", border: "1px solid var(--border)",
-  boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 10,
-  fontWeight: 600, color: "var(--text-secondary)", textAlign: "center",
+  padding: "16px 4px", borderRadius: "var(--radius-sm)",
+  background: "var(--card-bg)", border: "var(--card-border)",
+  boxShadow: "var(--shadow)", cursor: "pointer", fontSize: "var(--text-overline)",
+  fontWeight: 500, color: "var(--text-muted)", textAlign: "center",
   transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s, background 0.15s",
-  display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
   minWidth: 0, overflow: "hidden",
  },
 
  /* Chart */
  chartCard: {
-  background: "var(--card-bg)", borderRadius: "var(--radius)", padding: "14px",
-  marginBottom: 16, boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+  background: "var(--card-bg)", borderRadius: "var(--radius)", padding: "18px",
+  boxShadow: "var(--shadow)", border: "var(--card-border)",
   width: "100%", boxSizing: "border-box", overflow: "hidden",
  },
- chartTitle: { fontSize: 13, fontWeight: 600, color: "var(--text)", margin: "0 0 12px" },
+ chartTitle: { fontSize: "var(--text-h3)", fontWeight: 600, color: "var(--text)", margin: "0 0 14px" },
 
- /* Quote */
+ /* Quote — lowest emphasis, tertiary */
  quote: {
- fontSize: 13, color: "var(--text-muted)", fontStyle: "italic",
- lineHeight: 1.6, margin: "0 0 24px", fontWeight: 400, textAlign: "center",
+ fontSize: "var(--text-caption)", color: "var(--text-muted)", fontStyle: "italic",
+ lineHeight: 1.7, fontWeight: 400, textAlign: "center", opacity: 0.7,
  },
 
- /* Section */
- sectionTitle: { fontSize: 14, fontWeight: 600, color: "var(--text)", margin: "0 0 12px" },
+ /* Section Title — H2 level */
+ sectionTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: "8px 0 14px", letterSpacing: "-0.02em" },
 
- /* Activity */
+ /* Activity — secondary emphasis */
  activityList: { display: "flex", flexDirection: "column", gap: 8, width: "100%" },
  activityItem: {
-  display: "flex", alignItems: "center", gap: 10, padding: "12px 12px",
+  display: "flex", alignItems: "center", gap: 12, padding: "14px 14px",
   background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
-  boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+  boxShadow: "var(--shadow)", border: "var(--card-border)",
   boxSizing: "border-box", width: "100%", minWidth: 0,
  },
  activityDot: {
- width: 36, height: 36, borderRadius: 10,
+ width: 38, height: 38, borderRadius: 10,
  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
  },
  activityInfo: { flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 0 },
- activityTitle: { fontSize: 13, fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
- activityDate: { fontSize: 12, color: "var(--text-muted)", fontWeight: 400, flexShrink: 0, marginLeft: 8 },
+ activityTitle: { fontSize: "var(--text-body)", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+ activityDate: { fontSize: "var(--text-caption)", color: "var(--text-muted)", fontWeight: 400, flexShrink: 0, marginLeft: 10 },
 
  /* Tooltip */
  tooltip: {
- background: "var(--card-bg)", borderRadius: 10, padding: "8px 12px",
- boxShadow: "var(--shadow-md)", border: "1px solid var(--border)",
+ background: "var(--card-bg)", borderRadius: 12, padding: "10px 14px",
+ boxShadow: "var(--shadow-md)", border: "var(--card-border)",
  },
- tooltipLabel: { fontSize: 12, fontWeight: 600, color: "var(--text)", margin: "0 0 4px" },
- tooltipValue: { fontSize: 12, fontWeight: 400, margin: 0 },
+ tooltipLabel: { fontSize: "var(--text-caption)", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" },
+ tooltipValue: { fontSize: "var(--text-caption)", fontWeight: 400, margin: 0 },
 
- /* Progress Insights (inline within summary card) */
+ /* Progress Insights */
  insightsDivider: {
- height: 1, background: "var(--border)", margin: "14px 0",
+ height: 1, background: "var(--border-light)", margin: "16px 0",
  },
- insightsInline: { display: "flex", flexDirection: "column", gap: 6 },
- insightsSubtitle: { fontSize: 13, fontWeight: 700, color: "var(--text)" },
+ insightsInline: { display: "flex", flexDirection: "column", gap: 8 },
+ insightsSubtitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)" },
  insightsBadge: {
- display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600,
- padding: "3px 8px", borderRadius: 20,
+ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--text-overline)", fontWeight: 600,
+ padding: "3px 10px", borderRadius: 20,
  },
- insightItem: { display: "flex", alignItems: "flex-start", gap: 8 },
- insightText: { fontSize: 13, color: "var(--text)", lineHeight: 1.4 },
+ insightItem: { display: "flex", alignItems: "flex-start", gap: 8, paddingLeft: 2 },
+ insightText: { fontSize: "var(--text-body)", color: "var(--text)", lineHeight: 1.5 },
  snapshotBtn: {
- width: "100%", marginTop: 14, padding: "10px", border: "1px dashed var(--border)",
- borderRadius: 10, background: "none", color: "var(--text-secondary)",
- fontSize: 12, fontWeight: 600, cursor: "pointer",
+ width: "100%", marginTop: 16, padding: "11px", border: "1px dashed var(--border)",
+ borderRadius: 10, background: "none", color: "var(--text-muted)",
+ fontSize: "var(--text-caption)", fontWeight: 600, cursor: "pointer",
  },
  summaryEmpty: {
- fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5, margin: "0 0 4px", fontStyle: "italic",
+ fontSize: "var(--text-body)", color: "var(--text-muted)", lineHeight: 1.6, margin: 0, fontStyle: "italic",
  },
 
  /* Empty State */
  emptyCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "36px 24px", boxShadow: "var(--shadow)", border: "1px solid var(--border)",
+ padding: "44px 24px", boxShadow: "var(--shadow)", border: "var(--card-border)",
  textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center",
- marginBottom: 20,
  },
- emptyCardTitle: { fontSize: 17, fontWeight: 700, color: "var(--text)", margin: "0 0 6px" },
- emptyCardText: { fontSize: 13, color: "var(--text-muted)", margin: 0, maxWidth: 260, lineHeight: 1.5 },
+ emptyCardTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },
+ emptyCardText: { fontSize: "var(--text-body)", color: "var(--text-muted)", margin: 0, maxWidth: 280, lineHeight: 1.6 },
 
  /* Generate Modal */
  typeGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 },
  typeBtn: {
  display: "flex", flexDirection: "column", alignItems: "center",
- justifyContent: "center", gap: 6, padding: "14px 8px",
+ justifyContent: "center", gap: 6, padding: "16px 8px",
  borderRadius: "var(--radius-sm)", border: "2px solid var(--border)",
  cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
  boxShadow: "var(--shadow)", background: "var(--card-bg)",
  },
  quickPrompts: { display: "flex", flexWrap: "wrap", gap: 8 },
  quickPromptBtn: {
- padding: "7px 12px", borderRadius: 20,
- background: "var(--card-bg)", border: "1px solid var(--border)",
- fontSize: 12, color: "var(--text-secondary)", cursor: "pointer",
+ padding: "8px 14px", borderRadius: 20,
+ background: "var(--card-bg)", border: "var(--card-border)",
+ fontSize: "var(--text-caption)", color: "var(--text-secondary)", cursor: "pointer",
  fontWeight: 500, transition: "background 0.15s",
  boxShadow: "var(--shadow)",
  },
 
- /* Weekly Summary (unified) */
+ /* Weekly Summary */
  summaryCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "16px", boxShadow: "var(--shadow)",
- border: "1px solid var(--border)", marginBottom: 16,
+ padding: "20px", boxShadow: "var(--shadow)",
+ border: "var(--card-border)",
  },
  summaryHeader: {
  display: "flex", justifyContent: "space-between", alignItems: "center",
- marginBottom: 10,
+ marginBottom: 14,
  },
- summaryTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 },
+ summaryTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0 },
  summaryIconBtn: {
- background: "var(--bg-surface)", border: "1px solid var(--border)",
- borderRadius: 8, width: 30, height: 30, cursor: "pointer",
+ background: "var(--hover-overlay)", border: "1px solid var(--border-light)",
+ borderRadius: 8, width: 32, height: 32, cursor: "pointer",
  display: "flex", alignItems: "center", justifyContent: "center",
  color: "var(--text-muted)", transition: "background 0.15s, color 0.15s",
  },
  summaryText: {
- fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6,
- margin: "0 0 10px", whiteSpace: "pre-wrap",
+ fontSize: "var(--text-body)", color: "var(--text-secondary)", lineHeight: 1.7,
+ margin: "0 0 12px", whiteSpace: "pre-wrap",
  },
  summaryStats: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 },
  summaryStatTag: {
- padding: "4px 10px", borderRadius: 12,
- background: "var(--primary-bg)", fontSize: 12,
+ padding: "5px 12px", borderRadius: 12,
+ background: "var(--primary-bg)", fontSize: "var(--text-caption)",
  fontWeight: 600, color: "var(--primary)",
  },
 
- /* Daily Plan Card */
+ /* Daily Plan Card — primary CTA, high emphasis */
  dailyPlanCard: {
  display: "flex", alignItems: "center", justifyContent: "space-between",
- padding: "16px 18px", borderRadius: "var(--radius)",
+ padding: "18px 20px", borderRadius: "var(--radius)",
  background: "var(--card-bg)", border: "1.5px solid var(--primary)",
- cursor: "pointer", marginBottom: 16, boxShadow: "var(--shadow-md)",
+ cursor: "pointer", boxShadow: "var(--shadow-md)",
  transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
  },
- dpLeft: { display: "flex", alignItems: "center", gap: 12 },
+ dpLeft: { display: "flex", alignItems: "center", gap: 14 },
  dpIcon: {
- width: 38, height: 38, borderRadius: 10,
+ width: 42, height: 42, borderRadius: 12,
  background: "var(--primary-bg)",
  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
  },
- dpTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
- dpText: { fontSize: 12, color: "var(--text-secondary)", margin: "2px 0 0" },
+ dpTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0 },
+ dpText: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: "3px 0 0" },
 };

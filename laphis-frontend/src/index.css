@@ -23,6 +23,31 @@
   --transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-slow: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Typography Scale — 6 clear levels */
+  --text-hero: 32px;
+  --text-h1: 24px;
+  --text-h2: 18px;
+  --text-h3: 15px;
+  --text-body: 14px;
+  --text-caption: 12px;
+  --text-overline: 11px;
+
+  /* Font weights — intentional contrast */
+  --weight-black: 800;
+  --weight-bold: 700;
+  --weight-semi: 600;
+  --weight-medium: 500;
+  --weight-regular: 400;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-section: 28px;
+
   /* Glassmorphism — subtle soft glass */
   --glass-blur: 20px;
   --glass-saturation: 1.1;
@@ -345,10 +370,15 @@ body::after {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   letter-spacing: -0.035em;
-  line-height: 1.1;
+  line-height: 1.15;
   color: var(--text);
-  font-weight: 800;
+  font-weight: var(--weight-bold);
 }
+
+h1 { font-size: var(--text-h1); font-weight: var(--weight-black); }
+h2 { font-size: var(--text-h2); font-weight: var(--weight-bold); }
+h3 { font-size: var(--text-h3); font-weight: var(--weight-semi); }
+h4 { font-size: var(--text-body); font-weight: var(--weight-semi); }
 
 a {
   color: var(--primary);
