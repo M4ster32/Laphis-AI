@@ -11,7 +11,7 @@
   width: 100%;
   max-width: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: transparent;
 }
 
 /* ---------- HEADER ---------- */
@@ -25,10 +25,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: color-mix(in srgb, var(--header-bg) 85%, transparent);
+  background: var(--header-bg);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
   border-bottom: 1px solid var(--border-light);
+  box-shadow: var(--card-highlight);
 }
 
 .header-left {
@@ -147,10 +148,11 @@ body[style*="overflow: hidden"] .layout-main {
 .bottom-nav {
   flex-shrink: 0;
   z-index: 200;
-  background: color-mix(in srgb, var(--nav-bg) 80%, transparent);
+  background: var(--nav-bg);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
   border-top: 1px solid var(--nav-border);
+  box-shadow: var(--card-highlight);
   padding: 8px 12px 20px;
   display: flex;
   align-items: center;
