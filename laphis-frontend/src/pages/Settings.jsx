@@ -404,151 +404,130 @@ export default function Settings() {
   );
 }
 
-// ===== STYLES — Liquid Glass =====
+// ===== STYLES — Compact System Settings =====
 const s = {
-  page: { animation: "fadeUp 0.35s ease" },
-  pageTitle: { fontSize: 20, fontWeight: 700, color: "var(--text)", margin: "0 0 24px" },
+  page: { animation: "fadeUp 0.25s ease" },
+  pageTitle: { fontSize: 18, fontWeight: 700, color: "var(--text)", margin: "0 0 16px" },
 
-  /* Section */
   section: {
-    background: "var(--card-bg)", borderRadius: "var(--radius)",
-    padding: "20px", boxShadow: "var(--shadow)", marginBottom: 16,
-    border: "1px solid var(--border)",
+    background: "var(--card-bg)", borderRadius: 14,
+    padding: "14px 16px", boxShadow: "var(--shadow)", marginBottom: 12,
+    border: "var(--card-border)",
   },
   sectionTitle: {
-    fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 16px",
+    fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 10px",
+    textTransform: "uppercase", letterSpacing: "0.05em",
   },
 
-  /* Settings Row */
   settingRow: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "8px 0",
+    padding: "6px 0",
   },
-  settingLabel: { display: "block", fontSize: 14, fontWeight: 600, color: "var(--text)" },
-  settingDesc: { display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 },
+  settingLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "var(--text)" },
+  settingDesc: { display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 1 },
 
-  /* Toggle */
   toggleBtn: {
-    width: 48, height: 26, borderRadius: 13, border: "none",
-    cursor: "pointer", transition: "background 0.3s", position: "relative",
-    flexShrink: 0,
-    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.05)",
+    width: 44, height: 24, borderRadius: 12, border: "none",
+    cursor: "pointer", transition: "background 0.3s", position: "relative", flexShrink: 0,
+    boxShadow: "inset 0 1px 3px rgba(0,0,0,0.12)",
   },
   toggleDot: {
-    width: 22, height: 22, borderRadius: "50%", background: "var(--bg-surface)",
+    width: 20, height: 20, borderRadius: "50%", background: "var(--bg-surface)",
     position: "absolute", top: 2, transition: "transform 0.3s",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
   },
 
-  /* Permission */
   permCard: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "14px 16px", background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
-    marginBottom: 20, border: "1px solid var(--border)",
-    boxShadow: "var(--shadow)",
+    padding: "10px 12px", background: "var(--hover-overlay)", borderRadius: 10,
+    marginBottom: 14, border: "none",
   },
-  permInfo: { display: "flex", gap: 12, alignItems: "center" },
-  permIcon: { fontSize: 16, fontWeight: 700, color: "var(--text-secondary)" },
-  permLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "var(--text)" },
-  permDesc: { display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 2 },
+  permInfo: { display: "flex", gap: 10, alignItems: "center" },
+  permLabel: { display: "block", fontSize: 12, fontWeight: 600, color: "var(--text)" },
+  permDesc: { display: "block", fontSize: 10, color: "var(--text-muted)", marginTop: 1 },
 
-  /* Reminders */
   remindersHeader: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  remindersTitle: { fontSize: 14, fontWeight: 600, color: "var(--text)", margin: 0 },
+  remindersTitle: { fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 },
 
-  /* Add Form */
   addForm: {
-    background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
-    padding: "16px", marginBottom: 16, animation: "slideUp 0.25s ease",
-    border: "1px solid var(--border)",
-    boxShadow: "var(--shadow)",
+    background: "var(--hover-overlay)", borderRadius: 10,
+    padding: "12px", marginBottom: 12, animation: "slideUp 0.2s ease",
+    border: "none",
   },
   presetGrid: {
-    display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 16,
+    display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6, marginBottom: 12,
   },
   presetBtn: {
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-    padding: "12px 8px", borderRadius: "var(--radius-xs)",
-    border: "1.5px solid var(--border)", cursor: "pointer", transition: "all 0.25s",
-    background: "var(--card-bg)",
-    boxShadow: "var(--shadow)",
-  },
-  daysRow: { display: "flex", gap: 6, justifyContent: "space-between" },
-  dayBtn: {
-    width: 36, height: 36, borderRadius: "50%", border: "2px solid var(--border)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 11, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-    boxShadow: "var(--shadow)",
+    padding: "8px 6px", borderRadius: 8,
+    border: "1.5px solid var(--border)", cursor: "pointer", transition: "all 0.2s",
+    background: "var(--card-bg)",
+  },
+  daysRow: { display: "flex", gap: 4, justifyContent: "space-between" },
+  dayBtn: {
+    width: 32, height: 32, borderRadius: "50%", border: "1.5px solid var(--border)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
   },
 
-  /* Reminder Items */
-  remindersList: { display: "flex", flexDirection: "column", gap: 10 },
+  remindersList: { display: "flex", flexDirection: "column", gap: 6 },
   reminderCard: {
     display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-    padding: "14px 16px", background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
-    transition: "opacity 0.3s", border: "1px solid var(--border)",
-    boxShadow: "var(--shadow)",
+    padding: "10px 12px", background: "var(--hover-overlay)", borderRadius: 10,
+    transition: "opacity 0.3s", border: "none",
   },
-  reminderLeft: { display: "flex", gap: 12, alignItems: "flex-start", flex: 1 },
-  reminderIcon: { fontSize: 14, fontWeight: 700, color: "var(--text-secondary)", flexShrink: 0, marginTop: 2 },
-  reminderLabel: { display: "block", fontSize: 14, fontWeight: 600, color: "var(--text)" },
-  reminderTime: { display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 2 },
-  reminderMsg: { display: "block", fontSize: 11, color: "var(--text-secondary)", marginTop: 4, fontStyle: "italic" },
-  reminderActions: { display: "flex", gap: 8, alignItems: "center", flexShrink: 0 },
+  reminderLeft: { display: "flex", gap: 10, alignItems: "flex-start", flex: 1 },
+  reminderIcon: { fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", flexShrink: 0, marginTop: 2 },
+  reminderLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "var(--text)" },
+  reminderTime: { display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 1 },
+  reminderMsg: { display: "block", fontSize: 10, color: "var(--text-secondary)", marginTop: 2, fontStyle: "italic" },
+  reminderActions: { display: "flex", gap: 6, alignItems: "center", flexShrink: 0 },
 
   miniToggle: {
-    width: 32, height: 18, borderRadius: 9, border: "none",
+    width: 30, height: 16, borderRadius: 8, border: "none",
     cursor: "pointer", transition: "background 0.3s", position: "relative",
   },
   miniToggleDot: {
-    width: 14, height: 14, borderRadius: "50%", background: "var(--bg-surface)",
+    width: 12, height: 12, borderRadius: "50%", background: "var(--bg-surface)",
     position: "absolute", top: 2, transition: "transform 0.3s",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
   },
   deleteBtn: {
     background: "none", border: "none", fontSize: 14, cursor: "pointer",
-    padding: 4, opacity: 0.6, transition: "opacity 0.2s",
+    padding: 3, opacity: 0.5, transition: "opacity 0.2s", color: "var(--text-muted)",
   },
 
-  /* Empty */
-  emptyState: {
-    textAlign: "center", padding: "28px 16px",
-  },
-  emptyText: { fontSize: 14, color: "var(--text-muted)", margin: "8px 0 2px", fontWeight: 600 },
-  emptySubtext: { fontSize: 12, color: "var(--text-muted)", margin: 0 },
+  emptyState: { textAlign: "center", padding: "20px 12px" },
+  emptyText: { fontSize: 13, color: "var(--text-muted)", margin: "6px 0 2px", fontWeight: 600 },
+  emptySubtext: { fontSize: 11, color: "var(--text-muted)", margin: 0 },
 
-  /* About */
-  aboutCard: { textAlign: "center", padding: "16px 0" },
+  aboutCard: { textAlign: "center", padding: "10px 0" },
   aboutLogo: {
-    width: 48, height: 48, borderRadius: 16, background: "var(--gradient-primary)",
-    color: "white", fontSize: 20, fontWeight: 700,
+    width: 36, height: 36, borderRadius: 10, background: "var(--gradient-primary)",
+    color: "white", fontSize: 16, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
-    margin: "0 auto 12px",
-    boxShadow: "0 4px 16px var(--btn-primary-hover-shadow)",
+    margin: "0 auto 8px",
+    boxShadow: "0 2px 8px var(--btn-primary-hover-shadow)",
   },
-  aboutName: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
-  aboutDesc: { fontSize: 13, color: "var(--text-muted)", margin: 0 },
+  aboutName: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "0 0 2px" },
+  aboutDesc: { fontSize: 11, color: "var(--text-muted)", margin: 0 },
 
-  /* Archived Plans */
   archivedCard: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "12px 14px", background: "var(--bg)",
-    borderRadius: "var(--radius-xs)", gap: 10,
-    border: "1px solid var(--border)",
+    padding: "10px 12px", background: "var(--hover-overlay)",
+    borderRadius: 8, gap: 8, border: "none",
   },
   archivedTitle: {
-    display: "block", fontSize: 14, fontWeight: 600, color: "var(--text)",
+    display: "block", fontSize: 13, fontWeight: 600, color: "var(--text)",
     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
   },
-  archivedMeta: {
-    display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 2,
-  },
+  archivedMeta: { display: "block", fontSize: 10, color: "var(--text-muted)", marginTop: 1 },
   archivedActionBtn: {
-    background: "var(--card-bg)", border: "1px solid var(--border)",
-    borderRadius: 8, padding: "6px 12px", fontSize: 12,
+    background: "var(--card-bg)", border: "1px solid var(--border-light)",
+    borderRadius: 6, padding: "5px 10px", fontSize: 11,
     fontWeight: 600, color: "var(--primary)", cursor: "pointer",
     transition: "background 0.15s", display: "flex", alignItems: "center",
   },

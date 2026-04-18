@@ -6,11 +6,7 @@ import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
 import jsPDF from "jspdf";
-import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight } from "lucide-react";
-import {
- AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
- Tooltip, ResponsiveContainer,
-} from "recharts";
+import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 
 const motivationalQuotes = [
  "Stay consistent. Small progress every day.",
@@ -50,6 +46,8 @@ export default function Dashboard() {
  const [weeklySummary, setWeeklySummary] = useState(null);
  const [summaryLoading, setSummaryLoading] = useState(false);
 
+
+ const [expandSummary, setExpandSummary] = useState(false);
 
  useEffect(() => {
  if (profile) loadData();
@@ -346,535 +344,296 @@ export default function Dashboard() {
 
  return (
  <div style={s.page}>
- {/* Greeting */}
+ {/* ── Greeting ── */}
  <div style={s.greeting}>
- <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
- <AvatarDisplay avatar={profile.avatar} name={profile.name} size={48} />
+ <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+ <AvatarDisplay avatar={profile.avatar} name={profile.name} size={42} />
  <div>
- <p style={s.greetingSub}>{greetingTime},</p>
+ <p style={s.greetingSub}>{greetingTime}</p>
  <h1 style={s.greetingName}>{profile.name?.split(" ")[0]}</h1>
  </div>
  </div>
  </div>
 
- {/* Stats Row — compact inline */}
- <div style={s.statsRow}>
- <div style={s.statItem}>
- <span style={s.statValue}>{streak}</span>
- <span style={s.statLabel}>Streak</span>
+ {/* ── Stats Strip ── */}
+ <div style={s.statsStrip}>
+ {[
+ { v: streak, l: "Streak" },
+ { v: workoutLogs.length, l: "Treinos" },
+ { v: totalDuration, l: "Min" },
+ { v: `${waterData.glasses}/${waterData.goal_glasses}`, l: "Água" },
+ ].map((st, i) => (
+ <div key={i} style={s.statCell}>
+ <span style={s.statVal}>{st.v}</span>
+ <span style={s.statLbl}>{st.l}</span>
  </div>
- <div style={s.statDivider} />
- <div style={s.statItem}>
- <span style={s.statValue}>{workoutLogs.length}</span>
- <span style={s.statLabel}>Treinos</span>
- </div>
- <div style={s.statDivider} />
- <div style={s.statItem}>
- <span style={s.statValue}>{totalCalories.toLocaleString()}</span>
- <span style={s.statLabel}>Calorias</span>
- </div>
- <div style={s.statDivider} />
- <div style={s.statItem}>
- <span style={s.statValue}>{totalDuration}</span>
- <span style={s.statLabel}>Minutos</span>
- </div>
+ ))}
  </div>
 
- {/* Daily Plan shortcut */}
- <div style={s.dailyPlanCard} onClick={() => navigate("/daily-plan")}>
-  <div style={s.dpLeft}>
-   <div style={s.dpIcon}><CalendarClock size={20} color="var(--primary)" /></div>
-   <div>
-    <h4 style={s.dpTitle}>Plano do Dia</h4>
-    <p style={s.dpText}>Treino + refeições adaptáveis pela IA</p>
-   </div>
-  </div>
-  <ChevronRight size={18} color="var(--primary)" />
+ {/* ── Hero: Daily Plan ── */}
+ <div style={s.heroCard} onClick={() => navigate("/daily-plan")}>
+ <div style={s.heroLeft}>
+ <div style={s.heroIcon}><CalendarClock size={22} color="var(--primary)" /></div>
+ <div>
+ <h2 style={s.heroTitle}>Plano do Dia</h2>
+ <p style={s.heroSub}>Treino + refeições personalizados</p>
+ </div>
+ </div>
+ <ChevronRight size={18} color="var(--text-muted)" />
  </div>
 
- {/* ====== RESUMO SEMANAL (unified) ====== */}
+ {/* ── Quick Actions ── */}
+ <div style={s.quickRow}>
+ {[
+ { label: "Registar", to: "/logs", Icon: ClipboardList },
+ { label: "Planos", to: "/plans", Icon: Dumbbell },
+ { label: "Relatórios", to: "/reports", Icon: BarChart3 },
+ { label: "Zen", to: "/zen", Icon: Wind },
+ ].map((a, i) => (
+ <button key={i} style={s.quickBtn} onClick={() => navigate(a.to)}>
+ <a.Icon size={18} strokeWidth={1.5} color="var(--text-secondary)" />
+ <span>{a.label}</span>
+ </button>
+ ))}
+ </div>
+
+ {/* ── Weekly Summary (collapsible) ── */}
  <div style={s.summaryCard}>
- <div style={s.summaryHeader}>
+ <button style={s.summaryToggle} onClick={() => setExpandSummary(!expandSummary)}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Sparkles size={18} color="var(--primary)" strokeWidth={1.5} />
- <h4 style={s.summaryTitle}>Resumo Semanal</h4>
+ <Sparkles size={16} color="var(--primary)" strokeWidth={1.5} />
+ <span style={s.summaryLabel}>Resumo Semanal</span>
  </div>
- <div style={{ display: "flex", gap: 6 }}>
- <button style={s.summaryIconBtn} onClick={handleDownloadPDF} title="Guardar PDF">
- <Download size={15} strokeWidth={2} />
+ <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+ {weeklySummary?.stats && (
+ <div style={s.summaryMiniStats}>
+ {weeklySummary.stats.treinos > 0 && <span>{weeklySummary.stats.treinos} treinos</span>}
+ {weeklySummary.stats.minutos_treino > 0 && <span>· {weeklySummary.stats.minutos_treino}min</span>}
+ </div>
+ )}
+ {expandSummary ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+ </div>
  </button>
- <button style={s.summaryIconBtn} onClick={handleRefreshSummary} disabled={summaryLoading} title="Atualizar">
- <RefreshCw size={15} strokeWidth={2} className={summaryLoading ? "spin" : ""} />
- </button>
- </div>
- </div>
 
- {/* AI Summary text */}
+ {expandSummary && (
+ <div style={s.summaryBody}>
  {weeklySummary?.summary_text && (
  <p style={s.summaryText}>{weeklySummary.summary_text}</p>
  )}
-
- {/* Stats tags */}
  {weeklySummary?.stats && (
- <div style={s.summaryStats}>
- {weeklySummary.stats.treinos > 0 && (
- <span style={s.summaryStatTag}>🏋️ {weeklySummary.stats.treinos} treinos</span>
- )}
- {weeklySummary.stats.minutos_treino > 0 && (
- <span style={s.summaryStatTag}>⏱️ {weeklySummary.stats.minutos_treino}min</span>
- )}
- {weeklySummary.stats.copos_agua > 0 && (
- <span style={s.summaryStatTag}>💧 {weeklySummary.stats.copos_agua} copos</span>
- )}
- {weeklySummary.stats.sessoes_zen > 0 && (
- <span style={s.summaryStatTag}>🧘 {weeklySummary.stats.sessoes_zen} zen</span>
- )}
+ <div style={s.summaryTags}>
+ {weeklySummary.stats.treinos > 0 && <span style={s.tag}>🏋️ {weeklySummary.stats.treinos} treinos</span>}
+ {weeklySummary.stats.minutos_treino > 0 && <span style={s.tag}>⏱️ {weeklySummary.stats.minutos_treino}min</span>}
+ {weeklySummary.stats.copos_agua > 0 && <span style={s.tag}>💧 {weeklySummary.stats.copos_agua} copos</span>}
+ {weeklySummary.stats.sessoes_zen > 0 && <span style={s.tag}>🧘 {weeklySummary.stats.sessoes_zen} zen</span>}
  </div>
  )}
 
- {/* Progress insights */}
  {insights && (insights.highlights?.length > 0 || insights.suggestions?.length > 0) && (
- <>
- <div style={s.insightsDivider} />
- <div style={s.insightsInline}>
- <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
- <span style={s.insightsSubtitle}>Progresso</span>
+ <div style={s.insightsBlock}>
  {insights.trend_direction && (
  <span style={{
- ...s.insightsBadge,
- background: insights.trend_direction === "improving" ? "rgba(76, 175, 80, 0.12)"
- : insights.trend_direction === "declining" ? "rgba(244, 67, 54, 0.12)"
- : "rgba(255, 193, 7, 0.12)",
- color: insights.trend_direction === "improving" ? "#2E7D32"
- : insights.trend_direction === "declining" ? "#C62828"
- : "#F57F17",
+ ...s.trendBadge,
+ background: insights.trend_direction === "improving" ? "rgba(76,175,80,0.10)" : insights.trend_direction === "declining" ? "rgba(244,67,54,0.10)" : "rgba(255,193,7,0.10)",
+ color: insights.trend_direction === "improving" ? "#2E7D32" : insights.trend_direction === "declining" ? "#C62828" : "#F57F17",
  }}>
- {insights.trend_direction === "improving" ? <TrendingUp size={13} /> : insights.trend_direction === "declining" ? <TrendingDown size={13} /> : <Activity size={13} />}
- {insights.trend_direction === "improving" ? " A melhorar" : insights.trend_direction === "declining" ? " Em queda" : " Estável"}
+ {insights.trend_direction === "improving" ? <><TrendingUp size={12} /> A melhorar</> : insights.trend_direction === "declining" ? <><TrendingDown size={12} /> Em queda</> : <><Activity size={12} /> Estável</>}
  </span>
  )}
- </div>
- {insights.highlights?.slice(0, 3).map((h, i) => (
- <div key={`h-${i}`} style={s.insightItem}>
- <TrendingUp size={13} color="var(--p2)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
- <span style={s.insightText}>{h}</span>
- </div>
+ {insights.highlights?.slice(0, 2).map((h, i) => (
+ <p key={`h-${i}`} style={s.insightLine}><TrendingUp size={12} color="var(--p2)" style={{ flexShrink: 0, marginTop: 2 }} /> {h}</p>
  ))}
- {insights.suggestions?.slice(0, 2).map((sg, i) => (
- <div key={`s-${i}`} style={s.insightItem}>
- <Lightbulb size={13} color="var(--primary)" strokeWidth={2} style={{ marginTop: 2, flexShrink: 0 }} />
- <span style={{ ...s.insightText, color: "var(--text-secondary)" }}>{sg}</span>
- </div>
+ {insights.suggestions?.slice(0, 1).map((sg, i) => (
+ <p key={`s-${i}`} style={{ ...s.insightLine, color: "var(--text-muted)" }}><Lightbulb size={12} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 2 }} /> {sg}</p>
  ))}
  </div>
- </>
  )}
 
- {/* No data — CTA to generate */}
- {!weeklySummary && !insights && !summaryLoading && !insightsLoading && (
- <p style={s.summaryEmpty}>Ainda sem dados esta semana. Regista treinos ou refeições para ver o teu resumo.</p>
+ {!weeklySummary && !insights && (
+ <p style={s.summaryEmpty}>Regista treinos ou refeições para ver o resumo.</p>
  )}
 
- {/* Analyze button */}
- <button style={s.snapshotBtn} onClick={handleCreateSnapshot} disabled={insightsLoading}>
- {insightsLoading ? "A analisar..." : "📊 Analisar Progresso"}
+ <div style={s.summaryActions}>
+ <button style={s.summaryActBtn} onClick={handleCreateSnapshot} disabled={insightsLoading}>
+ {insightsLoading ? "A analisar..." : "Analisar"}
  </button>
- </div>
-
- {/* Hydration + Zen — side by side */}
- <div style={s.twoCol}>
- {/* Water */}
- <div style={s.waterCard}>
- <div style={s.waterHeader}>
- <Droplets size={18} color="var(--primary)" strokeWidth={1.5} />
- <span style={s.sectionLabel}>Hidratação</span>
- </div>
- <div style={s.waterBody}>
- <div style={s.waterRing}>
- <svg width="88" height="88" viewBox="0 0 88 88">
- <circle cx="44" cy="44" r="40" fill="none" stroke="var(--border)" strokeWidth="4" />
- <circle
- cx="44" cy="44" r="40" fill="none"
- stroke="var(--primary)" strokeWidth="4"
- strokeDasharray={waterCircumference}
- strokeDashoffset={waterOffset}
- strokeLinecap="round"
- style={{ transition: "stroke-dashoffset 0.5s ease", transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
- />
- </svg>
- <div style={s.waterRingText}>
- <span style={s.waterCount}>{waterData.glasses}</span>
- <span style={s.waterGoal}>/{waterData.goal_glasses}</span>
- </div>
- </div>
- <div style={s.waterControls}>
- <button style={s.waterBtn} onClick={handleRemoveWater} disabled={waterData.glasses <= 0}>-</button>
- <button style={{ ...s.waterBtn, ...s.waterBtnPlus }} onClick={handleAddWater} disabled={waterAdding}>+</button>
- </div>
- </div>
- </div>
-
- {/* Zen summary */}
- <div style={s.zenSummary}>
- <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
- <Wind size={18} color="var(--p3)" strokeWidth={1.5} />
- <span style={s.sectionLabel}>Zen</span>
- </div>
- <div style={s.zenStatRow}>
- <div style={s.zenStat}>
- <span style={s.zenStatNum}>{zenStats.total_sessions || 0}</span>
- <span style={s.zenStatText}>sessões</span>
- </div>
- <div style={s.zenStat}>
- <span style={s.zenStatNum}>{zenStats.total_minutes || 0}</span>
- <span style={s.zenStatText}>min</span>
- </div>
- </div>
- <button
- style={s.zenLink}
- onClick={() => navigate("/zen")}
- >
- Abrir Zen
+ <button style={s.summaryActBtn} onClick={handleRefreshSummary} disabled={summaryLoading}>
+ <RefreshCw size={13} className={summaryLoading ? "spin" : ""} /> Atualizar
+ </button>
+ <button style={s.summaryActBtn} onClick={handleDownloadPDF}>
+ <Download size={13} /> PDF
  </button>
  </div>
  </div>
-
- {/* Quick Actions — 4 items */}
- <div style={s.actionsRow}>
- {[
- { label: "Registar", to: "/logs", icon: ClipboardList, color: "var(--primary)", bg: "var(--primary-bg)" },
- { label: "Planos", to: "/plans", icon: Dumbbell, color: "var(--p2)", bg: "var(--cta-bg)" },
- { label: "Relatórios", to: "/reports", icon: BarChart3, color: "var(--p3)", bg: "var(--primary-bg)" },
- { label: "Zen", to: "/zen", icon: Wind, color: "var(--accent)", bg: "var(--primary-bg)" },
- ].map((a, i) => (
- <button key={i} style={s.actionBtn} onClick={() => navigate(a.to)}>
- <div style={{ width: 40, height: 40, borderRadius: 12, background: a.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 4 }}>
- <a.icon size={20} strokeWidth={1.5} color={a.color} />
- </div>
- {a.label}
- </button>
- ))}
- </div>
-
- {/* Weekly Chart */}
- {workoutLogs.length > 0 && (
- <div style={s.chartCard}>
- <h4 style={s.chartTitle}>Treinos — 7 dias</h4>
- <ResponsiveContainer width="100%" height={140}>
- <BarChart data={weeklyData} barSize={20}>
- <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
- <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
- <YAxis hide allowDecimals={false} />
- <Tooltip content={<CustomTooltip />} />
- <Bar dataKey="treinos" name="Treinos" fill={CHART_COLORS.training} radius={[4, 4, 0, 0]} />
- </BarChart>
- </ResponsiveContainer>
- </div>
  )}
-
- {mealLogs.length > 0 && (
- <div style={s.chartCard}>
- <h4 style={s.chartTitle}>Calorias — 7 dias</h4>
- <ResponsiveContainer width="100%" height={140}>
- <AreaChart data={weeklyData}>
- <defs>
- <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor={CHART_COLORS.nutrition} stopOpacity={0.2} />
- <stop offset="95%" stopColor={CHART_COLORS.nutrition} stopOpacity={0} />
- </linearGradient>
- </defs>
- <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
- <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
- <YAxis hide />
- <Tooltip content={<CustomTooltip />} />
- <Area type="monotone" dataKey="calorias" name="Calorias"
- stroke={CHART_COLORS.nutrition} fill="url(#calGrad)"
- strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.nutrition }} />
- </AreaChart>
- </ResponsiveContainer>
  </div>
- )}
 
- {/* Quote — subtle */}
- <p style={s.quote}>"{quote}"</p>
-
- {/* Recent Activity */}
+ {/* ── Recent Activity (compact, max 3) ── */}
  {logs.length > 0 && (
- <>
- <h4 style={s.sectionTitle}>Atividade Recente</h4>
- <div style={s.activityList}>
- {logs.slice(0, 4).map((log, idx) => {
+ <div style={s.recentCard}>
+ <h3 style={s.recentTitle}>Recente</h3>
+ {logs.slice(0, 3).map((log, idx) => {
  const isWorkout = log.log_type === "treino" || log.type === "workout";
  return (
- <div key={idx} style={s.activityItem}>
- <div style={{ ...s.activityDot, background: isWorkout ? CHART_COLORS.trainingLight : CHART_COLORS.nutritionLight }}>
- {isWorkout ? <TrendingUp size={18} color={CHART_COLORS.training} strokeWidth={1.5} /> : <UtensilsCrossed size={18} color={CHART_COLORS.nutrition} strokeWidth={1.5} />}
+ <div key={idx} style={s.recentRow}>
+ <div style={{ ...s.recentDot, background: isWorkout ? "var(--primary-bg)" : "var(--cta-bg)" }}>
+ {isWorkout ? <Dumbbell size={14} color="var(--primary)" strokeWidth={1.5} /> : <UtensilsCrossed size={14} color="var(--p2)" strokeWidth={1.5} />}
  </div>
- <div style={s.activityInfo}>
- <span style={s.activityTitle}>
- {isWorkout
- ? (log.description || `Treino — ${log.duration_min || 0}min`)
- : (log.foods || `Refeição — ${log.calories || 0} cal`)}
+ <span style={s.recentText}>
+ {isWorkout ? (log.description || `Treino — ${log.duration_min || 0}min`) : (log.foods || `Refeição — ${log.calories || 0} cal`)}
  </span>
- <span style={s.activityDate}>
- {log.date || log.created_at?.split("T")[0] || "—"}
- </span>
- </div>
+ <span style={s.recentDate}>{log.date || log.created_at?.split("T")[0] || "—"}</span>
  </div>
  );
  })}
  </div>
- </>
  )}
 
- {/* Empty state when no logs */}
+ {/* ── Empty State ── */}
  {!loading && logs.length === 0 && (
  <div style={s.emptyCard}>
- <Flame size={32} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.5, marginBottom: 8 }} />
- <h4 style={s.emptyCardTitle}>Começa a tua jornada!</h4>
- <p style={s.emptyCardText}>Regista o teu primeiro treino ou refeição para acompanhar o progresso.</p>
- <button className="btn btn-primary btn-sm" onClick={() => navigate("/logs")} style={{ marginTop: 14 }}>
+ <Flame size={28} color="var(--text-muted)" strokeWidth={1.5} style={{ opacity: 0.4 }} />
+ <h3 style={s.emptyTitle}>Começa a tua jornada!</h3>
+ <p style={s.emptySub}>Regista o teu primeiro treino ou refeição.</p>
+ <button className="btn btn-primary btn-sm" onClick={() => navigate("/logs")} style={{ marginTop: 12 }}>
  <Plus size={14} strokeWidth={2} style={{ marginRight: 4 }} />Registar
  </button>
  </div>
  )}
+
+ {/* ── Quote (minimal) ── */}
+ <p style={s.quote}>"{quote}"</p>
  </div>
  );
 }
 
-// ===== STYLES =====
+// ===== STYLES — Clean, Dense, Focused =====
 const s = {
- page: { animation: "fadeUp 0.3s ease", display: "flex", flexDirection: "column", gap: 20 },
+ page: { animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", gap: 14 },
 
  /* Onboarding */
  onboardCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "48px 24px 36px", boxShadow: "var(--shadow-lg)",
+ padding: "40px 24px 32px", boxShadow: "var(--shadow-lg)",
  border: "var(--card-border)", textAlign: "center",
  },
- onboardTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 12px", letterSpacing: "-0.03em" },
- onboardDesc: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "0 0 32px", lineHeight: 1.7 },
- onboardFeatures: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 32, textAlign: "left" },
- onboardFeature: { display: "flex", alignItems: "center", gap: 14, padding: "10px 0" },
- onboardDot: { width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", flexShrink: 0 },
- onboardFeatureText: { fontSize: "var(--text-body)", fontWeight: 500, color: "var(--text-secondary)" },
+ onboardTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 10px", letterSpacing: "-0.03em" },
+ onboardDesc: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "0 0 28px", lineHeight: 1.6 },
+ onboardFeatures: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 28, textAlign: "left" },
+ onboardFeature: { display: "flex", alignItems: "center", gap: 12, padding: "8px 0" },
+ onboardDot: { width: 5, height: 5, borderRadius: "50%", background: "var(--primary)", flexShrink: 0 },
+ onboardFeatureText: { fontSize: 13, fontWeight: 500, color: "var(--text-secondary)" },
 
- /* Greeting — HERO level focal point */
- greeting: { marginBottom: 4, paddingTop: 4 },
- greetingSub: { fontSize: "var(--text-caption)", color: "var(--text-muted)", fontWeight: 500, margin: "0 0 2px", letterSpacing: "0.04em", textTransform: "uppercase" },
- greetingName: { fontSize: 28, fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em", lineHeight: 1.15 },
- greetingAvatar: {
- width: 50, height: 50, borderRadius: 16,
- background: "var(--gradient-primary)", color: "#fff",
- fontSize: 20, fontWeight: 800,
- display: "flex", alignItems: "center", justifyContent: "center",
- boxShadow: "0 4px 12px var(--btn-primary-shadow)", flexShrink: 0,
- },
+ /* Greeting — tight, dominant name */
+ greeting: { paddingTop: 2 },
+ greetingSub: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, margin: 0, letterSpacing: "0.04em", textTransform: "uppercase" },
+ greetingName: { fontSize: 24, fontWeight: 800, color: "var(--text)", margin: "1px 0 0", letterSpacing: "-0.03em", lineHeight: 1.1 },
 
- /* Stats Row — key data, high emphasis */
- statsRow: {
- display: "flex", alignItems: "center", gap: 0,
- background: "var(--card-bg)", borderRadius: "var(--radius)",
-  padding: "18px 4px", boxShadow: "var(--shadow)",
-  border: "var(--card-border)", width: "100%", boxSizing: "border-box", overflow: "hidden",
- },
- statItem: {
-  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-  minWidth: 0, overflow: "hidden",
- },
- statValue: { fontSize: 22, fontWeight: 800, color: "var(--text)", lineHeight: 1, whiteSpace: "nowrap", letterSpacing: "-0.03em" },
- statLabel: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.06em" },
- statDivider: { width: 1, height: 32, background: "var(--border-light)", opacity: 0.8 },
-
- /* Two Column */
- twoCol: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, width: "100%", boxSizing: "border-box" },
-
- /* Water */
- waterCard: {
- background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "16px", boxShadow: "var(--shadow)", border: "var(--card-border)",
- display: "flex", flexDirection: "column",
- },
- waterHeader: { marginBottom: 10, display: "flex", alignItems: "center", gap: 8 },
- sectionLabel: { fontSize: "var(--text-h3)", fontWeight: 600, color: "var(--text)" },
- waterBody: { display: "flex", flexDirection: "column", alignItems: "center", gap: 10, flex: 1 },
- waterRing: { position: "relative", width: 88, height: 88 },
- waterRingText: {
- position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
- textAlign: "center", display: "flex", flexDirection: "column",
- },
- waterCount: { fontSize: 22, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
- waterGoal: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500 },
- waterControls: { display: "flex", gap: 8 },
- waterBtn: {
- width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--border)",
- background: "var(--card-bg)", fontSize: 16, fontWeight: 600, cursor: "pointer",
- color: "var(--text-secondary)", display: "flex", alignItems: "center", justifyContent: "center",
- transition: "background 0.15s",
- },
- waterBtnPlus: {
- background: "var(--primary)", color: "#fff", border: "none",
- },
-
- /* Zen Summary */
- zenSummary: {
- background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "16px", boxShadow: "var(--shadow)", border: "var(--card-border)",
- display: "flex", flexDirection: "column",
- },
- zenStatRow: { display: "flex", gap: 20, marginTop: 14, flex: 1 },
- zenStat: { display: "flex", flexDirection: "column", gap: 3 },
- zenStatNum: { fontSize: 22, fontWeight: 700, color: "var(--text)", lineHeight: 1 },
- zenStatText: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.04em" },
- zenLink: {
- marginTop: "auto", paddingTop: 12, background: "none", border: "none",
- color: "var(--primary)", fontSize: "var(--text-body)", fontWeight: 600, cursor: "pointer",
- textAlign: "left", padding: "10px 0 0",
- },
-
- /* Quick Actions — tertiary level */
- actionsRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, width: "100%", boxSizing: "border-box" },
- actionBtn: {
-  padding: "16px 4px", borderRadius: "var(--radius-sm)",
-  background: "var(--card-bg)", border: "var(--card-border)",
-  boxShadow: "var(--shadow)", cursor: "pointer", fontSize: "var(--text-overline)",
-  fontWeight: 500, color: "var(--text-muted)", textAlign: "center",
-  transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s, background 0.15s",
-  display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
-  minWidth: 0, overflow: "hidden",
- },
-
- /* Chart */
- chartCard: {
-  background: "var(--card-bg)", borderRadius: "var(--radius)", padding: "18px",
-  boxShadow: "var(--shadow)", border: "var(--card-border)",
-  width: "100%", boxSizing: "border-box", overflow: "hidden",
- },
- chartTitle: { fontSize: "var(--text-h3)", fontWeight: 600, color: "var(--text)", margin: "0 0 14px" },
-
- /* Quote — lowest emphasis, tertiary */
- quote: {
- fontSize: "var(--text-caption)", color: "var(--text-muted)", fontStyle: "italic",
- lineHeight: 1.7, fontWeight: 400, textAlign: "center", opacity: 0.7,
- },
-
- /* Section Title — H2 level */
- sectionTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: "8px 0 14px", letterSpacing: "-0.02em" },
-
- /* Activity — secondary emphasis */
- activityList: { display: "flex", flexDirection: "column", gap: 8, width: "100%" },
- activityItem: {
-  display: "flex", alignItems: "center", gap: 12, padding: "14px 14px",
-  background: "var(--card-bg)", borderRadius: "var(--radius-sm)",
-  boxShadow: "var(--shadow)", border: "var(--card-border)",
-  boxSizing: "border-box", width: "100%", minWidth: 0,
- },
- activityDot: {
- width: 38, height: 38, borderRadius: 10,
- display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
- },
- activityInfo: { flex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 0 },
- activityTitle: { fontSize: "var(--text-body)", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
- activityDate: { fontSize: "var(--text-caption)", color: "var(--text-muted)", fontWeight: 400, flexShrink: 0, marginLeft: 10 },
-
- /* Tooltip */
- tooltip: {
- background: "var(--card-bg)", borderRadius: 12, padding: "10px 14px",
- boxShadow: "var(--shadow-md)", border: "var(--card-border)",
- },
- tooltipLabel: { fontSize: "var(--text-caption)", fontWeight: 600, color: "var(--text)", margin: "0 0 4px" },
- tooltipValue: { fontSize: "var(--text-caption)", fontWeight: 400, margin: 0 },
-
- /* Progress Insights */
- insightsDivider: {
- height: 1, background: "var(--border-light)", margin: "16px 0",
- },
- insightsInline: { display: "flex", flexDirection: "column", gap: 8 },
- insightsSubtitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)" },
- insightsBadge: {
- display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--text-overline)", fontWeight: 600,
- padding: "3px 10px", borderRadius: 20,
- },
- insightItem: { display: "flex", alignItems: "flex-start", gap: 8, paddingLeft: 2 },
- insightText: { fontSize: "var(--text-body)", color: "var(--text)", lineHeight: 1.5 },
- snapshotBtn: {
- width: "100%", marginTop: 16, padding: "11px", border: "1px dashed var(--border)",
- borderRadius: 10, background: "none", color: "var(--text-muted)",
- fontSize: "var(--text-caption)", fontWeight: 600, cursor: "pointer",
- },
- summaryEmpty: {
- fontSize: "var(--text-body)", color: "var(--text-muted)", lineHeight: 1.6, margin: 0, fontStyle: "italic",
- },
-
- /* Empty State */
- emptyCard: {
- background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "44px 24px", boxShadow: "var(--shadow)", border: "var(--card-border)",
- textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center",
- },
- emptyCardTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },
- emptyCardText: { fontSize: "var(--text-body)", color: "var(--text-muted)", margin: 0, maxWidth: 280, lineHeight: 1.6 },
-
- /* Generate Modal */
- typeGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 },
- typeBtn: {
- display: "flex", flexDirection: "column", alignItems: "center",
- justifyContent: "center", gap: 6, padding: "16px 8px",
- borderRadius: "var(--radius-sm)", border: "2px solid var(--border)",
- cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
- boxShadow: "var(--shadow)", background: "var(--card-bg)",
- },
- quickPrompts: { display: "flex", flexWrap: "wrap", gap: 8 },
- quickPromptBtn: {
- padding: "8px 14px", borderRadius: 20,
- background: "var(--card-bg)", border: "var(--card-border)",
- fontSize: "var(--text-caption)", color: "var(--text-secondary)", cursor: "pointer",
- fontWeight: 500, transition: "background 0.15s",
- boxShadow: "var(--shadow)",
- },
-
- /* Weekly Summary */
- summaryCard: {
- background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "20px", boxShadow: "var(--shadow)",
+ /* Stats Strip — ultra compact */
+ statsStrip: {
+ display: "flex", alignItems: "center",
+ background: "var(--card-bg)", borderRadius: 14,
+ padding: "12px 0", boxShadow: "var(--shadow)",
  border: "var(--card-border)",
  },
- summaryHeader: {
- display: "flex", justifyContent: "space-between", alignItems: "center",
- marginBottom: 14,
- },
- summaryTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0 },
- summaryIconBtn: {
- background: "var(--hover-overlay)", border: "1px solid var(--border-light)",
- borderRadius: 8, width: 32, height: 32, cursor: "pointer",
- display: "flex", alignItems: "center", justifyContent: "center",
- color: "var(--text-muted)", transition: "background 0.15s, color 0.15s",
- },
- summaryText: {
- fontSize: "var(--text-body)", color: "var(--text-secondary)", lineHeight: 1.7,
- margin: "0 0 12px", whiteSpace: "pre-wrap",
- },
- summaryStats: { display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 4 },
- summaryStatTag: {
- padding: "5px 12px", borderRadius: 12,
- background: "var(--primary-bg)", fontSize: "var(--text-caption)",
- fontWeight: 600, color: "var(--primary)",
- },
+ statCell: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 },
+ statVal: { fontSize: 17, fontWeight: 800, color: "var(--text)", lineHeight: 1, letterSpacing: "-0.02em" },
+ statLbl: { fontSize: 10, color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" },
 
- /* Daily Plan Card — primary CTA, high emphasis */
- dailyPlanCard: {
+ /* Hero Card — primary focal point */
+ heroCard: {
  display: "flex", alignItems: "center", justifyContent: "space-between",
- padding: "18px 20px", borderRadius: "var(--radius)",
+ padding: "16px 18px", borderRadius: 16,
  background: "var(--card-bg)", border: "1.5px solid var(--primary)",
  cursor: "pointer", boxShadow: "var(--shadow-md)",
  transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
  },
- dpLeft: { display: "flex", alignItems: "center", gap: 14 },
- dpIcon: {
- width: 42, height: 42, borderRadius: 12,
+ heroLeft: { display: "flex", alignItems: "center", gap: 12 },
+ heroIcon: {
+ width: 40, height: 40, borderRadius: 12,
  background: "var(--primary-bg)",
  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
  },
- dpTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0 },
- dpText: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: "3px 0 0" },
+ heroTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 },
+ heroSub: { fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0", fontWeight: 400 },
+
+ /* Quick Actions — tighter, icon-forward */
+ quickRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 },
+ quickBtn: {
+ padding: "10px 4px", borderRadius: 12,
+ background: "var(--card-bg)", border: "var(--card-border)",
+ boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 10,
+ fontWeight: 500, color: "var(--text-muted)", textAlign: "center",
+ transition: "transform 0.12s var(--ease-spring), box-shadow 0.12s",
+ display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+ },
+
+ /* Weekly Summary — collapsible */
+ summaryCard: {
+ background: "var(--card-bg)", borderRadius: 14,
+ boxShadow: "var(--shadow)", border: "var(--card-border)",
+ overflow: "hidden",
+ },
+ summaryToggle: {
+ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
+ padding: "13px 16px", background: "none", border: "none", cursor: "pointer",
+ },
+ summaryLabel: { fontSize: 13, fontWeight: 700, color: "var(--text)" },
+ summaryMiniStats: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, display: "flex", gap: 4 },
+ summaryBody: { padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 10 },
+ summaryText: { fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" },
+ summaryTags: { display: "flex", flexWrap: "wrap", gap: 6 },
+ tag: {
+ padding: "3px 10px", borderRadius: 10,
+ background: "var(--primary-bg)", fontSize: 11,
+ fontWeight: 600, color: "var(--primary)",
+ },
+ insightsBlock: { display: "flex", flexDirection: "column", gap: 6, paddingTop: 4 },
+ trendBadge: {
+ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600,
+ padding: "3px 10px", borderRadius: 20, width: "fit-content",
+ },
+ insightLine: { fontSize: 12, color: "var(--text)", lineHeight: 1.5, margin: 0, display: "flex", alignItems: "flex-start", gap: 6 },
+ summaryEmpty: { fontSize: 12, color: "var(--text-muted)", margin: 0, fontStyle: "italic" },
+ summaryActions: { display: "flex", gap: 6, paddingTop: 4 },
+ summaryActBtn: {
+ padding: "6px 12px", borderRadius: 8, background: "var(--hover-overlay)",
+ border: "1px solid var(--border-light)", fontSize: 11, fontWeight: 600,
+ color: "var(--text-secondary)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+ transition: "background 0.12s",
+ },
+
+ /* Recent Activity — dense list, no individual cards */
+ recentCard: {
+ background: "var(--card-bg)", borderRadius: 14,
+ padding: "12px 14px", boxShadow: "var(--shadow)", border: "var(--card-border)",
+ },
+ recentTitle: { fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" },
+ recentRow: {
+ display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+ borderBottom: "1px solid var(--border-light)",
+ },
+ recentDot: { width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+ recentText: { flex: 1, fontSize: 13, fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+ recentDate: { fontSize: 11, color: "var(--text-muted)", fontWeight: 400, flexShrink: 0 },
+
+ /* Empty State */
+ emptyCard: {
+ background: "var(--card-bg)", borderRadius: 14,
+ padding: "36px 20px", boxShadow: "var(--shadow)", border: "var(--card-border)",
+ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+ },
+ emptyTitle: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 },
+ emptySub: { fontSize: 13, color: "var(--text-muted)", margin: 0, maxWidth: 260, lineHeight: 1.5 },
+
+ /* Quote — barely visible tertiary */
+ quote: {
+ fontSize: 11, color: "var(--text-muted)", fontStyle: "italic",
+ lineHeight: 1.6, fontWeight: 400, textAlign: "center", opacity: 0.5, margin: 0,
+ },
+
+ /* Tooltip (for charts elsewhere) */
+ tooltip: { background: "var(--card-bg)", borderRadius: 10, padding: "8px 12px", boxShadow: "var(--shadow-md)", border: "var(--card-border)" },
+ tooltipLabel: { fontSize: 11, fontWeight: 600, color: "var(--text)", margin: "0 0 3px" },
+ tooltipValue: { fontSize: 11, fontWeight: 400, margin: 0 },
 };
