@@ -6,7 +6,11 @@ import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
 import jsPDF from "jspdf";
-import { Wind, Droplets, TrendingUp, TrendingDown, ClipboardList, BarChart3, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import {
+ AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+ Tooltip, ResponsiveContainer,
+} from "recharts";
 
 const motivationalQuotes = [
  "Stay consistent. Small progress every day.",
@@ -344,7 +348,7 @@ export default function Dashboard() {
 
  return (
  <div style={s.page}>
- {/* ── Greeting ── */}
+ {/* ── 1. HERO: Greeting + Daily Plan ── */}
  <div style={s.greeting}>
  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
  <AvatarDisplay avatar={profile.avatar} name={profile.name} size={42} />
@@ -355,22 +359,6 @@ export default function Dashboard() {
  </div>
  </div>
 
- {/* ── Stats Strip ── */}
- <div style={s.statsStrip}>
- {[
- { v: streak, l: "Streak" },
- { v: workoutLogs.length, l: "Treinos" },
- { v: totalDuration, l: "Min" },
- { v: `${waterData.glasses}/${waterData.goal_glasses}`, l: "Água" },
- ].map((st, i) => (
- <div key={i} style={s.statCell}>
- <span style={s.statVal}>{st.v}</span>
- <span style={s.statLbl}>{st.l}</span>
- </div>
- ))}
- </div>
-
- {/* ── Hero: Daily Plan ── */}
  <div style={s.heroCard} onClick={() => navigate("/daily-plan")}>
  <div style={s.heroLeft}>
  <div style={s.heroIcon}><CalendarClock size={22} color="var(--primary)" /></div>
@@ -382,22 +370,61 @@ export default function Dashboard() {
  <ChevronRight size={18} color="var(--text-muted)" />
  </div>
 
- {/* ── Quick Actions ── */}
- <div style={s.quickRow}>
+ {/* ── 2. COMPACT STATS ── */}
+ <div style={s.statsStrip}>
  {[
- { label: "Registar", to: "/logs", Icon: ClipboardList },
- { label: "Planos", to: "/plans", Icon: Dumbbell },
- { label: "Relatórios", to: "/reports", Icon: BarChart3 },
- { label: "Zen", to: "/zen", Icon: Wind },
- ].map((a, i) => (
- <button key={i} style={s.quickBtn} onClick={() => navigate(a.to)}>
- <a.Icon size={18} strokeWidth={1.5} color="var(--text-secondary)" />
- <span>{a.label}</span>
- </button>
+ { v: streak, l: "Streak" },
+ { v: workoutLogs.length, l: "Treinos" },
+ { v: totalCalories.toLocaleString(), l: "Calorias" },
+ { v: totalDuration, l: "Min" },
+ ].map((st, i) => (
+ <div key={i} style={s.statCell}>
+ <span style={s.statVal}>{st.v}</span>
+ <span style={s.statLbl}>{st.l}</span>
+ </div>
  ))}
  </div>
 
- {/* ── Weekly Summary (collapsible) ── */}
+ {/* ── 3. CHARTS — Visual Data ── */}
+ {workoutLogs.length > 0 && (
+ <div style={s.chartCard}>
+ <h4 style={s.chartTitle}>Treinos — 7 dias</h4>
+ <ResponsiveContainer width="100%" height={120}>
+ <BarChart data={weeklyData} barSize={18}>
+ <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
+ <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+ <YAxis hide allowDecimals={false} />
+ <Tooltip content={<CustomTooltip />} />
+ <Bar dataKey="treinos" name="Treinos" fill={CHART_COLORS.training} radius={[4, 4, 0, 0]} />
+ </BarChart>
+ </ResponsiveContainer>
+ </div>
+ )}
+
+ {mealLogs.length > 0 && (
+ <div style={s.chartCard}>
+ <h4 style={s.chartTitle}>Calorias — 7 dias</h4>
+ <ResponsiveContainer width="100%" height={120}>
+ <AreaChart data={weeklyData}>
+ <defs>
+ <linearGradient id="calGrad" x1="0" y1="0" x2="0" y2="1">
+ <stop offset="5%" stopColor={CHART_COLORS.nutrition} stopOpacity={0.18} />
+ <stop offset="95%" stopColor={CHART_COLORS.nutrition} stopOpacity={0} />
+ </linearGradient>
+ </defs>
+ <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
+ <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
+ <YAxis hide />
+ <Tooltip content={<CustomTooltip />} />
+ <Area type="monotone" dataKey="calorias" name="Calorias"
+ stroke={CHART_COLORS.nutrition} fill="url(#calGrad)"
+ strokeWidth={2} dot={{ r: 2.5, fill: CHART_COLORS.nutrition }} />
+ </AreaChart>
+ </ResponsiveContainer>
+ </div>
+ )}
+
+ {/* ── 4. WEEKLY SUMMARY (collapsible, default collapsed) ── */}
  <div style={s.summaryCard}>
  <button style={s.summaryToggle} onClick={() => setExpandSummary(!expandSummary)}>
  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -507,7 +534,7 @@ export default function Dashboard() {
  );
 }
 
-// ===== STYLES — Clean, Dense, Focused =====
+// ===== STYLES — Balanced: Clean + Data-Rich =====
 const s = {
  page: { animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", gap: 14 },
 
@@ -524,12 +551,29 @@ const s = {
  onboardDot: { width: 5, height: 5, borderRadius: "50%", background: "var(--primary)", flexShrink: 0 },
  onboardFeatureText: { fontSize: 13, fontWeight: 500, color: "var(--text-secondary)" },
 
- /* Greeting — tight, dominant name */
+ /* 1. Greeting */
  greeting: { paddingTop: 2 },
  greetingSub: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, margin: 0, letterSpacing: "0.04em", textTransform: "uppercase" },
  greetingName: { fontSize: 24, fontWeight: 800, color: "var(--text)", margin: "1px 0 0", letterSpacing: "-0.03em", lineHeight: 1.1 },
 
- /* Stats Strip — ultra compact */
+ /* Hero Card — primary focus */
+ heroCard: {
+ display: "flex", alignItems: "center", justifyContent: "space-between",
+ padding: "14px 16px", borderRadius: 14,
+ background: "var(--card-bg)", border: "1.5px solid var(--primary)",
+ cursor: "pointer", boxShadow: "var(--shadow-md)",
+ transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
+ },
+ heroLeft: { display: "flex", alignItems: "center", gap: 12 },
+ heroIcon: {
+ width: 38, height: 38, borderRadius: 10,
+ background: "var(--primary-bg)",
+ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+ },
+ heroTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
+ heroSub: { fontSize: 11, color: "var(--text-muted)", margin: "2px 0 0", fontWeight: 400 },
+
+ /* 2. Stats Strip */
  statsStrip: {
  display: "flex", alignItems: "center",
  background: "var(--card-bg)", borderRadius: 14,
@@ -540,35 +584,15 @@ const s = {
  statVal: { fontSize: 17, fontWeight: 800, color: "var(--text)", lineHeight: 1, letterSpacing: "-0.02em" },
  statLbl: { fontSize: 10, color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" },
 
- /* Hero Card — primary focal point */
- heroCard: {
- display: "flex", alignItems: "center", justifyContent: "space-between",
- padding: "16px 18px", borderRadius: 16,
- background: "var(--card-bg)", border: "1.5px solid var(--primary)",
- cursor: "pointer", boxShadow: "var(--shadow-md)",
- transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
+ /* 3. Charts */
+ chartCard: {
+ background: "var(--card-bg)", borderRadius: 14, padding: "14px 14px 8px",
+ boxShadow: "var(--shadow)", border: "var(--card-border)",
+ overflow: "hidden",
  },
- heroLeft: { display: "flex", alignItems: "center", gap: 12 },
- heroIcon: {
- width: 40, height: 40, borderRadius: 12,
- background: "var(--primary-bg)",
- display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
- },
- heroTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 },
- heroSub: { fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0", fontWeight: 400 },
+ chartTitle: { fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.04em" },
 
- /* Quick Actions — tighter, icon-forward */
- quickRow: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 },
- quickBtn: {
- padding: "10px 4px", borderRadius: 12,
- background: "var(--card-bg)", border: "var(--card-border)",
- boxShadow: "var(--shadow)", cursor: "pointer", fontSize: 10,
- fontWeight: 500, color: "var(--text-muted)", textAlign: "center",
- transition: "transform 0.12s var(--ease-spring), box-shadow 0.12s",
- display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
- },
-
- /* Weekly Summary — collapsible */
+ /* 4. Weekly Summary — collapsible */
  summaryCard: {
  background: "var(--card-bg)", borderRadius: 14,
  boxShadow: "var(--shadow)", border: "var(--card-border)",
@@ -581,7 +605,7 @@ const s = {
  summaryLabel: { fontSize: 13, fontWeight: 700, color: "var(--text)" },
  summaryMiniStats: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, display: "flex", gap: 4 },
  summaryBody: { padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 10 },
- summaryText: { fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" },
+ summaryText: { fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap" },
  summaryTags: { display: "flex", flexWrap: "wrap", gap: 6 },
  tag: {
  padding: "3px 10px", borderRadius: 10,
@@ -603,17 +627,17 @@ const s = {
  transition: "background 0.12s",
  },
 
- /* Recent Activity — dense list, no individual cards */
+ /* 5. Recent Activity */
  recentCard: {
  background: "var(--card-bg)", borderRadius: 14,
  padding: "12px 14px", boxShadow: "var(--shadow)", border: "var(--card-border)",
  },
  recentTitle: { fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" },
  recentRow: {
- display: "flex", alignItems: "center", gap: 10, padding: "8px 0",
+ display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
  borderBottom: "1px solid var(--border-light)",
  },
- recentDot: { width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+ recentDot: { width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
  recentText: { flex: 1, fontSize: 13, fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
  recentDate: { fontSize: 11, color: "var(--text-muted)", fontWeight: 400, flexShrink: 0 },
 
@@ -626,13 +650,13 @@ const s = {
  emptyTitle: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 },
  emptySub: { fontSize: 13, color: "var(--text-muted)", margin: 0, maxWidth: 260, lineHeight: 1.5 },
 
- /* Quote — barely visible tertiary */
+ /* Quote */
  quote: {
  fontSize: 11, color: "var(--text-muted)", fontStyle: "italic",
  lineHeight: 1.6, fontWeight: 400, textAlign: "center", opacity: 0.5, margin: 0,
  },
 
- /* Tooltip (for charts elsewhere) */
+ /* Tooltip */
  tooltip: { background: "var(--card-bg)", borderRadius: 10, padding: "8px 12px", boxShadow: "var(--shadow-md)", border: "var(--card-border)" },
  tooltipLabel: { fontSize: 11, fontWeight: 600, color: "var(--text)", margin: "0 0 3px" },
  tooltipValue: { fontSize: 11, fontWeight: 400, margin: 0 },
