@@ -483,8 +483,8 @@ const s = {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "8px 0 16px",
   },
-  title: { fontSize: 20, fontWeight: 700, color: "var(--text)", margin: 0 },
-  subtitle: { fontSize: 13, color: "var(--text-muted)", margin: "2px 0 0", fontWeight: 500 },
+  title: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em" },
+  subtitle: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 500 },
   addBtn: { padding: "8px 18px", fontSize: 14 },
   aiBtn: {
     width: 38, height: 38, borderRadius: "var(--radius-sm)",
@@ -506,8 +506,8 @@ const s = {
     justifyContent: "center", flexWrap: "wrap",
     border: g.border, minWidth: 0, overflow: "hidden",
   },
-  statChipValue: { fontSize: 15, fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap" },
-  statChipLabel: { fontSize: 10, color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" },
+  statChipValue: { fontSize: "var(--text-h3)", fontWeight: 800, color: "var(--text)", whiteSpace: "nowrap", fontFamily: "var(--font-heading)" },
+  statChipLabel: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" },
 
   /* Search */
   searchWrap: {
@@ -544,7 +544,7 @@ const s = {
     padding: "20px", boxShadow: g.shadowMd, marginBottom: 20,
     animation: "slideUp 0.25s ease", border: g.border,
   },
-  formTitle: { fontSize: 17, fontWeight: 700, color: "var(--text)", margin: "0 0 16px" },
+  formTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: "0 0 18px", letterSpacing: "-0.02em" },
   row: { display: "flex", gap: 12 },
   mealGrid: { display: "flex", flexWrap: "wrap", gap: 8 },
   mealBtn: {
@@ -571,10 +571,10 @@ const s = {
     flexShrink: 0,
   },
   logTitle: {
-    fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px",
-    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+    fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: "0 0 4px",
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em",
   },
-  logDate: { fontSize: 12, color: "var(--text-muted)", margin: 0 },
+  logDate: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: 0 },
   deleteBtn: {
     background: "var(--card-bg)", border: g.border,
     borderRadius: 10, padding: "4px 8px", fontSize: 14,
@@ -592,16 +592,16 @@ const s = {
   },
   logTag: {
     padding: "4px 10px", borderRadius: 12,
-    background: "var(--bg-subtle)", fontSize: 12, fontWeight: 600,
+    background: "var(--bg-subtle)", fontSize: "var(--text-caption)", fontWeight: 600,
     color: "var(--text-secondary)",
   },
   logFoods: {
-    fontSize: 13, color: "var(--text-secondary)", margin: "8px 0 0",
-    lineHeight: 1.4, width: "100%",
+    fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "10px 0 0",
+    lineHeight: 1.5, width: "100%",
   },
   logNotes: {
-    fontSize: 13, color: "var(--text-muted)", margin: "8px 0 0",
-    fontStyle: "italic", lineHeight: 1.4,
+    fontSize: "var(--text-body)", color: "var(--text-muted)", margin: "8px 0 0",
+    fontStyle: "italic", lineHeight: 1.5,
   },
 
   /* Empty */
@@ -611,6 +611,6 @@ const s = {
     background: g.bg, borderRadius: "var(--radius)", boxShadow: g.shadow,
     border: g.border,
   },
-  emptyTitle: { fontSize: 18, fontWeight: 700, color: "var(--text)", margin: 0 },
-  emptyText: { fontSize: 14, color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 },
+  emptyTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
+  emptyText: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 },
 };

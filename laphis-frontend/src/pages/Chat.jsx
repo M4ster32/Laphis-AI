@@ -582,7 +582,7 @@ const s = {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "16px 14px 12px", borderBottom: "1px solid var(--border)",
   },
-  sidebarTitle: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 },
+  sidebarTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
   sidebarClose: {
     background: "none", border: "none", cursor: "pointer",
     color: "var(--text-muted)", padding: 4,
@@ -658,11 +658,11 @@ const s = {
     boxShadow: "0 2px 8px var(--btn-primary-shadow)",
   },
   coachName: {
-    fontSize: 15, fontWeight: 800, color: "var(--text)", margin: 0,
+    fontSize: "var(--text-h3)", fontWeight: 800, color: "var(--text)", margin: 0,
     maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
     letterSpacing: "-0.02em",
   },
-  coachStatus: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500 },
+  coachStatus: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500 },
 
   /* Messages */
   messagesArea: {
@@ -673,14 +673,14 @@ const s = {
   assistantBubbleWrap: { display: "flex", justifyContent: "flex-start" },
   userBubble: {
     background: "var(--gradient-primary)", color: "white",
-    borderRadius: "20px 20px 6px 20px", padding: "13px 18px",
-    maxWidth: "80%", fontSize: 14, lineHeight: 1.55, fontWeight: 500,
+    borderRadius: "20px 20px 6px 20px", padding: "14px 18px",
+    maxWidth: "80%", fontSize: "var(--text-body)", lineHeight: 1.6, fontWeight: 500,
     boxShadow: "0 2px 8px var(--btn-primary-shadow)",
   },
   assistantBubble: {
     background: "var(--card-bg)", color: "var(--text)",
-    borderRadius: "20px 20px 20px 6px", padding: "13px 18px",
-    maxWidth: "85%", fontSize: 14, lineHeight: 1.55, fontWeight: 500,
+    borderRadius: "20px 20px 20px 6px", padding: "14px 18px",
+    maxWidth: "85%", fontSize: "var(--text-body)", lineHeight: 1.6, fontWeight: 500,
     boxShadow: "var(--shadow)", border: "1px solid var(--border)",
   },
   msgContent: { whiteSpace: "pre-wrap", wordBreak: "break-word" },
@@ -714,8 +714,8 @@ const s = {
     fontSize: 20, fontWeight: 800, marginBottom: 4,
     boxShadow: "0 4px 16px var(--btn-primary-shadow)",
   },
-  welcomeTitle: { fontSize: 21, fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
-  welcomeText: { fontSize: 14, color: "var(--text-secondary)", maxWidth: 300, lineHeight: 1.5, margin: 0 },
+  welcomeTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em" },
+  welcomeText: { fontSize: "var(--text-body)", color: "var(--text-secondary)", maxWidth: 300, lineHeight: 1.6, margin: 0 },
   suggestionsGrid: {
     display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8,
     width: "100%", maxWidth: 360, marginTop: 16,
@@ -761,6 +761,6 @@ const s = {
     textAlign: "center", padding: "60px 20px",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
   },
-  emptyTitle: { fontSize: 18, fontWeight: 700, color: "var(--text)", margin: 0 },
-  emptyText: { fontSize: 14, color: "var(--text-secondary)", margin: 0, maxWidth: 260, lineHeight: 1.5 },
+  emptyTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
+  emptyText: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: 0, maxWidth: 260, lineHeight: 1.6 },
 };

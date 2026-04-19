@@ -432,7 +432,7 @@ const s = {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "8px 0 16px",
   },
-  title: { fontSize: 20, fontWeight: 700, color: "var(--text)", margin: 0 },
+  title: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em" },
   newBtn: { padding: "8px 18px", fontSize: 14 },
   iconBtn: {
     width: 38, height: 38, borderRadius: "var(--radius-sm)",
@@ -468,10 +468,10 @@ const s = {
   planTop: { display: "flex", alignItems: "flex-start", gap: 12 },
   planIcon: { fontSize: 26, marginTop: 2 },
   planTitle: {
-    fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px",
-    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+    fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: "0 0 4px",
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.02em",
   },
-  planMeta: { fontSize: 12, color: "var(--text-muted)", margin: 0 },
+  planMeta: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: 0 },
   planCatBadge: {
     marginLeft: 6, padding: "2px 8px", borderRadius: 10,
     background: "var(--primary-bg)", fontSize: 11, fontWeight: 600,

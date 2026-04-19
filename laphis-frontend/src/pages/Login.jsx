@@ -113,11 +113,11 @@ const s = {
   },
   container: {
     width: "100%", maxWidth: 400,
-    background: "var(--card-bg)", borderRadius: 20,
-    padding: "32px 24px", boxShadow: "var(--shadow-md)",
+    background: "var(--card-bg)", borderRadius: 22,
+    padding: "36px 26px", boxShadow: "var(--shadow-md)",
     border: "1px solid var(--border)",
   },
-  brand: { textAlign: "center", marginBottom: 28 },
+  brand: { textAlign: "center", marginBottom: 32 },
   logo: {
     width: 56, height: 56, borderRadius: 16,
     background: "var(--gradient-primary)", color: "#FFFFFF",
@@ -126,8 +126,8 @@ const s = {
     marginBottom: 16,
     boxShadow: "0 4px 12px var(--btn-primary-shadow)",
   },
-  title: { fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 6px" },
-  subtitle: { fontSize: 14, color: "var(--text-secondary)", margin: 0, fontWeight: 500 },
+  title: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 6px", letterSpacing: "-0.03em" },
+  subtitle: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: 0, fontWeight: 500 },
   link: {
     textAlign: "center", fontSize: 14, color: "var(--text-secondary)",
     marginTop: 24, fontWeight: 500,

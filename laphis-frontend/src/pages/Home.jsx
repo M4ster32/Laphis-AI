@@ -74,19 +74,19 @@ const s = {
     boxShadow: "var(--btn-primary-shadow)",
   },
   brandName: {
-    fontSize: 36, fontWeight: 800, letterSpacing: 3,
+    fontSize: "var(--text-hero)", fontWeight: 800, letterSpacing: 4,
     color: "var(--text)", margin: 0,
     fontFamily: "'Clash Display', sans-serif",
   },
   tagline: {
-    fontSize: 16, color: "var(--text-secondary)", fontWeight: 500,
-    lineHeight: 1.5, maxWidth: 280, margin: "0 auto",
+    fontSize: "var(--text-h3)", color: "var(--text-secondary)", fontWeight: 500,
+    lineHeight: 1.55, maxWidth: 300, margin: "0 auto",
   },
 
-  features: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 36 },
+  features: { display: "flex", flexDirection: "column", gap: 16, marginBottom: 40 },
   featureCard: {
-    display: "flex", alignItems: "center", gap: 16,
-    padding: "18px 20px", background: "var(--card-bg)",
+    display: "flex", alignItems: "center", gap: 18,
+    padding: "20px 22px", background: "var(--card-bg)",
     borderRadius: 20, boxShadow: "var(--shadow)",
     border: "1px solid var(--border)",
   },
@@ -98,13 +98,13 @@ const s = {
     width: 40, height: 40, borderRadius: 12, background: "var(--primary-bg)",
     display: "flex", alignItems: "center", justifyContent: "center",
   },
-  featureTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
-  featureDesc: { fontSize: 13, color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 },
+  featureTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: "0 0 4px", letterSpacing: "-0.02em" },
+  featureDesc: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 },
 
-  ctaArea: { display: "flex", flexDirection: "column", gap: 12 },
+  ctaArea: { display: "flex", flexDirection: "column", gap: 14 },
 
   footer: {
-    textAlign: "center", fontSize: 12, color: "var(--text-muted)",
-    marginTop: 32, fontWeight: 500,
+    textAlign: "center", fontSize: "var(--text-caption)", color: "var(--text-muted)",
+    marginTop: 36, fontWeight: 500,
   },
 };

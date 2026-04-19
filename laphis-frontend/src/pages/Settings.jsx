@@ -407,24 +407,24 @@ export default function Settings() {
 // ===== STYLES — Compact System Settings =====
 const s = {
   page: { animation: "fadeUp 0.25s ease" },
-  pageTitle: { fontSize: 18, fontWeight: 700, color: "var(--text)", margin: "0 0 16px" },
+  pageTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 20px", letterSpacing: "-0.03em" },
 
   section: {
     background: "var(--card-bg)", borderRadius: 14,
-    padding: "14px 16px", boxShadow: "var(--shadow)", marginBottom: 12,
+    padding: "16px 18px", boxShadow: "var(--shadow)", marginBottom: 14,
     border: "var(--card-border)",
   },
   sectionTitle: {
-    fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 10px",
-    textTransform: "uppercase", letterSpacing: "0.05em",
+    fontSize: "var(--text-overline)", fontWeight: 700, color: "var(--text-muted)", margin: "0 0 12px",
+    textTransform: "uppercase", letterSpacing: "0.06em",
   },
 
   settingRow: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
     padding: "6px 0",
   },
-  settingLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "var(--text)" },
-  settingDesc: { display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 1 },
+  settingLabel: { display: "block", fontSize: "var(--text-body)", fontWeight: 600, color: "var(--text)" },
+  settingDesc: { display: "block", fontSize: "var(--text-overline)", color: "var(--text-muted)", marginTop: 2 },
 
   toggleBtn: {
     width: 44, height: 24, borderRadius: 12, border: "none",

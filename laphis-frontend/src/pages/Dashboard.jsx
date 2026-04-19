@@ -536,25 +536,25 @@ export default function Dashboard() {
 
 // ===== STYLES — Balanced: Clean + Data-Rich =====
 const s = {
- page: { animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", gap: 14 },
+ page: { animation: "fadeUp 0.25s ease", display: "flex", flexDirection: "column", gap: 18 },
 
  /* Onboarding */
  onboardCard: {
  background: "var(--card-bg)", borderRadius: "var(--radius)",
- padding: "40px 24px 32px", boxShadow: "var(--shadow-lg)",
+ padding: "44px 28px 36px", boxShadow: "var(--shadow-lg)",
  border: "var(--card-border)", textAlign: "center",
  },
- onboardTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 10px", letterSpacing: "-0.03em" },
- onboardDesc: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "0 0 28px", lineHeight: 1.6 },
- onboardFeatures: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 28, textAlign: "left" },
- onboardFeature: { display: "flex", alignItems: "center", gap: 12, padding: "8px 0" },
+ onboardTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 12px", letterSpacing: "-0.035em", lineHeight: 1.15 },
+ onboardDesc: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "0 0 32px", lineHeight: 1.65 },
+ onboardFeatures: { display: "flex", flexDirection: "column", gap: 14, marginBottom: 32, textAlign: "left" },
+ onboardFeature: { display: "flex", alignItems: "center", gap: 14, padding: "8px 0" },
  onboardDot: { width: 5, height: 5, borderRadius: "50%", background: "var(--primary)", flexShrink: 0 },
- onboardFeatureText: { fontSize: 13, fontWeight: 500, color: "var(--text-secondary)" },
+ onboardFeatureText: { fontSize: "var(--text-body)", fontWeight: 500, color: "var(--text-secondary)", lineHeight: 1.5 },
 
  /* 1. Greeting */
- greeting: { paddingTop: 2 },
- greetingSub: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, margin: 0, letterSpacing: "0.04em", textTransform: "uppercase" },
- greetingName: { fontSize: 24, fontWeight: 800, color: "var(--text)", margin: "1px 0 0", letterSpacing: "-0.03em", lineHeight: 1.1 },
+ greeting: { paddingTop: 4 },
+ greetingSub: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 600, margin: 0, letterSpacing: "0.06em", textTransform: "uppercase" },
+ greetingName: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "2px 0 0", letterSpacing: "-0.035em", lineHeight: 1.1 },
 
  /* Hero Card — primary focus */
  heroCard: {
@@ -570,19 +570,19 @@ const s = {
  background: "var(--primary-bg)",
  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
  },
- heroTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: 0 },
- heroSub: { fontSize: 11, color: "var(--text-muted)", margin: "2px 0 0", fontWeight: 400 },
+ heroTitle: { fontSize: "var(--text-body)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.01em" },
+ heroSub: { fontSize: "var(--text-overline)", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 500 },
 
  /* 2. Stats Strip */
  statsStrip: {
  display: "flex", alignItems: "center",
  background: "var(--card-bg)", borderRadius: 14,
- padding: "12px 0", boxShadow: "var(--shadow)",
+ padding: "14px 0", boxShadow: "var(--shadow)",
  border: "var(--card-border)",
  },
- statCell: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 },
- statVal: { fontSize: 17, fontWeight: 800, color: "var(--text)", lineHeight: 1, letterSpacing: "-0.02em" },
- statLbl: { fontSize: 10, color: "var(--text-muted)", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" },
+ statCell: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 },
+ statVal: { fontSize: "var(--text-h2)", fontWeight: 800, color: "var(--text)", lineHeight: 1, letterSpacing: "-0.02em", fontFamily: "var(--font-heading)" },
+ statLbl: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" },
 
  /* 3. Charts */
  chartCard: {
@@ -590,7 +590,7 @@ const s = {
  boxShadow: "var(--shadow)", border: "var(--card-border)",
  overflow: "hidden",
  },
- chartTitle: { fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.04em" },
+ chartTitle: { fontSize: "var(--text-overline)", fontWeight: 700, color: "var(--text-muted)", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.06em" },
 
  /* 4. Weekly Summary — collapsible */
  summaryCard: {
@@ -602,10 +602,10 @@ const s = {
  width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center",
  padding: "13px 16px", background: "none", border: "none", cursor: "pointer",
  },
- summaryLabel: { fontSize: 13, fontWeight: 700, color: "var(--text)" },
- summaryMiniStats: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, display: "flex", gap: 4 },
- summaryBody: { padding: "0 16px 14px", display: "flex", flexDirection: "column", gap: 10 },
- summaryText: { fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55, margin: 0, whiteSpace: "pre-wrap" },
+ summaryLabel: { fontSize: "var(--text-body)", fontWeight: 700, color: "var(--text)" },
+ summaryMiniStats: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500, display: "flex", gap: 4 },
+ summaryBody: { padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 12 },
+ summaryText: { fontSize: "var(--text-caption)", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" },
  summaryTags: { display: "flex", flexWrap: "wrap", gap: 6 },
  tag: {
  padding: "3px 10px", borderRadius: 10,
@@ -632,32 +632,32 @@ const s = {
  background: "var(--card-bg)", borderRadius: 14,
  padding: "12px 14px", boxShadow: "var(--shadow)", border: "var(--card-border)",
  },
- recentTitle: { fontSize: 12, fontWeight: 700, color: "var(--text-muted)", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.05em" },
+ recentTitle: { fontSize: "var(--text-overline)", fontWeight: 700, color: "var(--text-muted)", margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.06em" },
  recentRow: {
- display: "flex", alignItems: "center", gap: 10, padding: "7px 0",
+ display: "flex", alignItems: "center", gap: 12, padding: "8px 0",
  borderBottom: "1px solid var(--border-light)",
  },
- recentDot: { width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
- recentText: { flex: 1, fontSize: 13, fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
- recentDate: { fontSize: 11, color: "var(--text-muted)", fontWeight: 400, flexShrink: 0 },
+ recentDot: { width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
+ recentText: { flex: 1, fontSize: "var(--text-body)", fontWeight: 500, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+ recentDate: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 400, flexShrink: 0 },
 
  /* Empty State */
  emptyCard: {
  background: "var(--card-bg)", borderRadius: 14,
- padding: "36px 20px", boxShadow: "var(--shadow)", border: "var(--card-border)",
- textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+ padding: "44px 24px", boxShadow: "var(--shadow)", border: "var(--card-border)",
+ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
  },
- emptyTitle: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0 },
- emptySub: { fontSize: 13, color: "var(--text-muted)", margin: 0, maxWidth: 260, lineHeight: 1.5 },
+ emptyTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
+ emptySub: { fontSize: "var(--text-body)", color: "var(--text-muted)", margin: 0, maxWidth: 260, lineHeight: 1.6 },
 
  /* Quote */
  quote: {
- fontSize: 11, color: "var(--text-muted)", fontStyle: "italic",
- lineHeight: 1.6, fontWeight: 400, textAlign: "center", opacity: 0.5, margin: 0,
+ fontSize: "var(--text-overline)", color: "var(--text-muted)", fontStyle: "italic",
+ lineHeight: 1.7, fontWeight: 400, textAlign: "center", opacity: 0.5, margin: "4px 0 0",
  },
 
  /* Tooltip */
- tooltip: { background: "var(--card-bg)", borderRadius: 10, padding: "8px 12px", boxShadow: "var(--shadow-md)", border: "var(--card-border)" },
- tooltipLabel: { fontSize: 11, fontWeight: 600, color: "var(--text)", margin: "0 0 3px" },
- tooltipValue: { fontSize: 11, fontWeight: 400, margin: 0 },
+ tooltip: { background: "var(--card-bg)", borderRadius: 10, padding: "10px 14px", boxShadow: "var(--shadow-md)", border: "var(--card-border)" },
+ tooltipLabel: { fontSize: "var(--text-overline)", fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
+ tooltipValue: { fontSize: "var(--text-overline)", fontWeight: 400, margin: 0 },
 };

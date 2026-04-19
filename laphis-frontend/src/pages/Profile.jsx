@@ -468,16 +468,16 @@ const s = {
   page: { animation: "fadeUp 0.35s ease" },
   profileHeader: { textAlign: "center", marginBottom: 24, paddingTop: 8 },
   avatarRing: { width: 92, height: 92, borderRadius: 28, border: "3px solid var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", padding: 3 },
-  profileName: { fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
-  memberSinceText: { fontSize: 13, color: "var(--text-muted)", fontWeight: 500, margin: 0 },
+  profileName: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 4px", letterSpacing: "-0.03em" },
+  memberSinceText: { fontSize: "var(--text-caption)", color: "var(--text-muted)", fontWeight: 500, margin: 0 },
 
   infoCard: { background: gl.bg, borderRadius: "var(--radius)", padding: "6px 20px", marginBottom: 16, boxShadow: gl.shadow, border: gl.border },
-  infoRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0" },
-  infoLabel: { fontSize: 14, color: "var(--text-muted)", fontWeight: 500 },
-  infoValue: { fontSize: 14, fontWeight: 600, color: "var(--text)", textTransform: "capitalize" },
+  infoRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "15px 0" },
+  infoLabel: { fontSize: "var(--text-body)", color: "var(--text-muted)", fontWeight: 500 },
+  infoValue: { fontSize: "var(--text-body)", fontWeight: 600, color: "var(--text)", textTransform: "capitalize" },
   infoDivider: { height: 1, background: "var(--border)" },
 
-  sectionTitle: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "0 0 14px" },
+  sectionTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: "0 0 16px", letterSpacing: "-0.02em" },
   badgesGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 32 },
   badge: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "18px 8px", background: gl.bg, borderRadius: "var(--radius-sm)", boxShadow: gl.shadow, transition: "opacity 0.3s", border: gl.border },
   badgeLabel: { fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textAlign: "center" },
@@ -485,7 +485,7 @@ const s = {
 
   formCard: { background: gl.bg, borderRadius: "var(--radius)", padding: "24px 20px", boxShadow: gl.shadowMd, border: gl.border },
   formHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid var(--glass-border)" },
-  formHeaderTitle: { fontSize: 18, fontWeight: 700, color: "var(--text)", margin: 0 },
+  formHeaderTitle: { fontSize: "var(--text-h2)", fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.02em" },
   formClose: { width: 34, height: 34, borderRadius: 12, background: "var(--card-bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "var(--text-muted)", cursor: "pointer", border: gl.border, boxShadow: "var(--shadow)", transition: "background 0.15s" },
 
   stepIndicator: { display: "flex", alignItems: "center", justifyContent: "center", gap: 0, marginBottom: 24, padding: "0 4px" },

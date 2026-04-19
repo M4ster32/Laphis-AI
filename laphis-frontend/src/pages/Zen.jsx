@@ -926,8 +926,8 @@ const s = {
     boxShadow: "0 4px 16px rgba(140, 68, 27, 0.15)",
   },
   zenHeroEmoji: { fontSize: 48, display: "block", marginBottom: 8, animation: "float 3s ease-in-out infinite" },
-  zenTitle: { fontSize: 24, fontWeight: 700, color: "white", margin: "0 0 4px" },
-  zenSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.8)", margin: 0, fontWeight: 500 },
+  zenTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "white", margin: "0 0 6px", letterSpacing: "-0.03em" },
+  zenSubtitle: { fontSize: "var(--text-body)", color: "rgba(255,255,255,0.8)", margin: 0, fontWeight: 500 },
 
   /* Affirmation */
   affirmationCard: {
@@ -948,12 +948,12 @@ const s = {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
     boxShadow: gl.shadow, border: gl.border,
   },
-  zenStatValue: { fontSize: 20, fontWeight: 700, color: "var(--text)" },
-  zenStatLabel: { fontSize: 11, color: "var(--text-muted)", fontWeight: 600 },
+  zenStatValue: { fontSize: "var(--text-h2)", fontWeight: 800, color: "var(--text)", fontFamily: "var(--font-heading)" },
+  zenStatLabel: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 600 },
 
   /* Section */
-  sectionTitle: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "0 0 14px" },
-  subTitle: { fontSize: 14, fontWeight: 700, color: "var(--text)", margin: "20px 0 12px" },
+  sectionTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: "0 0 16px", letterSpacing: "-0.02em" },
+  subTitle: { fontSize: "var(--text-body)", fontWeight: 700, color: "var(--text)", margin: "24px 0 14px" },
 
   /* Activities */
   activitiesGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 },
@@ -968,8 +968,8 @@ const s = {
     width: 56, height: 56, borderRadius: 18,
     display: "flex", alignItems: "center", justifyContent: "center",
   },
-  activityTitle: { fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 },
-  activityDesc: { fontSize: 12, color: "var(--text-muted)", margin: 0, lineHeight: 1.4 },
+  activityTitle: { fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.01em" },
+  activityDesc: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 },
 
   /* History */
   historyList: { display: "flex", flexDirection: "column", gap: 8 },
@@ -1072,7 +1072,7 @@ const s = {
     padding: "40px 24px 32px", boxShadow: gl.shadowMd,
     border: gl.border,
   },
-  completeTitle: { fontSize: 22, fontWeight: 700, color: "var(--text)", margin: "0 0 8px" },
-  completeDesc: { fontSize: 15, color: "var(--text-secondary)", margin: "0 0 24px", lineHeight: 1.6 },
+  completeTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 10px", letterSpacing: "-0.03em" },
+  completeDesc: { fontSize: "var(--text-h3)", color: "var(--text-secondary)", margin: "0 0 28px", lineHeight: 1.6 },
   completeActions: { display: "flex", flexDirection: "column", gap: 10, marginTop: 24 },
 };
