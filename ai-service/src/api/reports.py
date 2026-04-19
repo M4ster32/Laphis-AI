@@ -4,7 +4,7 @@ API de Relatórios — Agrega dados de todas as tabelas para gerar relatórios d
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import Counter
 import jwt
 import os
@@ -39,8 +39,8 @@ def _calc_streak(dates_list):
     unique = sorted(set(dates_list), reverse=True)
     if not unique:
         return 0
-    today = datetime.utcnow().strftime("%Y-%m-%d")
-    yesterday = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     if unique[0] != today and unique[0] != yesterday:
         return 0
     streak = 1
@@ -58,8 +58,8 @@ def _weekly_data(items, date_field, value_field, weeks=8):
     """Agregar dados por semana"""
     result = []
     for w in range(weeks - 1, -1, -1):
-        start = datetime.utcnow() - timedelta(weeks=w + 1)
-        end = datetime.utcnow() - timedelta(weeks=w)
+        start = datetime.now(timezone.utc) - timedelta(weeks=w + 1)
+        end = datetime.now(timezone.utc) - timedelta(weeks=w)
         week_items = [
             i for i in items
             if hasattr(i, date_field) and getattr(i, date_field)
@@ -148,8 +148,8 @@ def get_report_summary(token: str = None, db: Session = Depends(get_db)):
     # Zen weekly (use created_at)
     zen_weekly = []
     for w in range(7, -1, -1):
-        start = datetime.utcnow() - timedelta(weeks=w + 1)
-        end = datetime.utcnow() - timedelta(weeks=w)
+        start = datetime.now(timezone.utc) - timedelta(weeks=w + 1)
+        end = datetime.now(timezone.utc) - timedelta(weeks=w)
         week_sessions = [
             z for z in zen_sessions
             if z.created_at and start <= z.created_at <= end
@@ -187,7 +187,7 @@ def get_report_summary(token: str = None, db: Session = Depends(get_db)):
 # ==================== WEEKLY AI SUMMARY ====================
 
 def _generate_weekly_summary_text(workouts, meals, zen_sessions, water_logs, plans, profile):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     week_ago = now - timedelta(days=7)
     week_str = lambda d: d.strftime("%Y-%m-%d")
 
@@ -283,7 +283,7 @@ def get_weekly_summary(token: str = None, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
     week_end = (now - timedelta(days=now.weekday()) + timedelta(days=6)).strftime("%Y-%m-%d")
 
@@ -330,7 +330,7 @@ def refresh_weekly_summary(token: str = None, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="Utilizador não encontrado")
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
     week_end = (now - timedelta(days=now.weekday()) + timedelta(days=6)).strftime("%Y-%m-%d")
 

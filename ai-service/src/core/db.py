@@ -4,8 +4,7 @@ Configuração da Base de Dados SQLite com SQLAlchemy
 import os
 from pathlib import Path
 from sqlalchemy import create_engine, inspect
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 # Caminho da base de dados - ABSOLUTO para evitar problemas com working directory
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"

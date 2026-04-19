@@ -4,7 +4,7 @@ Utiliza autenticação por JWT token (query param)
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import jwt
 import os
 from ..core.db import get_db
@@ -116,8 +116,8 @@ def create_log(
     user_id = _get_user_id(token)
     profile_id = _get_profile_id(user_id, db)
 
-    today = datetime.utcnow().strftime("%Y-%m-%d")
-    now = datetime.utcnow()
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now = datetime.now(timezone.utc)
 
     if payload.log_type == "treino":
         workout = WorkoutLog(

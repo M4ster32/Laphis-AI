@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt, os, logging
 from ..core.db import get_db
 from ..core.models import Profile, ChatMessage, ChatSession, User, AdaptationLog
@@ -25,7 +25,7 @@ def _load_profile(profile_id: int, db: Session) -> Profile:
 
 
 def _get_or_create_session(user_id: int, session_id: int | None, db: Session) -> ChatSession:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if session_id:
         session = (
             db.query(ChatSession)
@@ -143,7 +143,7 @@ async def ask(payload: AskIn, db: Session = Depends(get_db)):
         session_id=session.id,
         role="user",
         content=payload.question,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     db.add(user_msg)
 
@@ -152,7 +152,7 @@ async def ask(payload: AskIn, db: Session = Depends(get_db)):
         session_id=session.id,
         role="assistant",
         content=ai_text,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     db.add(ai_msg)
     db.commit()

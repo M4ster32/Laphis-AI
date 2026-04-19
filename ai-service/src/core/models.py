@@ -2,7 +2,7 @@
 Modelos SQLAlchemy para a base de dados LAPHIS
 Define as tabelas e relacionamentos
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float, JSON
 from sqlalchemy.orm import relationship
 from .db import Base
@@ -57,7 +57,7 @@ class WorkoutLog(Base):
     duration_min = Column(Integer, nullable=True)
     calories = Column(Integer, nullable=True)  # Calorias queimadas
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamento
     profile = relationship("Profile", back_populates="workout_logs")
@@ -81,7 +81,7 @@ class MealLog(Base):
     calories = Column(Integer, nullable=True)
     protein_g = Column(Integer, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamento
     profile = relationship("Profile", back_populates="meal_logs")
@@ -102,7 +102,7 @@ class WaterLog(Base):
     date = Column(String(10), nullable=False)  # "YYYY-MM-DD"
     glasses = Column(Integer, nullable=False, default=0)  # Copos de água (250ml cada)
     ml_total = Column(Integer, nullable=False, default=0)  # Total em ml
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamento
     user = relationship("User", back_populates="water_logs")
@@ -123,7 +123,7 @@ class WeightEntry(Base):
     weight_kg = Column(Float, nullable=False)
     date = Column(String(10), nullable=False)  # "YYYY-MM-DD"
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamento
     user = relationship("User", back_populates="weight_entries")
@@ -145,7 +145,7 @@ class Category(Base):
     name = Column(String(60), nullable=False)
     icon = Column(String(10), nullable=True)  # emoji
     color = Column(String(20), nullable=True)  # hex color ex: "#9B6A4A"
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamentos
     user = relationship("User", back_populates="categories")
@@ -166,7 +166,7 @@ class User(Base):
     email = Column(String(120), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     goal = Column(String(50), nullable=True)  # "perder_gordura", "ganhar_massa", "manter"
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Email verification
     email_verified = Column(Integer, default=0, nullable=False)  # 0=não, 1=sim
@@ -197,7 +197,7 @@ class ChatSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String(120), nullable=False, default="Nova conversa")
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
     expires_at = Column(DateTime, nullable=False)
 
     user = relationship("User", back_populates="chat_sessions")
@@ -215,7 +215,7 @@ class ChatMessage(Base):
     session_id = Column(Integer, ForeignKey("chat_sessions.id"), nullable=True, index=True)
     role = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
 
     user = relationship("User", back_populates="messages")
     session = relationship("ChatSession", back_populates="messages")
@@ -235,7 +235,7 @@ class WeeklySummary(Base):
     highlights = Column(JSON, nullable=True)
     suggestions = Column(JSON, nullable=True)
     stats = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="weekly_summaries")
 
@@ -258,8 +258,8 @@ class Plan(Base):
     content_json = Column(JSON, nullable=False)  # Plano estruturado em JSON
     notes = Column(Text, nullable=True)
     status = Column(String(20), nullable=False, default="active")  # "active", "archived"
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamentos
     profile = relationship("Profile", back_populates="plans")
@@ -284,7 +284,7 @@ class ZenSession(Base):
     mood_before = Column(String(20), nullable=True)  # "calm", "stressed", "anxious", etc.
     mood_after = Column(String(20), nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
 
     # Relacionamento
     user = relationship("User", back_populates="zen_sessions")
@@ -337,7 +337,7 @@ class ProgressSnapshot(Base):
 
     # Meta
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relacionamentos
     profile = relationship("Profile", back_populates="progress_snapshots")
@@ -374,7 +374,7 @@ class PlanFeedback(Base):
     completed_pct = Column(Integer, nullable=True)  # % do plano que completou (0-100)
     weeks_followed = Column(Integer, nullable=True)  # semanas a seguir este plano
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
 
     # Relacionamentos
     plan = relationship("Plan", back_populates="feedback")
@@ -412,7 +412,7 @@ class AdaptationLog(Base):
     user_response = Column(Text, nullable=True)  # Resposta/comentário do user
     responded_at = Column(DateTime, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
 
     # Relacionamentos
     profile = relationship("Profile", back_populates="adaptation_logs")
@@ -438,8 +438,8 @@ class DailyPlan(Base):
     meals = Column(JSON, nullable=False)
     adjustments = Column(JSON, nullable=True)  # list of adjustment records
     status = Column(String(20), nullable=False, default="active")  # "active", "completed", "skipped"
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationship
     profile = relationship("Profile", back_populates="daily_plans")

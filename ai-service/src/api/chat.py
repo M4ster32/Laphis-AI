@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt, os
 from ..core.db import get_db
 from ..core.models import User, Profile, ChatMessage, ChatSession
@@ -33,7 +33,7 @@ def _get_user_id(token: str) -> int:
 @router.get("/sessions", response_model=list[ChatSessionOut])
 def list_sessions(token: str = None, db: Session = Depends(get_db)):
     user_id = _get_user_id(token)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     sessions = (
         db.query(ChatSession)
         .filter(ChatSession.user_id == user_id, ChatSession.expires_at > now)
@@ -54,7 +54,7 @@ def list_sessions(token: str = None, db: Session = Depends(get_db)):
 @router.post("/sessions", response_model=ChatSessionOut)
 def create_session(token: str = None, db: Session = Depends(get_db)):
     user_id = _get_user_id(token)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     session = ChatSession(
         user_id=user_id,
         title="Nova conversa",
@@ -155,7 +155,7 @@ def get_chat_history(
 
 
 def cleanup_expired_sessions(db: Session):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expired = db.query(ChatSession).filter(ChatSession.expires_at <= now).all()
     count = len(expired)
     for s in expired:

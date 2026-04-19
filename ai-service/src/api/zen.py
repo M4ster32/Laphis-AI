@@ -4,7 +4,7 @@ Regista sessões de meditação e respiração do utilizador
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import jwt
 import os
 from ..core.db import get_db
@@ -72,7 +72,7 @@ def create_zen_session(
         mood_before=payload.mood_before,
         mood_after=payload.mood_after,
         notes=payload.notes,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     db.add(session)
     db.commit()

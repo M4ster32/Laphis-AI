@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -38,10 +39,38 @@ from .api.rag_ingest import router as rag_ingest_router
 from .api.rag_ask import router as rag_ask_router
 from .api.daily_plan import router as daily_plan_router
 
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """Lifespan handler — executa no arranque e shutdown"""
+    print("\n🚀 Iniciando LAPHIS AI Service...")
+    init_db()
+    _migrate_db()
+    if is_ai_available():
+        print(f"  🤖 IA ATIVA — modelo: {CHAT_MODEL}")
+        print("     Chat, planos e adaptação usam OpenAI")
+    else:
+        print("  📋 Modo REGRAS — sem OPENAI_API_KEY")
+        print("     Chat e planos usam sistema de regras/templates")
+        print("     Para ativar IA: define OPENAI_API_KEY no .env")
+    from .core.db import SessionLocal
+    from .api.chat import cleanup_expired_sessions
+    try:
+        db = SessionLocal()
+        deleted = cleanup_expired_sessions(db)
+        if deleted:
+            print(f"  🗑️ {deleted} sessões de chat expiradas removidas")
+        db.close()
+    except Exception:
+        pass
+    print("✅ Base de dados pronta para usar!")
+    yield
+
+
 app = FastAPI(
     title="LAPHIS AI Service",
     version="0.1.0",
-    description="AI backend for training and nutrition recommendations"
+    description="AI backend for training and nutrition recommendations",
+    lifespan=lifespan,
 )
 
 # ✅ CORS - Allow frontend to access API
@@ -87,33 +116,6 @@ def _migrate_db():
     except Exception as e:
         print(f"  ⚠️ Migração: {e}")
 
-
-# 🔹 Criar tabelas no arranque da aplicação
-@app.on_event("startup")
-def on_startup():
-    print("\n🚀 Iniciando LAPHIS AI Service...")
-    init_db()
-    _migrate_db()
-    # Mostrar modo de IA
-    if is_ai_available():
-        print(f"  🤖 IA ATIVA — modelo: {CHAT_MODEL}")
-        print("     Chat, planos e adaptação usam OpenAI")
-    else:
-        print("  📋 Modo REGRAS — sem OPENAI_API_KEY")
-        print("     Chat e planos usam sistema de regras/templates")
-        print("     Para ativar IA: define OPENAI_API_KEY no .env")
-    # Limpar sessões de chat expiradas
-    from .core.db import SessionLocal
-    from .api.chat import cleanup_expired_sessions
-    try:
-        db = SessionLocal()
-        deleted = cleanup_expired_sessions(db)
-        if deleted:
-            print(f"  🗑️ {deleted} sessões de chat expiradas removidas")
-        db.close()
-    except Exception:
-        pass
-    print("✅ Base de dados pronta para usar!")
 
 # 🔹 Endpoint raiz (para veres algo logo no browser)
 @app.get("/")

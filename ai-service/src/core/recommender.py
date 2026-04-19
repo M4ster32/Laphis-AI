@@ -449,7 +449,7 @@ def recommend(profile: ProfileOut, question: str) -> Tuple[str, List[str]]:
 
 import re as _re
 import copy as _copy
-from datetime import datetime as _dt
+from datetime import datetime as _dt, timezone as _tz
 
 # Exercise pool — each entry has a bodyweight alternative
 _EXERCISE_POOL = {
@@ -852,6 +852,6 @@ def adjust_daily_plan(plan_data: dict, constraint: str, profile: ProfileOut):
     record = {
         "constraint": constraint,
         "changes": changes,
-        "timestamp": _dt.utcnow().isoformat(),
+        "timestamp": _dt.now(_tz.utc).isoformat(),
     }
     return {"workout": workout, "meals": meals}, record

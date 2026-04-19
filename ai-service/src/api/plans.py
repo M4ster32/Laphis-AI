@@ -4,7 +4,7 @@ Endpoints para gerar, guardar, listar, editar e duplicar planos
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from ..core.db import get_db
 from ..core.models import Profile, Plan
@@ -165,8 +165,8 @@ async def generate_plan(payload: PlanGenerateIn, db: Session = Depends(get_db)):
         content_json=content,
         notes=payload.notes,
         status="active",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     db.add(plan)
     db.commit()
@@ -190,8 +190,8 @@ def save_plan(payload: PlanSaveIn, db: Session = Depends(get_db)):
         content_json=payload.content_json,
         notes=payload.notes,
         status="active",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     db.add(plan)
     db.commit()
@@ -247,7 +247,7 @@ def update_plan(plan_id: int, payload: PlanUpdateIn, db: Session = Depends(get_d
     if payload.category_id is not None:
         plan.category_id = payload.category_id
 
-    plan.updated_at = datetime.utcnow()
+    plan.updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(plan)
 
@@ -270,8 +270,8 @@ def duplicate_plan(plan_id: int, db: Session = Depends(get_db)):
         content_json=original.content_json,
         notes=original.notes,
         status="active",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     db.add(new_plan)
     db.commit()

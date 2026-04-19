@@ -4,7 +4,7 @@ Recolhe e agrega métricas do utilizador para alimentar a futura camada de IA.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import Counter
 import jwt
 import os
@@ -44,8 +44,8 @@ def _calc_streak(dates_list):
     if not dates_list:
         return 0
     unique = sorted(set(dates_list), reverse=True)
-    today = datetime.utcnow().strftime("%Y-%m-%d")
-    yesterday = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%d")
     if unique[0] != today and unique[0] != yesterday:
         return 0
     streak = 1
@@ -64,7 +64,7 @@ def _build_snapshot(profile: Profile, db: Session, period_days: int = 7) -> dict
     Constrói um snapshot agregando dados da última semana (ou período configurável).
     Retorna um dict pronto para criar o modelo ProgressSnapshot.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     start_date = (now - timedelta(days=period_days)).strftime("%Y-%m-%d")
     today = now.strftime("%Y-%m-%d")
 

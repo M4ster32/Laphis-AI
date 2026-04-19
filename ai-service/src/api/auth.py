@@ -5,7 +5,7 @@ password reset, current-user retrieval, and logout.
 
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 import os
 from passlib.context import CryptContext
@@ -44,7 +44,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create a signed JWT with an optional custom expiry."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -81,7 +81,7 @@ def _validate_code(stored: str | None, provided: str, expires: datetime | None) 
     """
     if not stored or stored != provided:
         raise HTTPException(status_code=400, detail="Código inválido")
-    if expires and datetime.utcnow() > expires:
+    if expires and datetime.now(timezone.utc).replace(tzinfo=None) > expires:
         raise HTTPException(status_code=400, detail="Código expirado. Pede um novo código.")
 
 
@@ -100,10 +100,10 @@ def register(payload: RegisterIn, db: Session = Depends(get_db)):
         email=payload.email,
         password_hash=hash_password(payload.password),
         goal=payload.goal or "manter",
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
         email_verified=0,
         verification_code=code,
-        verification_code_expires=datetime.utcnow() + timedelta(minutes=CODE_EXPIRE_MINUTES),
+        verification_code_expires=datetime.now(timezone.utc) + timedelta(minutes=CODE_EXPIRE_MINUTES),
     )
     db.add(new_user)
     db.commit()
@@ -175,7 +175,7 @@ def resend_verification_code(payload: ResendCodeIn, db: Session = Depends(get_db
 
     code = generate_code(6)
     user.verification_code = code
-    user.verification_code_expires = datetime.utcnow() + timedelta(minutes=CODE_EXPIRE_MINUTES)
+    user.verification_code_expires = datetime.now(timezone.utc) + timedelta(minutes=CODE_EXPIRE_MINUTES)
     db.commit()
 
     send_verification_email(user.email, code)
@@ -195,7 +195,7 @@ def forgot_password(payload: ForgotPasswordIn, db: Session = Depends(get_db)):
 
     code = generate_code(6)
     user.reset_code = code
-    user.reset_code_expires = datetime.utcnow() + timedelta(minutes=CODE_EXPIRE_MINUTES)
+    user.reset_code_expires = datetime.now(timezone.utc) + timedelta(minutes=CODE_EXPIRE_MINUTES)
     db.commit()
 
     send_reset_password_email(user.email, code)

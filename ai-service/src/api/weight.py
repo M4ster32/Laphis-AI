@@ -3,7 +3,7 @@ API de Peso Corporal — Acompanha a evolução do peso ao longo do tempo
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import jwt
 import os
 from ..core.db import get_db
@@ -55,7 +55,7 @@ def add_weight_entry(
 ):
     """Registar novo peso (atualiza se já existir para o dia de hoje)"""
     user_id = _get_user_id(token)
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # Verifica se já existe entrada para hoje
     existing = (
@@ -76,7 +76,7 @@ def add_weight_entry(
         weight_kg=payload.weight_kg,
         date=today,
         notes=payload.notes,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     db.add(entry)
     db.commit()

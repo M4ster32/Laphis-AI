@@ -154,8 +154,8 @@ def _get_recent_chat(db: Session, user_id: int, limit: int = 6) -> list[dict]:
 
 def _save_chat_messages(db: Session, user_id: int, question: str, answer: str):
     """Guarda pergunta e resposta no histórico de chat."""
-    from datetime import datetime
+    from datetime import datetime, timezone
 
-    db.add(ChatMessage(user_id=user_id, role="user", content=question, created_at=datetime.utcnow()))
-    db.add(ChatMessage(user_id=user_id, role="assistant", content=answer, created_at=datetime.utcnow()))
+    db.add(ChatMessage(user_id=user_id, role="user", content=question, created_at=datetime.now(timezone.utc)))
+    db.add(ChatMessage(user_id=user_id, role="assistant", content=answer, created_at=datetime.now(timezone.utc)))
     db.commit()

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 from typing import Literal, Optional, List, Any
 from datetime import datetime
 
@@ -60,9 +60,7 @@ class ProfileIn(BaseModel):
 
 class ProfileOut(ProfileIn):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class WorkoutLogIn(BaseModel):
     date: Optional[str] = Field(default=None, description="YYYY-MM-DD (auto se vazio)")
@@ -128,9 +126,7 @@ class CategoryOut(BaseModel):
     icon: Optional[str]
     color: Optional[str]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==================== PLAN SCHEMAS ====================
 
@@ -168,9 +164,7 @@ class PlanOut(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PlanListOut(BaseModel):
     id: int
@@ -180,9 +174,7 @@ class PlanListOut(BaseModel):
     title: str
     status: str
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==================== CHAT HISTORY SCHEMAS ====================
 
@@ -192,9 +184,7 @@ class ChatMessageOut(BaseModel):
     content: str
     session_id: Optional[int] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ChatSessionOut(BaseModel):
     id: int
@@ -202,9 +192,7 @@ class ChatSessionOut(BaseModel):
     created_at: datetime
     expires_at: datetime
     message_count: int = 0
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ChatSessionDetailOut(BaseModel):
     id: int
@@ -212,9 +200,7 @@ class ChatSessionDetailOut(BaseModel):
     created_at: datetime
     expires_at: datetime
     messages: List[ChatMessageOut] = []
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ChatHistoryOut(BaseModel):
     messages: List[ChatMessageOut]
@@ -233,9 +219,7 @@ class WeeklySummaryOut(BaseModel):
     suggestions: Optional[List[str]] = None
     stats: Optional[dict] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==================== ZEN SESSION SCHEMAS ====================
 
@@ -258,9 +242,7 @@ class ZenSessionOut(BaseModel):
     mood_after: Optional[str]
     notes: Optional[str]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==================== REPORTS SCHEMAS ====================
 
@@ -296,9 +278,7 @@ class WaterLogOut(BaseModel):
     glasses: int
     ml_total: int
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class WaterDailyOut(BaseModel):
     date: str
@@ -320,9 +300,7 @@ class WeightEntryOut(BaseModel):
     date: str
     notes: Optional[str]
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==================== PROGRESS SNAPSHOT SCHEMAS ====================
 
@@ -348,9 +326,7 @@ class ProgressSnapshotOut(BaseModel):
     active_plan_id: Optional[int] = None
     notes: Optional[str] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ProgressInsightsOut(BaseModel):
     """Resumo de insights para o frontend — dados já processados"""
@@ -393,9 +369,7 @@ class PlanFeedbackOut(BaseModel):
     completed_pct: Optional[int] = None
     weeks_followed: Optional[int] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # ==================== ADAPTATION LOG SCHEMAS ====================
 
@@ -419,9 +393,7 @@ class AdaptationLogOut(BaseModel):
     user_response: Optional[str] = None
     responded_at: Optional[datetime] = None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AdaptationRespondIn(BaseModel):
     status: Literal["accepted", "rejected"]
@@ -448,6 +420,4 @@ class DailyPlanOut(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

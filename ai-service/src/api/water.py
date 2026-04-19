@@ -3,7 +3,7 @@ API de Hidratação — Acompanha a ingestão de água diária
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 import os
 from ..core.db import get_db
@@ -35,7 +35,7 @@ def _get_user_id(token: str) -> int:
 def get_today_water(token: str = None, db: Session = Depends(get_db)):
     """Obter progresso de água de hoje"""
     user_id = _get_user_id(token)
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     record = (
         db.query(WaterLog)
@@ -62,7 +62,7 @@ def add_water(
 ):
     """Adicionar copos de água ao dia de hoje"""
     user_id = _get_user_id(token)
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     record = (
         db.query(WaterLog)
@@ -79,7 +79,7 @@ def add_water(
             date=today,
             glasses=payload.glasses,
             ml_total=payload.glasses * GLASS_ML,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         db.add(record)
 
@@ -99,7 +99,7 @@ def add_water(
 def remove_water(token: str = None, db: Session = Depends(get_db)):
     """Remover 1 copo de água do dia de hoje"""
     user_id = _get_user_id(token)
-    today = datetime.utcnow().strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     record = (
         db.query(WaterLog)
@@ -134,7 +134,7 @@ def water_history(
     result = []
 
     for i in range(days - 1, -1, -1):
-        d = (datetime.utcnow() - timedelta(days=i)).strftime("%Y-%m-%d")
+        d = (datetime.now(timezone.utc) - timedelta(days=i)).strftime("%Y-%m-%d")
         record = (
             db.query(WaterLog)
             .filter(WaterLog.user_id == user_id, WaterLog.date == d)

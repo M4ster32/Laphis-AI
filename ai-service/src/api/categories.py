@@ -4,7 +4,7 @@ Cada utilizador pode criar categorias para organizar planos
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 import jwt
 import os
 from ..core.db import get_db
@@ -63,7 +63,7 @@ def create_category(payload: CategoryIn, token: str = None, db: Session = Depend
         name=payload.name,
         icon=payload.icon,
         color=payload.color,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     db.add(category)
     db.commit()

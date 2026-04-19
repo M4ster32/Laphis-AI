@@ -4,7 +4,7 @@ Combina heurísticas simples com IA (OpenAI) quando disponível.
 """
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 import os
 import logging
@@ -83,7 +83,7 @@ def submit_feedback(
         existing.tags = payload.tags
         existing.completed_pct = payload.completed_pct
         existing.weeks_followed = payload.weeks_followed
-        existing.created_at = datetime.utcnow()
+        existing.created_at = datetime.now(timezone.utc)
         db.commit()
         db.refresh(existing)
 
@@ -187,7 +187,7 @@ def respond_to_suggestion(
 
     suggestion.status = payload.status
     suggestion.user_response = payload.user_response
-    suggestion.responded_at = datetime.utcnow()
+    suggestion.responded_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(suggestion)
     return AdaptationLogOut.model_validate(suggestion)
@@ -224,7 +224,7 @@ async def _run_ai_analysis(profile: Profile, db: Session) -> list:
     Análise de adaptação via IA (OpenAI).
     Retorna lista de AdaptationLog criados.
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     two_weeks_ago = (now - timedelta(days=14)).strftime("%Y-%m-%d")
     one_week_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
 
@@ -384,7 +384,7 @@ def _run_heuristic_analysis(profile: Profile, db: Session) -> list:
     Retorna lista de AdaptationLog criados.
     """
     new_logs = []
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     two_weeks_ago = (now - timedelta(days=14)).strftime("%Y-%m-%d")
     one_week_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
 

@@ -6,7 +6,7 @@ Uses AI (OpenAI) when available, with fallback to rule-based recommender.
 """
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import logging
 
@@ -60,7 +60,7 @@ async def gen_daily_plan(payload: DailyPlanGenerateIn, db: Session = Depends(get
     Uses AI when OPENAI_API_KEY is available, else rule-based.
     """
     profile = _load_profile(payload.profile_id, db)
-    target_date = payload.date or (datetime.utcnow() + timedelta(days=1)).strftime("%Y-%m-%d")
+    target_date = payload.date or (datetime.now(timezone.utc) + timedelta(days=1)).strftime("%Y-%m-%d")
 
     # Return existing plan if one already exists for this date
     existing = (
@@ -91,8 +91,8 @@ async def gen_daily_plan(payload: DailyPlanGenerateIn, db: Session = Depends(get
         meals=result["meals"],
         adjustments=[],
         status="active",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
     )
     db.add(plan)
     db.commit()
@@ -111,7 +111,7 @@ def get_daily_plan(
     Get the daily plan for a given date (defaults to today).
     Returns null if no plan exists yet.
     """
-    target = date or datetime.utcnow().strftime("%Y-%m-%d")
+    target = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     plan = (
         db.query(DailyPlan)
         .filter(DailyPlan.profile_id == profile_id, DailyPlan.date == target)
@@ -144,7 +144,7 @@ def adjust_plan(payload: DailyPlanAdjustIn, db: Session = Depends(get_db)):
     plan.workout = new_data["workout"]
     plan.meals = new_data["meals"]
     plan.adjustments = list(plan.adjustments or []) + [record]
-    plan.updated_at = datetime.utcnow()
+    plan.updated_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(plan)

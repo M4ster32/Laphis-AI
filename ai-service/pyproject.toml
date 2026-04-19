@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:passlib.*:",
+    "ignore::DeprecationWarning:pytest_asyncio.*:",
+    "ignore::DeprecationWarning:crypt.*:",
+    "ignore::UserWarning",
+]
