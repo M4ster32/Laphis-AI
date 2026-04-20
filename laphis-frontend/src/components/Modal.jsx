@@ -77,6 +77,7 @@ const s = {
     display: "flex", alignItems: "flex-end", justifyContent: "center",
     animation: "fadeIn 0.15s ease",
     padding: 0,
+    paddingBottom: 64,
   },
   modal: {
     background: "var(--bg-surface)", borderRadius: "20px 20px 0 0",

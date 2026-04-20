@@ -136,61 +136,56 @@ export default function Chat() {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  // Detectar exercícios mencionados nas mensagens do assistant
+  // Detectar categoria de treino na mensagem e buscar exercícios relevantes
   useEffect(() => {
-    const detectExercises = async () => {
-      for (let i = 0; i < messages.length; i++) {
-        const msg = messages[i];
-        if (msg.role !== "assistant" || detectedExercises[i]) continue;
-        
-        // Lista de exercícios conhecidos para detectar
-        const exercisePatterns = [
-          /agachamento|squat/gi,
-          /supino|bench\s*press/gi,
-          /deadlift|levantamento\s*terra/gi,
-          /remada|row/gi,
-          /pull[- ]?ups?|elevações?/gi,
-          /flexões?|push[- ]?ups?/gi,
-          /curl|rosca/gi,
-          /press\s*militar|overhead\s*press/gi,
-          /lunges?|afundos?/gi,
-          /stiff|romeno/gi,
-          /prancha|plank/gi,
-          /leg\s*press/gi,
-          /extensão\s*(de\s*)?pernas?/gi,
-          /elevação\s*lateral/gi,
-          /face\s*pull/gi,
-          /tricep\s*dips?/gi,
-          /burpees?/gi,
-          /mountain\s*climbers?/gi,
-          /kettlebell\s*swing/gi,
-          /crunch/gi,
-        ];
-        
-        const foundNames = new Set();
-        for (const pattern of exercisePatterns) {
-          const matches = msg.content.match(pattern);
-          if (matches) {
-            matches.forEach(m => foundNames.add(m.toLowerCase().replace(/\s+/g, " ").trim()));
-          }
-        }
-        
-        if (foundNames.size > 0) {
-          // Buscar exercícios da API
-          const exercises = [];
-          for (const name of [...foundNames].slice(0, 4)) { // Máximo 4 exercícios por mensagem
-            const ex = await ApiService.getExerciseByName(name);
-            if (ex) exercises.push(ex);
-          }
-          
-          if (exercises.length > 0) {
-            setDetectedExercises(prev => ({ ...prev, [i]: exercises }));
-          }
-        }
+    const lastIdx = messages.length - 1;
+    if (lastIdx < 0) return;
+    const msg = messages[lastIdx];
+    if (msg.role !== "assistant") return;
+    if (detectedExercises[lastIdx] !== undefined) return;
+
+    const text = msg.content.toLowerCase();
+
+    // Detetar categoria com base em palavras-chave
+    const categoryMap = [
+      { category: "peito",    keywords: ["peito", "supino", "chest", "peitoral", "bench", "crucifixo", "flexões"] },
+      { category: "costas",   keywords: ["costas", "remada", "dorsal", "pull", "deadlift", "terra", "lat", "elevações"] },
+      { category: "pernas",   keywords: ["perna", "quad", "glúteo", "gluteo", "agachamento", "squat", "leg press", "stiff", "lunges", "afundos", "femur", "gémeo"] },
+      { category: "ombros",   keywords: ["ombro", "deltóide", "press militar", "overhead", "elevação lateral", "face pull", "arnold"] },
+      { category: "biceps",   keywords: ["bícep", "bicep", "curl", "rosca"] },
+      { category: "triceps",  keywords: ["trícep", "tricep", "skull", "dips", "extensão tríceps"] },
+      { category: "abdomen",  keywords: ["abdómen", "abdominal", "core", "prancha", "plank", "crunch", "oblíquo"] },
+      { category: "cardio",   keywords: ["cardio", "burpee", "hiit", "corrida", "mountain climber", "jumping", "aeróbico"] },
+      { category: "full_body",keywords: ["corpo inteiro", "full body", "kettlebell", "funcional", "completo"] },
+    ];
+
+    // Exige pelo menos 3 palavras-chave de fitness para mostrar exercícios
+    const isFitnessMsg = /treino|exerc[ií]cio|s[eé]rie|reps|sets|x\d|\dx\d/i.test(msg.content);
+    if (!isFitnessMsg) {
+      setDetectedExercises(prev => ({ ...prev, [lastIdx]: [] }));
+      return;
+    }
+
+    let detectedCategory = null;
+    for (const { category, keywords } of categoryMap) {
+      if (keywords.some(kw => text.includes(kw))) {
+        detectedCategory = category;
+        break;
       }
-    };
-    
-    detectExercises();
+    }
+
+    if (!detectedCategory) {
+      setDetectedExercises(prev => ({ ...prev, [lastIdx]: [] }));
+      return;
+    }
+
+    // Uma única chamada à API para buscar 3 exercícios da categoria
+    ApiService.listExercises({ category: detectedCategory, limit: 3 })
+      .then(items => {
+        const list = Array.isArray(items) ? items : (items?.items || []);
+        setDetectedExercises(prev => ({ ...prev, [lastIdx]: list }));
+      })
+      .catch(() => setDetectedExercises(prev => ({ ...prev, [lastIdx]: [] })));
   }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSessions = useCallback(async () => {
