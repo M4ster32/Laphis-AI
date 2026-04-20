@@ -10,6 +10,7 @@ export { default as Card } from "./Card";
 export { default as PasswordInput } from "./PasswordInput";
 export { default as GeneratePlanModal } from "./GeneratePlanModal";
 export { default as EmptyState } from "./EmptyState";
+export { default as ExerciseCard, ExerciseGrid, ExerciseList } from "./ExerciseCard";
 export { ToastProvider, useToast } from "./Toast";
 export {
   SkeletonLine,

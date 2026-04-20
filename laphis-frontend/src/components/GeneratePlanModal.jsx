@@ -114,7 +114,7 @@ export default function GeneratePlanModal({
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
-          style={{ resize: "vertical" }}
+          style={{ resize: "none" }}
           disabled={generating}
         />
       </div>
@@ -175,7 +175,7 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    padding: "14px 8px",
+    padding: "12px 8px",
     borderRadius: "var(--radius-sm)",
     border: "2px solid var(--border)",
     cursor: "pointer",

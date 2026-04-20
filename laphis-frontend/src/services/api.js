@@ -850,6 +850,75 @@ class ApiService {
       errorMsg: "Erro ao ajustar plano",
     });
   }
+
+  // ==================== EXERCISES ====================
+
+  /**
+   * List exercises with optional filters.
+   * @param {Object} [filters] - { category, difficulty, equipment, muscle, search }
+   * @returns {Promise<Array>}
+   */
+  static async listExercises(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.category) params.append("category", filters.category);
+    if (filters.difficulty) params.append("difficulty", filters.difficulty);
+    if (filters.equipment) params.append("equipment", filters.equipment);
+    if (filters.muscle) params.append("muscle", filters.muscle);
+    if (filters.search) params.append("search", filters.search);
+    if (filters.limit) params.append("limit", filters.limit);
+    const query = params.toString();
+    return this._request(`/exercises${query ? `?${query}` : ""}`, { fallback: [] });
+  }
+
+  /**
+   * Get all exercise categories with counts.
+   * @returns {Promise<Array>}
+   */
+  static async getExerciseCategories() {
+    return this._request("/exercises/categories", { fallback: [] });
+  }
+
+  /**
+   * Get random exercises for suggestions.
+   * @param {Object} [opts] - { category, difficulty, count }
+   * @returns {Promise<Array>}
+   */
+  static async getRandomExercises(opts = {}) {
+    const params = new URLSearchParams();
+    if (opts.category) params.append("category", opts.category);
+    if (opts.difficulty) params.append("difficulty", opts.difficulty);
+    if (opts.count) params.append("count", opts.count);
+    const query = params.toString();
+    return this._request(`/exercises/random${query ? `?${query}` : ""}`, { fallback: [] });
+  }
+
+  /**
+   * Get exercise details by ID.
+   * @param {number} exerciseId
+   * @returns {Promise<Object|null>}
+   */
+  static async getExercise(exerciseId) {
+    return this._request(`/exercises/${exerciseId}`, { fallback: null });
+  }
+
+  /**
+   * Get exercise by name (fuzzy match).
+   * @param {string} name
+   * @returns {Promise<Object|null>}
+   */
+  static async getExerciseByName(name) {
+    return this._request(`/exercises/by-name/${encodeURIComponent(name)}`, { fallback: null });
+  }
+
+  /**
+   * Get exercises for a specific muscle.
+   * @param {string} muscle
+   * @param {number} [limit=10]
+   * @returns {Promise<Array>}
+   */
+  static async getExercisesForMuscle(muscle, limit = 10) {
+    return this._request(`/exercises/for-muscle/${encodeURIComponent(muscle)}?limit=${limit}`, { fallback: [] });
+  }
 }
 
 export default ApiService;

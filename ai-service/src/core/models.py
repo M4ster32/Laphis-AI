@@ -423,6 +423,46 @@ class AdaptationLog(Base):
         return f"<AdaptationLog(id={self.id}, profile_id={self.profile_id}, trigger={self.trigger}, status={self.status})>"
 
 
+class Exercise(Base):
+    """
+    Modelo de Exercício
+    Base de dados de exercícios com imagens, vídeos e instruções
+    """
+    __tablename__ = "exercises"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, index=True)
+    name_en = Column(String(100), nullable=True)  # Nome em inglês para pesquisa
+    category = Column(String(50), nullable=False, index=True)  # "peito", "costas", "pernas", "ombros", "biceps", "triceps", "abdomen", "cardio"
+    muscle_primary = Column(String(100), nullable=False)  # Músculo principal trabalhado
+    muscle_secondary = Column(String(200), nullable=True)  # Músculos secundários (comma-separated)
+    difficulty = Column(String(20), nullable=False, default="intermedio")  # "iniciante", "intermedio", "avancado"
+    equipment = Column(String(100), nullable=True)  # "barra", "halteres", "máquina", "peso corporal", "cabos"
+    
+    # Media
+    image_url = Column(Text, nullable=True)  # URL da imagem do exercício
+    video_url = Column(Text, nullable=True)  # URL do vídeo (YouTube)
+    gif_url = Column(Text, nullable=True)  # URL de GIF animado (opcional)
+    
+    # Instruções
+    instructions = Column(Text, nullable=True)  # Passos de execução (markdown)
+    tips = Column(Text, nullable=True)  # Dicas de forma
+    common_mistakes = Column(Text, nullable=True)  # Erros comuns
+    
+    # Métricas sugeridas
+    default_sets = Column(Integer, nullable=True, default=3)
+    default_reps = Column(String(20), nullable=True, default="8-12")  # "8-12", "12-15", "AMRAP"
+    default_rest_sec = Column(Integer, nullable=True, default=60)
+    
+    # Metadados
+    is_compound = Column(Integer, nullable=False, default=1)  # 1 = composto, 0 = isolamento
+    calories_per_min = Column(Float, nullable=True)  # Estimativa de calorias/minuto
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self):
+        return f"<Exercise(id={self.id}, name={self.name}, category={self.category})>"
+
+
 class DailyPlan(Base):
     """
     Plano Diário Adaptativo

@@ -400,6 +400,52 @@ class AdaptationRespondIn(BaseModel):
     user_response: Optional[str] = Field(default=None, max_length=300)
 
 
+# ==================== EXERCISE SCHEMAS ====================
+
+ExerciseCategory = Literal["peito", "costas", "pernas", "ombros", "biceps", "triceps", "abdomen", "cardio", "full_body"]
+ExerciseDifficulty = Literal["iniciante", "intermedio", "avancado"]
+
+class ExerciseOut(BaseModel):
+    id: int
+    name: str
+    name_en: Optional[str] = None
+    category: str
+    muscle_primary: str
+    muscle_secondary: Optional[str] = None
+    difficulty: str
+    equipment: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    gif_url: Optional[str] = None
+    instructions: Optional[str] = None
+    tips: Optional[str] = None
+    common_mistakes: Optional[str] = None
+    default_sets: Optional[int] = 3
+    default_reps: Optional[str] = "8-12"
+    default_rest_sec: Optional[int] = 60
+    is_compound: int = 1
+    calories_per_min: Optional[float] = None
+    model_config = ConfigDict(from_attributes=True)
+
+class ExerciseListOut(BaseModel):
+    id: int
+    name: str
+    category: str
+    muscle_primary: str
+    difficulty: str
+    equipment: Optional[str] = None
+    image_url: Optional[str] = None
+    is_compound: int = 1
+    model_config = ConfigDict(from_attributes=True)
+
+class ExerciseFilterIn(BaseModel):
+    category: Optional[str] = None
+    difficulty: Optional[str] = None
+    equipment: Optional[str] = None
+    muscle: Optional[str] = None
+    search: Optional[str] = None
+
+
 # ==================== DAILY PLAN SCHEMAS ====================
 
 class DailyPlanGenerateIn(BaseModel):

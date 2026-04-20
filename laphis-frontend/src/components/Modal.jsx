@@ -81,12 +81,13 @@ const s = {
   modal: {
     background: "var(--bg-surface)", borderRadius: "20px 20px 0 0",
     width: "100%", maxWidth: 500,
-    maxHeight: "calc(100dvh - 48px)",
+    maxHeight: "calc(100dvh - 80px)",
     display: "flex", flexDirection: "column",
     animation: "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
     boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.12)",
     border: "none",
     position: "relative",
+    overflow: "hidden",
   },
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -106,11 +107,11 @@ const s = {
   body: {
     padding: "14px 18px", flex: 1, overflowY: "auto",
     WebkitOverflowScrolling: "touch",
+    minHeight: 0,
   },
   footer: {
     display: "flex", gap: 8, justifyContent: "flex-end",
-    padding: "12px 18px",
-    paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))",
+    padding: "12px 18px 16px",
     borderTop: "1px solid var(--border-light)",
     background: "var(--bg-surface)",
     flexShrink: 0,

@@ -4,7 +4,8 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
-import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check, Zap } from "lucide-react";
+import ExerciseCard, { ExerciseList } from "../components/ExerciseCard";
+import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check, Zap, Dumbbell } from "lucide-react";
 
 /* Detect if message content looks like a training/nutrition plan */
 function looksLikePlan(text) {
@@ -124,6 +125,8 @@ export default function Chat() {
   const [savingPlan, setSavingPlan] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(null);
   const [pendingSuggestions, setPendingSuggestions] = useState([]);
+  const [detectedExercises, setDetectedExercises] = useState({});  // msgIndex -> exercises[]
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -132,6 +135,63 @@ export default function Chat() {
   };
 
   useEffect(() => { scrollToBottom(); }, [messages]);
+
+  // Detectar exercícios mencionados nas mensagens do assistant
+  useEffect(() => {
+    const detectExercises = async () => {
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        if (msg.role !== "assistant" || detectedExercises[i]) continue;
+        
+        // Lista de exercícios conhecidos para detectar
+        const exercisePatterns = [
+          /agachamento|squat/gi,
+          /supino|bench\s*press/gi,
+          /deadlift|levantamento\s*terra/gi,
+          /remada|row/gi,
+          /pull[- ]?ups?|elevações?/gi,
+          /flexões?|push[- ]?ups?/gi,
+          /curl|rosca/gi,
+          /press\s*militar|overhead\s*press/gi,
+          /lunges?|afundos?/gi,
+          /stiff|romeno/gi,
+          /prancha|plank/gi,
+          /leg\s*press/gi,
+          /extensão\s*(de\s*)?pernas?/gi,
+          /elevação\s*lateral/gi,
+          /face\s*pull/gi,
+          /tricep\s*dips?/gi,
+          /burpees?/gi,
+          /mountain\s*climbers?/gi,
+          /kettlebell\s*swing/gi,
+          /crunch/gi,
+        ];
+        
+        const foundNames = new Set();
+        for (const pattern of exercisePatterns) {
+          const matches = msg.content.match(pattern);
+          if (matches) {
+            matches.forEach(m => foundNames.add(m.toLowerCase().replace(/\s+/g, " ").trim()));
+          }
+        }
+        
+        if (foundNames.size > 0) {
+          // Buscar exercícios da API
+          const exercises = [];
+          for (const name of [...foundNames].slice(0, 4)) { // Máximo 4 exercícios por mensagem
+            const ex = await ApiService.getExerciseByName(name);
+            if (ex) exercises.push(ex);
+          }
+          
+          if (exercises.length > 0) {
+            setDetectedExercises(prev => ({ ...prev, [i]: exercises }));
+          }
+        }
+      }
+    };
+    
+    detectExercises();
+  }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSessions = useCallback(async () => {
     try {
@@ -471,6 +531,27 @@ export default function Chat() {
               <div style={s.msgContent}>
                 {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
               </div>
+              
+              {/* Exercícios detectados na mensagem */}
+              {msg.role === "assistant" && detectedExercises[i]?.length > 0 && (
+                <div style={s.exercisesSection}>
+                  <div style={s.exercisesHeader}>
+                    <Dumbbell size={14} />
+                    <span>Exercícios mencionados ({detectedExercises[i].length})</span>
+                  </div>
+                  <div style={s.exercisesList}>
+                    {detectedExercises[i].map((ex) => (
+                      <ExerciseCard
+                        key={ex.id}
+                        exercise={ex}
+                        compact={true}
+                        onClick={() => setSelectedExercise(ex)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               {msg.role === "assistant" && !msg.content.startsWith("Erro") && looksLikePlan(msg.content) && (
                 <div style={s.msgActions}>
                   <button
@@ -554,6 +635,29 @@ export default function Chat() {
         <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.5 }}>
           Tens a certeza que queres apagar esta conversa? As mensagens serão permanentemente removidas.
         </p>
+      </Modal>
+
+      {/* Modal de Exercício */}
+      <Modal
+        isOpen={!!selectedExercise}
+        onClose={() => setSelectedExercise(null)}
+        title={selectedExercise?.name || "Exercício"}
+        showFooter={false}
+      >
+        {selectedExercise && (
+          <div style={{ marginTop: -8 }}>
+            <ExerciseCard
+              exercise={selectedExercise}
+              compact={false}
+              showActions={true}
+              onStart={(ex) => {
+                setSelectedExercise(null);
+                // Could navigate to a workout tracker or log the exercise
+                console.log("Iniciar treino:", ex.name);
+              }}
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );
@@ -694,6 +798,29 @@ const s = {
     borderRadius: 8, padding: "4px 12px", fontSize: 12,
     cursor: "pointer", transition: "background 0.15s", fontWeight: 600,
     color: "var(--text-secondary)",
+  },
+
+  /* Exercises section in messages */
+  exercisesSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTop: "1px solid var(--border-light)",
+  },
+  exercisesHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--text-muted)",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  exercisesList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
   },
 
   typingDots: { display: "flex", gap: 4, padding: "4px 0" },
