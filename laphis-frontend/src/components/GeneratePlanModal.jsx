@@ -62,14 +62,14 @@ export default function GeneratePlanModal({
       loading={generating}
     >
       {error && (
-        <div className="alert alert-error" style={{ marginBottom: 12 }}>
+        <div className="alert alert-error" style={{ marginBottom: 10 }}>
           <span className="alert-icon">⚠️</span>
           <span>{error}</span>
         </div>
       )}
 
       {/* Plan type selector */}
-      <div className="form-group">
+      <div style={{ marginBottom: 14 }}>
         <label className="form-label">Tipo de plano</label>
         <div style={s.typeGrid}>
           {PLAN_TYPES.map((t) => {
@@ -86,17 +86,11 @@ export default function GeneratePlanModal({
                 }}
               >
                 <t.Icon
-                  size={22}
+                  size={20}
                   color={isActive ? t.color : "var(--text-muted)"}
                   strokeWidth={1.5}
                 />
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? t.color : "var(--text-secondary)",
-                  }}
-                >
+                <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? t.color : "var(--text-secondary)" }}>
                   {t.label}
                 </span>
               </button>
@@ -106,7 +100,7 @@ export default function GeneratePlanModal({
       </div>
 
       {/* Free-form prompt */}
-      <div className="form-group">
+      <div style={{ marginBottom: 12 }}>
         <label className="form-label">Descreve o que queres</label>
         <textarea
           className="form-input"
@@ -122,12 +116,7 @@ export default function GeneratePlanModal({
       {/* Quick prompt suggestions */}
       <div style={s.quickPrompts}>
         {QUICK_PROMPTS.map((p, i) => (
-          <button
-            key={i}
-            style={s.quickPromptBtn}
-            onClick={() => setPrompt(p)}
-            type="button"
-          >
+          <button key={i} style={s.quickPromptBtn} onClick={() => setPrompt(p)} type="button">
             {p}
           </button>
         ))}
@@ -135,7 +124,7 @@ export default function GeneratePlanModal({
 
       {/* Optional category assignment */}
       {categories.length > 0 && (
-        <div className="form-group" style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 12 }}>
           <label className="form-label">Categoria (opcional)</label>
           <div style={s.categoryChips}>
             {categories.map((cat) => {
