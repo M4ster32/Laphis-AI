@@ -81,7 +81,6 @@ const s = {
     background: "var(--bg-surface)", borderRadius: "20px 20px 0 0",
     width: "100%", maxWidth: 500,
     maxHeight: "92dvh",
-    minHeight: "min(520px, 80dvh)",
     display: "flex", flexDirection: "column",
     animation: "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
     boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.18)",

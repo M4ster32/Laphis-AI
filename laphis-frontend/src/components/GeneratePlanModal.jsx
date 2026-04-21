@@ -69,8 +69,8 @@ export default function GeneratePlanModal({
       )}
 
       {/* Plan type selector */}
-      <div style={{ marginBottom: 14 }}>
-        <label className="form-label">Tipo de plano</label>
+      <div style={{ marginBottom: 10 }}>
+        <label className="form-label" style={{ fontSize: 11 }}>Tipo de plano</label>
         <div style={s.typeGrid}>
           {PLAN_TYPES.map((t) => {
             const isActive = genType === t.value;
@@ -100,14 +100,14 @@ export default function GeneratePlanModal({
       </div>
 
       {/* Free-form prompt */}
-      <div style={{ marginBottom: 12 }}>
-        <label className="form-label">Descreve o que queres</label>
+      <div style={{ marginBottom: 10 }}>
+        <label className="form-label" style={{ fontSize: 11 }}>Descreve o que queres</label>
         <textarea
           className="form-input"
           placeholder="Ex: Plano semanal de treino para ganhar massa, 4 dias"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          rows={3}
+          rows={2}
           style={{ resize: "none" }}
           disabled={generating}
         />
@@ -163,8 +163,8 @@ const s = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    padding: "12px 8px",
+    gap: 4,
+    padding: "10px 8px",
     borderRadius: "var(--radius-sm)",
     border: "2px solid var(--border)",
     cursor: "pointer",
