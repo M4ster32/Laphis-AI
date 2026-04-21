@@ -72,10 +72,11 @@ export default function Modal({
 const s = {
   overlay: {
     position: "fixed", inset: 0, zIndex: 9999,
-    paddingTop: "50vh",
     background: "rgba(0, 0, 0, 0.5)",
     backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-    display: "flex", alignItems: "flex-end", justifyContent: "center",
+    display: "flex", flexDirection: "column", justifyContent: "flex-end",
+    paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))",
+    paddingTop: "clamp(60vh, 65vh, 75vh)",
     animation: "fadeIn 0.15s ease",
     boxSizing: "border-box",
   },
@@ -89,6 +90,7 @@ const s = {
     border: "none",
     position: "relative",
     overflow: "hidden",
+    alignSelf: "center",
   },
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
