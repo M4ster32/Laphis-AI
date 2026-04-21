@@ -3,10 +3,13 @@
  */
 
 // API URL: suporta production e development
-const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-export const API_BASE_URL = isDev 
-  ? `http://${window.location.hostname}:8000`
-  : 'https://laphis-backend.onrender.com';
+// Em produção (Render/domínio real) usa o backend do Render.
+// Em dev local (localhost ou IP privado) usa o mesmo host na porta 8000.
+const _host = window.location.hostname;
+const _isProd = _host === 'laphis-backend.onrender.com' || (!_host.match(/^(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/));
+export const API_BASE_URL = _isProd
+  ? 'https://laphis-backend.onrender.com'
+  : `http://${_host}:8000`;
 
 export const ROUTES = {
   HOME: "/",
