@@ -90,8 +90,8 @@ export default function ExerciseCard({
 
   const diffInfo = difficultyLabels[difficulty] || difficultyLabels.intermedio;
 
-  // Placeholder image se falhar
-  const placeholderImage = `https://via.placeholder.com/400x250/1a1a1a/666?text=${encodeURIComponent(name)}`;
+  // Placeholder SVG embutido — nunca falha
+  const placeholderImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%231a1a1a'/%3E%3Ctext x='200' y='115' font-family='Arial' font-size='40' fill='%23444' text-anchor='middle'%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3Ctext x='200' y='155' font-family='Arial' font-size='13' fill='%23666' text-anchor='middle'%3E${encodeURIComponent(name)}%3C/text%3E%3C/svg%3E`;
 
   // Modo compacto (para listas)
   if (compact) {
@@ -130,6 +130,7 @@ export default function ExerciseCard({
           <img
             src={imageError ? placeholderImage : image_url}
             alt={name}
+            referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
             style={{
               width: "100%",
@@ -207,6 +208,7 @@ export default function ExerciseCard({
         <img
           src={imageError ? placeholderImage : image_url}
           alt={name}
+          referrerPolicy="no-referrer"
           onError={() => setImageError(true)}
           style={{
             width: "100%",

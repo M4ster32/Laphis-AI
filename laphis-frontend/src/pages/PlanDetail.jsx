@@ -51,29 +51,37 @@ export default function PlanDetail() {
   // Load exercises when plan is ready
   useEffect(() => {
     if (!plan) return;
-    const content = plan.content_json;
-    const text = typeof content === "string" ? content : JSON.stringify(content || "");
-    const lower = text.toLowerCase();
+    if (plan.type !== "training" && plan.type !== "combined") return;
 
-    // Detect muscle category from plan content
+    // Flatten all text from content_json into one searchable string
+    const flattenObj = (obj) => {
+      if (!obj) return "";
+      if (typeof obj === "string") return obj;
+      if (Array.isArray(obj)) return obj.map(flattenObj).join(" ");
+      return Object.values(obj).map(flattenObj).join(" ");
+    };
+    const text = flattenObj(plan.content_json).toLowerCase()
+      // Normalize accented chars for keyword matching
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
     const categoryMap = [
-      { category: "peito",   keywords: ["peito", "supino", "crucifixo", "peitoral"] },
-      { category: "costas",  keywords: ["costas", "remada", "dorsais", "pull", "deadlift"] },
-      { category: "pernas",  keywords: ["perna", "agachamento", "squat", "glúteo", "leg press", "stiff", "lunges"] },
-      { category: "ombros",  keywords: ["ombro", "deltóide", "press militar", "elevação lateral"] },
-      { category: "biceps",  keywords: ["bícep", "bicep", "curl", "rosca"] },
-      { category: "triceps", keywords: ["trícep", "tricep", "skull"] },
-      { category: "abdomen", keywords: ["abdominal", "core", "prancha", "plank", "crunch"] },
-      { category: "cardio",  keywords: ["cardio", "burpee", "hiit", "corrida"] },
-      { category: "full_body", keywords: ["corpo inteiro", "full body", "completo"] },
+      { category: "peito",    keywords: ["peito", "supino", "crucifixo", "peitoral", "chest", "bench"] },
+      { category: "costas",   keywords: ["costas", "remada", "dorsal", "pull", "deadlift", "terra", "lat"] },
+      { category: "pernas",   keywords: ["perna", "agachamento", "squat", "gluteo", "leg press", "stiff", "lunges", "afundos", "quad"] },
+      { category: "ombros",   keywords: ["ombro", "deltoide", "press militar", "elevacao lateral", "arnold"] },
+      { category: "biceps",   keywords: ["bicep", "curl", "rosca"] },
+      { category: "triceps",  keywords: ["tricep", "skull", "dips"] },
+      { category: "abdomen",  keywords: ["abdominal", "core", "prancha", "plank", "crunch"] },
+      { category: "cardio",   keywords: ["cardio", "burpee", "hiit", "corrida", "mountain climber"] },
+      { category: "full_body",keywords: ["corpo inteiro", "full body", "completo", "kettlebell"] },
     ];
 
     let category = null;
     for (const { category: cat, keywords } of categoryMap) {
-      if (keywords.some(kw => lower.includes(kw))) { category = cat; break; }
+      if (keywords.some(kw => text.includes(kw))) { category = cat; break; }
     }
-    if (!category && plan.type === "training") category = "full_body";
-    if (!category) return;
+    // Fallback: for training plans always show something
+    if (!category) category = "full_body";
 
     ApiService.listExercises({ category, limit: 6 })
       .then(items => setPlanExercises(Array.isArray(items) ? items : (items?.items || [])))
