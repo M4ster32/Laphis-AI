@@ -90,7 +90,7 @@ const s = {
   },
   header: {
     display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "16px 18px 12px", borderBottom: "1px solid var(--border-light)",
+    padding: "12px 18px 10px", borderBottom: "1px solid var(--border-light)",
     flexShrink: 0,
   },
   title: {
@@ -104,7 +104,7 @@ const s = {
     transition: "all 0.15s", flexShrink: 0,
   },
   body: {
-    padding: "12px 16px", flex: 1, overflowY: "auto",
+    padding: "8px 16px", flex: 1, overflowY: "auto",
     WebkitOverflowScrolling: "touch",
     minHeight: 0,
     overscrollBehavior: "contain",

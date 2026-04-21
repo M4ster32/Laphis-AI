@@ -69,7 +69,7 @@ export default function GeneratePlanModal({
       )}
 
       {/* Plan type selector */}
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 8 }}>
         <label className="form-label" style={{ fontSize: 11 }}>Tipo de plano</label>
         <div style={s.typeGrid}>
           {PLAN_TYPES.map((t) => {
@@ -100,7 +100,7 @@ export default function GeneratePlanModal({
       </div>
 
       {/* Free-form prompt */}
-      <div style={{ marginBottom: 10 }}>
+      <div style={{ marginBottom: 8 }}>
         <label className="form-label" style={{ fontSize: 11 }}>Descreve o que queres</label>
         <textarea
           className="form-input"
@@ -164,7 +164,7 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
-    padding: "10px 8px",
+    padding: "8px 6px",
     borderRadius: "var(--radius-sm)",
     border: "2px solid var(--border)",
     cursor: "pointer",
