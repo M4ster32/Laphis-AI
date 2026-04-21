@@ -267,6 +267,15 @@ export default function Chat() {
     }
   };
 
+  // Deteta se a mensagem é um pedido explícito para criar/gerar um plano
+  const isPlanRequest = (msg) => {
+    const q = msg.toLowerCase();
+    return (
+      (q.includes("cria") || q.includes("gera") || q.includes("faz") || q.includes("dá-me") || q.includes("dame") || q.includes("quero")) &&
+      (q.includes("plano") || q.includes("programa") || q.includes("rotina") || q.includes("treino") || q.includes("workout"))
+    );
+  };
+
   const sendMessage = async (text = null) => {
     const msg = (text || input).trim();
     if (!msg || loading || !profile) return;
@@ -275,6 +284,43 @@ export default function Chat() {
     const userMsg = { role: "user", content: msg, created_at: new Date().toISOString() };
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
+
+    // Se é pedido de plano, gerar via API de planos diretamente
+    if (isPlanRequest(msg)) {
+      try {
+        const q = msg.toLowerCase();
+        const type = (q.includes("nutri") || q.includes("aliment") || q.includes("dieta"))
+          ? (q.includes("treino") || q.includes("exerc") ? "combined" : "nutrition")
+          : "training";
+
+        const plan = await ApiService.generatePlan(profile.id, type, msg, null);
+        const planId = plan?.id || plan?.plan?.id;
+        const planTitle = plan?.title || plan?.plan?.title || "Plano gerado";
+
+        const confirmMsg = `✅ **${planTitle}** criado com sucesso!\n\nPodes ver todos os exercícios com imagens e detalhes nos teus **Planos**.`;
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: confirmMsg,
+          created_at: new Date().toISOString(),
+          planId,
+        }]);
+      } catch {
+        // fallback para resposta normal do AI
+        try {
+          const resp = await ApiService.askAI(msg, profile.id, activeSession?.id || null);
+          const aiText = resp.title
+            ? `${resp.title}\n\n${(resp.bullets || []).map((b) => (b.startsWith("•") ? b : `• ${b}`)).join("\n")}`
+            : resp.answer || resp.response || "Sem resposta.";
+          setMessages((prev) => [...prev, { role: "assistant", content: aiText, created_at: new Date().toISOString() }]);
+        } catch (err2) {
+          setMessages((prev) => [...prev, { role: "assistant", content: "Erro: " + (err2.message || "Sem ligação"), created_at: new Date().toISOString() }]);
+        }
+      } finally {
+        setLoading(false);
+        inputRef.current?.focus();
+      }
+      return;
+    }
 
     try {
       const resp = await ApiService.askAI(msg, profile.id, activeSession?.id || null);
@@ -526,9 +572,23 @@ export default function Chat() {
               <div style={s.msgContent}>
                 {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
               </div>
+
+              {/* Botão "Ver Plano" quando plano foi criado automaticamente */}
+              {msg.role === "assistant" && msg.planId && (
+                <div style={{ marginTop: 12 }}>
+                  <button
+                    className="btn btn-primary"
+                    style={{ fontSize: 13, padding: "9px 18px", width: "100%" }}
+                    onClick={() => navigate(`/plans/${msg.planId}`)}
+                  >
+                    <Dumbbell size={15} strokeWidth={1.5} style={{ marginRight: 6, verticalAlign: -2 }} />
+                    Ver Plano com Exercícios
+                  </button>
+                </div>
+              )}
               
               {/* Exercícios detectados na mensagem */}
-              {msg.role === "assistant" && detectedExercises[i]?.length > 0 && (
+              {msg.role === "assistant" && !msg.planId && detectedExercises[i]?.length > 0 && (
                 <div style={s.exercisesSection}>
                   <div style={s.exercisesHeader}>
                     <Dumbbell size={14} />

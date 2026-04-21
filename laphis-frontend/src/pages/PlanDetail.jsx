@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
+import ExerciseCard from "../components/ExerciseCard";
 import jsPDF from "jspdf";
 import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
 
@@ -36,12 +37,48 @@ export default function PlanDetail() {
   const [respondingId, setRespondingId] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
+  // Exercises for this plan
+  const [planExercises, setPlanExercises] = useState([]);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+
   useEffect(() => {
     loadPlan();
     loadCategories();
     loadFeedback();
     loadSuggestions();
   }, [planId]);
+
+  // Load exercises when plan is ready
+  useEffect(() => {
+    if (!plan) return;
+    const content = plan.content_json;
+    const text = typeof content === "string" ? content : JSON.stringify(content || "");
+    const lower = text.toLowerCase();
+
+    // Detect muscle category from plan content
+    const categoryMap = [
+      { category: "peito",   keywords: ["peito", "supino", "crucifixo", "peitoral"] },
+      { category: "costas",  keywords: ["costas", "remada", "dorsais", "pull", "deadlift"] },
+      { category: "pernas",  keywords: ["perna", "agachamento", "squat", "glúteo", "leg press", "stiff", "lunges"] },
+      { category: "ombros",  keywords: ["ombro", "deltóide", "press militar", "elevação lateral"] },
+      { category: "biceps",  keywords: ["bícep", "bicep", "curl", "rosca"] },
+      { category: "triceps", keywords: ["trícep", "tricep", "skull"] },
+      { category: "abdomen", keywords: ["abdominal", "core", "prancha", "plank", "crunch"] },
+      { category: "cardio",  keywords: ["cardio", "burpee", "hiit", "corrida"] },
+      { category: "full_body", keywords: ["corpo inteiro", "full body", "completo"] },
+    ];
+
+    let category = null;
+    for (const { category: cat, keywords } of categoryMap) {
+      if (keywords.some(kw => lower.includes(kw))) { category = cat; break; }
+    }
+    if (!category && plan.type === "training") category = "full_body";
+    if (!category) return;
+
+    ApiService.listExercises({ category, limit: 6 })
+      .then(items => setPlanExercises(Array.isArray(items) ? items : (items?.items || [])))
+      .catch(() => {});
+  }, [plan]);
 
   const loadPlan = async () => {
     try {
@@ -597,6 +634,42 @@ export default function PlanDetail() {
         </div>
       </div>
 
+      {/* Exercises section — only for training/combined plans */}
+      {planExercises.length > 0 && (plan?.type === "training" || plan?.type === "combined") && (
+        <div style={s.exercisesCard}>
+          <div style={s.exercisesHeader}>
+            <Dumbbell size={18} strokeWidth={1.5} color="var(--primary)" />
+            <h3 style={s.exercisesTitle}>Exercícios</h3>
+          </div>
+          <div style={s.exercisesGrid}>
+            {planExercises.map((ex) => (
+              <ExerciseCard
+                key={ex.id}
+                exercise={ex}
+                compact={true}
+                onClick={() => setSelectedExercise(ex)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Exercise detail modal */}
+      <Modal
+        isOpen={!!selectedExercise}
+        onClose={() => setSelectedExercise(null)}
+        title={selectedExercise?.name || "Exercício"}
+        showFooter={false}
+      >
+        {selectedExercise && (
+          <ExerciseCard
+            exercise={selectedExercise}
+            compact={false}
+            showActions={true}
+          />
+        )}
+      </Modal>
+
       {/* Feedback Section */}
       <div style={s.feedbackCard}>
         <div style={s.feedbackHeader}>
@@ -960,6 +1033,21 @@ const s = {
     border: "1px solid var(--border)",
   },
   contentBody: { lineHeight: 1.6 },
+
+  exercisesCard: {
+    background: "var(--card-bg)", borderRadius: "var(--radius)",
+    padding: "16px 18px", boxShadow: "var(--shadow)", marginBottom: 16,
+    border: "1px solid var(--border)",
+  },
+  exercisesHeader: {
+    display: "flex", alignItems: "center", gap: 8, marginBottom: 14,
+  },
+  exercisesTitle: {
+    fontSize: 16, fontWeight: 700, color: "var(--text)", margin: 0,
+  },
+  exercisesGrid: {
+    display: "flex", flexDirection: "column", gap: 8,
+  },
   h2: { fontSize: 19, fontWeight: 700, color: "var(--text)", margin: "20px 0 8px" },
   h3: { fontSize: 16, fontWeight: 700, color: "var(--text)", margin: "16px 0 6px" },
   h4: { fontSize: 14, fontWeight: 700, color: "var(--text-secondary)", margin: "12px 0 4px" },
