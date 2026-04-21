@@ -80,7 +80,8 @@ const s = {
   modal: {
     background: "var(--bg-surface)", borderRadius: "20px 20px 0 0",
     width: "100%", maxWidth: 500,
-    maxHeight: "88dvh",
+    maxHeight: "92dvh",
+    minHeight: "min(520px, 80dvh)",
     display: "flex", flexDirection: "column",
     animation: "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
     boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.18)",
@@ -107,6 +108,7 @@ const s = {
     padding: "12px 16px", flex: 1, overflowY: "auto",
     WebkitOverflowScrolling: "touch",
     minHeight: 0,
+    overscrollBehavior: "contain",
   },
   footer: {
     display: "flex", gap: 8, justifyContent: "flex-end",
