@@ -72,10 +72,12 @@ export default function Modal({
 const s = {
   overlay: {
     position: "fixed", inset: 0, zIndex: 9999,
+    paddingTop: "50vh",
     background: "rgba(0, 0, 0, 0.5)",
     backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
     display: "flex", alignItems: "flex-end", justifyContent: "center",
     animation: "fadeIn 0.15s ease",
+    boxSizing: "border-box",
   },
   modal: {
     background: "var(--bg-surface)", borderRadius: "20px 20px 0 0",
@@ -104,7 +106,7 @@ const s = {
     transition: "all 0.15s", flexShrink: 0,
   },
   body: {
-    padding: "8px 16px", flex: 1, overflowY: "auto",
+    padding: "6px 16px", flex: 1, overflowY: "auto",
     WebkitOverflowScrolling: "touch",
     minHeight: 0,
     overscrollBehavior: "contain",

@@ -156,7 +156,7 @@ const s = {
   typeGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 10,
+    gap: 8,
   },
   typeBtn: {
     display: "flex",
@@ -175,14 +175,14 @@ const s = {
   quickPrompts: {
     display: "flex",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 6,
   },
   quickPromptBtn: {
-    padding: "7px 12px",
+    padding: "5px 10px",
     borderRadius: 20,
     background: "var(--card-bg)",
     border: "1px solid var(--border)",
-    fontSize: 12,
+    fontSize: 11,
     color: "var(--text-secondary)",
     cursor: "pointer",
     fontWeight: 500,
