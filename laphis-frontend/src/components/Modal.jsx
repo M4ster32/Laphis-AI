@@ -113,6 +113,7 @@ const s = {
   },
   footer: {
     display: "flex", gap: 8, justifyContent: "flex-end",
+    padding: "12px 18px",
     paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))",
     borderTop: "1px solid var(--border-light)",
     background: "var(--bg-surface)",
