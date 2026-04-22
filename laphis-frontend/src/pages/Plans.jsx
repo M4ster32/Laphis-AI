@@ -3,9 +3,20 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
-import GeneratePlanModal from "../components/GeneratePlanModal";
 import EmptyState from "../components/EmptyState";
-import { Tag, Plus, Archive, Copy, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap } from "lucide-react";
+import { Tag, Plus, Archive, Copy, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap, X } from "lucide-react";
+
+const PLAN_TYPES = [
+  { value: "training",  label: "Treino",     Icon: Dumbbell,         color: "var(--primary)", bg: "var(--primary-bg)" },
+  { value: "nutrition", label: "Nutrição",    Icon: UtensilsCrossed,  color: "var(--p2)",      bg: "var(--cta-bg)" },
+  { value: "combined",  label: "Combinado",   Icon: Zap,              color: "var(--p3)",      bg: "var(--primary-bg)" },
+];
+const QUICK_PROMPTS = [
+  "Plano semanal de treino",
+  "Nutrição para emagrecer",
+  "Treino corpo inteiro",
+  "Treino em casa",
+];
 
 const CATEGORY_ICONS = ["T", "F", "N", "Z", "C", "M", "O", "R", "S", "P", "H", "E"];
 
@@ -30,6 +41,11 @@ export default function Plans() {
   const [catIcon, setCatIcon] = useState("reports");
   const [catSaving, setCatSaving] = useState(false);
   const [editingCat, setEditingCat] = useState(null);
+
+  // Inline generate form state
+  const [genType, setGenType] = useState("combined");
+  const [genPrompt, setGenPrompt] = useState("");
+  const [genCategory, setGenCategory] = useState(null);
 
   useEffect(() => {
     if (profile) {
@@ -82,12 +98,15 @@ export default function Plans() {
     }
   };
 
-  const handleGenerate = async (type, promptText, categoryId) => {
+  const handleGenerate = async () => {
+    if (!genPrompt.trim()) return;
     try {
       setGenerating(true);
       setError(null);
-      await ApiService.generatePlan(profile.id, type, promptText, categoryId);
+      await ApiService.generatePlan(profile.id, genType, genPrompt.trim(), genCategory);
       setShowGenerate(false);
+      setGenPrompt("");
+      setGenCategory(null);
       await loadPlans();
     } catch (err) {
       setError(err.message || "Erro ao gerar plano");
@@ -188,8 +207,15 @@ export default function Plans() {
           <button style={s.iconBtn} onClick={() => setShowCategoryModal(true)} title="Categorias">
             <Tag size={16} strokeWidth={1.5} />
           </button>
-          <button className="btn btn-primary" style={s.newBtn} onClick={() => setShowGenerate(true)}>
-            <Plus size={16} strokeWidth={2} style={{ marginRight: 4, verticalAlign: -2 }} /> Novo
+          <button
+            className="btn btn-primary"
+            style={s.newBtn}
+            onClick={() => { setShowGenerate(!showGenerate); setError(null); }}
+          >
+            {showGenerate
+              ? <X size={16} strokeWidth={2} style={{ marginRight: 4, verticalAlign: -2 }} />
+              : <Plus size={16} strokeWidth={2} style={{ marginRight: 4, verticalAlign: -2 }} />}
+            {showGenerate ? "Cancelar" : "Novo"}
           </button>
         </div>
       </div>
@@ -222,6 +248,110 @@ export default function Plans() {
               {cat.name}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Inline Generate Form */}
+      {showGenerate && (
+        <div style={s.formCard}>
+          <h3 style={s.formTitle}>Novo Plano</h3>
+
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: 12 }}>
+              <span className="alert-icon">⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Type selector */}
+          <div style={{ marginBottom: 14 }}>
+            <label className="form-label" style={{ fontSize: 11 }}>Tipo de plano</label>
+            <div style={s.typeGrid}>
+              {PLAN_TYPES.map((t) => {
+                const isActive = genType === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setGenType(t.value)}
+                    style={{
+                      ...s.typeBtn,
+                      borderColor: isActive ? t.color : "var(--border)",
+                      background: isActive ? t.bg : "var(--card-bg)",
+                    }}
+                  >
+                    <t.Icon size={20} color={isActive ? t.color : "var(--text-muted)"} strokeWidth={1.5} />
+                    <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 500, color: isActive ? t.color : "var(--text-secondary)" }}>
+                      {t.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Prompt */}
+          <div style={{ marginBottom: 10 }}>
+            <label className="form-label" style={{ fontSize: 11 }}>Descreve o que queres</label>
+            <textarea
+              className="form-input"
+              placeholder="Ex: Plano semanal de treino para ganhar massa, 4 dias"
+              value={genPrompt}
+              onChange={(e) => setGenPrompt(e.target.value)}
+              rows={2}
+              style={{ resize: "none" }}
+              disabled={generating}
+            />
+          </div>
+
+          {/* Quick prompts */}
+          <div style={s.quickPrompts}>
+            {QUICK_PROMPTS.map((p, i) => (
+              <button key={i} style={s.quickPromptBtn} onClick={() => setGenPrompt(p)} type="button">
+                {p}
+              </button>
+            ))}
+          </div>
+
+          {/* Category */}
+          {categories.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <label className="form-label" style={{ fontSize: 11 }}>Categoria (opcional)</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {categories.map((cat) => {
+                  const isActive = genCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setGenCategory(isActive ? null : cat.id)}
+                      style={{
+                        padding: "6px 12px", borderRadius: 16,
+                        border: `1px solid ${isActive ? "var(--primary)" : "var(--border)"}`,
+                        background: isActive ? "var(--primary)" : "var(--card-bg)",
+                        color: isActive ? "white" : "var(--text-secondary)",
+                        fontSize: 12, fontWeight: 600, cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      {cat.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <button
+            className="btn btn-primary btn-full"
+            style={{ marginTop: 16 }}
+            onClick={handleGenerate}
+            disabled={generating || !genPrompt.trim()}
+          >
+            {generating ? (
+              <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> A gerar...</>
+            ) : "Gerar com AI"}
+          </button>
         </div>
       )}
 
@@ -342,16 +472,6 @@ export default function Plans() {
           )}
         </div>
       )}
-
-      {/* ====== GENERATE MODAL ====== */}
-      <GeneratePlanModal
-        isOpen={showGenerate}
-        onClose={() => { setShowGenerate(false); setError(null); }}
-        onGenerate={handleGenerate}
-        generating={generating}
-        error={error}
-        categories={categories}
-      />
 
       {/* ====== CATEGORY MANAGEMENT MODAL ====== */}
       <Modal
@@ -492,20 +612,26 @@ const s = {
     fontSize: 12, fontWeight: 600, color: "var(--text-muted)",
   },
 
-  /* Generate modal extras */
-  typeGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 },
+  /* Inline generate form */
+  formCard: {
+    background: "var(--card-bg)", borderRadius: "var(--radius)",
+    padding: "20px", boxShadow: "var(--shadow-md)", marginBottom: 20,
+    animation: "slideUp 0.25s ease", border: "1px solid var(--border)",
+  },
+  formTitle: { fontSize: "var(--text-h2)", fontWeight: 700, color: "var(--text)", margin: "0 0 16px", letterSpacing: "-0.02em" },
+  typeGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 },
   typeBtn: {
     display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", gap: 6, padding: "14px 8px",
+    justifyContent: "center", gap: 4, padding: "10px 6px",
     borderRadius: "var(--radius-sm)", border: "2px solid var(--border)",
     cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
     boxShadow: "var(--shadow)",
   },
-  quickPrompts: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  quickPrompts: { display: "flex", flexWrap: "wrap", gap: 6 },
   quickPromptBtn: {
-    padding: "8px 14px", borderRadius: 20,
+    padding: "5px 10px", borderRadius: 20,
     background: "var(--card-bg)", border: "1px solid var(--border)",
-    fontSize: 12, color: "var(--text-secondary)", cursor: "pointer",
+    fontSize: 11, color: "var(--text-secondary)", cursor: "pointer",
     fontWeight: 500, transition: "background 0.15s",
     boxShadow: "var(--shadow)",
   },
