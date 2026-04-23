@@ -484,9 +484,6 @@ export default function Dashboard() {
  <button style={s.summaryActBtn} onClick={handleCreateSnapshot} disabled={insightsLoading}>
  {insightsLoading ? "A analisar..." : "Analisar"}
  </button>
- <button style={s.summaryActBtn} onClick={handleRefreshSummary} disabled={summaryLoading}>
- <RefreshCw size={13} className={summaryLoading ? "spin" : ""} /> Atualizar
- </button>
  <button style={s.summaryActBtn} onClick={handleDownloadPDF}>
  <Download size={13} /> PDF
  </button>
