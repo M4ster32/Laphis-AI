@@ -344,6 +344,10 @@ export default function PlanDetail() {
     doc.line(margin, y, pageW - margin, y);
     y += 8;
 
+    // Strip emojis from text
+    const stripEmojis = (str) =>
+      str.replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{FE00}-\u{FEFF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA9F}]|\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu, "").replace(/\s{2,}/g, " ").trim();
+
     // Content
     const renderPDFContent = (raw) => {
       if (!raw) return;
@@ -366,7 +370,7 @@ export default function PlanDetail() {
 
         if (trimmed.startsWith("### ") || trimmed.startsWith("## ") || trimmed.startsWith("# ")) {
           const hLevel = trimmed.startsWith("### ") ? 3 : trimmed.startsWith("## ") ? 2 : 1;
-          const hText = trimmed.replace(/^#{1,3}\s*/, "");
+          const hText = stripEmojis(trimmed.replace(/^#{1,3}\s*/, ""));
           doc.setFontSize(hLevel === 1 ? 16 : hLevel === 2 ? 14 : 12);
           doc.setFont("helvetica", "bold");
           doc.setTextColor(74, 52, 39);
@@ -378,7 +382,7 @@ export default function PlanDetail() {
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(74, 52, 39);
-          const itemText = trimmed.replace(/^[-*•]\s*/, "");
+          const itemText = stripEmojis(trimmed.replace(/^[-*•]\s*/, ""));
           const wrapped = doc.splitTextToSize(itemText, maxW - 8);
           checkPage(wrapped.length * 5 + 2);
           doc.text("•", margin + 2, y);
@@ -388,7 +392,7 @@ export default function PlanDetail() {
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(74, 52, 39);
-          const wrapped = doc.splitTextToSize(trimmed, maxW);
+          const wrapped = doc.splitTextToSize(stripEmojis(trimmed), maxW);
           checkPage(wrapped.length * 5 + 2);
           doc.text(wrapped, margin, y);
           y += wrapped.length * 5 + 2;
