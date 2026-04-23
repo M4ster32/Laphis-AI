@@ -210,7 +210,7 @@ def get_insights(token: str = None, db: Session = Depends(get_db)):
     snapshots = (
         db.query(ProgressSnapshot)
         .filter(ProgressSnapshot.profile_id == profile.id)
-        .order_by(ProgressSnapshot.date.desc())
+        .order_by(ProgressSnapshot.id.desc())
         .limit(2)
         .all()
     )
