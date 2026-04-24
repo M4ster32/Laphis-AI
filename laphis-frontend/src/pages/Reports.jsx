@@ -3,6 +3,7 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import EmptyState from "../components/EmptyState";
+import { SkeletonReports } from "../components/Skeleton";
 import jsPDF from "jspdf";
 import { BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity, Download, Scale, Plus, Trash2 } from "lucide-react";
@@ -174,12 +175,9 @@ export default function Reports() {
   };
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner" />
-        <span className="loading-text">A gerar relatório...</span>
-      </div>
-    );
+    /* Skeleton mirrors the final layout so there is no visual jolt
+       when the real data lands. */
+    return <SkeletonReports />;
   }
 
   if (!report) {
@@ -204,16 +202,37 @@ export default function Reports() {
     { key: "activity", label: "Atividade", icon: Activity },
   ];
 
+  /**
+   * Optimistic weight add: inject a placeholder entry into the history
+   * chart/list the moment the user clicks so the UI feels instant.
+   * Replace the temp entry with the server copy once the write lands,
+   * or roll it back on failure.
+   */
   const handleAddWeight = async () => {
     const w = parseFloat(weightInput);
     if (!w || w < 30 || w > 300) return;
+
+    const notes = weightNotes.trim() || null;
+    const historySnapshot = weightHistory;
+    const statsSnapshot = weightStats;
+    const tempId = `temp-${Date.now()}`;
+    const optimisticEntry = {
+      id: tempId,
+      weight_kg: w,
+      notes,
+      logged_at: new Date().toISOString(),
+      _pending: true,
+    };
+
+    setWeightHistory((prev) => [...prev, optimisticEntry]);
+    setWeightStats((prev) => ({ ...prev, current: w }));
+    setWeightInput("");
+    setWeightNotes("");
+    setWeightAdding(true);
+
     try {
-      setWeightAdding(true);
-      await ApiService.addWeightEntry(w, weightNotes.trim() || null);
-      setWeightInput("");
-      setWeightNotes("");
+      await ApiService.addWeightEntry(w, notes);
       toast.success("Peso registado!");
-      // Reload weight data
       const [wH, wS] = await Promise.all([
         ApiService.getWeightEntries(60).catch(() => []),
         ApiService.getWeightStats().catch(() => ({})),
@@ -222,12 +241,21 @@ export default function Reports() {
       setWeightStats(wS || {});
     } catch (err) {
       toast.error("Erro ao registar peso");
+      setWeightHistory(historySnapshot);
+      setWeightStats(statsSnapshot);
     } finally {
       setWeightAdding(false);
     }
   };
 
+  /**
+   * Optimistic weight delete: remove the entry from state first, then
+   * run the delete call, rolling back if it fails.
+   */
   const handleDeleteWeight = async (entryId) => {
+    const historySnapshot = weightHistory;
+    const statsSnapshot = weightStats;
+    setWeightHistory((prev) => prev.filter((e) => e.id !== entryId));
     try {
       await ApiService.deleteWeightEntry(entryId);
       const [wH, wS] = await Promise.all([
@@ -239,6 +267,8 @@ export default function Reports() {
       toast.success("Registo apagado");
     } catch (err) {
       toast.error("Erro ao apagar");
+      setWeightHistory(historySnapshot);
+      setWeightStats(statsSnapshot);
     }
   };
 
@@ -567,7 +597,7 @@ export default function Reports() {
               <h4 style={s.cardTitle}>Histórico</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {weightHistory.slice().reverse().slice(0, 15).map((entry) => (
-                  <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+                  <div key={entry.id} className={entry._pending ? "is-pending" : ""} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text)" }}>{entry.weight_kg} kg</span>
                       <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 8 }}>{entry.date}</span>

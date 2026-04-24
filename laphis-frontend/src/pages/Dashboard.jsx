@@ -77,26 +77,41 @@ export default function Dashboard() {
  }
  };
 
+ /**
+  * Optimistic water add: bump the glass count locally first so the ring
+  * animates instantly, then reconcile with the server. Roll back the
+  * increment if the write fails so the UI never claims a glass that
+  * was not actually recorded.
+  */
  const handleAddWater = async () => {
- try {
+ const snapshot = waterData;
+ setWaterData((prev) => ({ ...prev, glasses: (prev?.glasses || 0) + 1 }));
  setWaterAdding(true);
+ try {
  const result = await ApiService.addWater(1);
  setWaterData(result);
  toast.success("Water added!");
  } catch (err) {
  console.error("Error adding water:", err);
+ setWaterData(snapshot);
  } finally {
  setWaterAdding(false);
  }
  };
 
+ /**
+  * Optimistic water remove: mirror of handleAddWater.
+  */
  const handleRemoveWater = async () => {
  if (waterData.glasses <= 0) return;
+ const snapshot = waterData;
+ setWaterData((prev) => ({ ...prev, glasses: Math.max(0, (prev?.glasses || 0) - 1) }));
  try {
  const result = await ApiService.removeWater();
  setWaterData(result);
  } catch (err) {
  console.error("Error removing water:", err);
+ setWaterData(snapshot);
  }
  };
 
@@ -359,7 +374,7 @@ export default function Dashboard() {
  </div>
  </div>
 
- <div style={s.heroCard} onClick={() => navigate("/daily-plan")}>
+ <div className="card-lift" style={s.heroCard} onClick={() => navigate("/daily-plan")}>
  <div style={s.heroLeft}>
  <div style={s.heroIcon}><CalendarClock size={22} color="var(--primary)" /></div>
  <div>

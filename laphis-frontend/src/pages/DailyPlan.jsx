@@ -3,6 +3,7 @@ import { useApp } from "../hooks/useApp";
 import { useToast } from "../components/Toast";
 import ApiService from "../services/api";
 import EmptyState from "../components/EmptyState";
+import { SkeletonDailyPlan } from "../components/Skeleton";
 import {
   CalendarClock, Dumbbell, UtensilsCrossed, Clock,
   Zap, Send, ChevronDown, ChevronUp, Flame,
@@ -118,10 +119,7 @@ export default function DailyPlan() {
 
       {/* Content */}
       {loading ? (
-        <div style={s.loadingWrap}>
-          <RefreshCw size={24} className="spin" color="var(--primary)" />
-          <span style={s.loadingText}>A carregar plano...</span>
-        </div>
+        <SkeletonDailyPlan />
       ) : !plan ? (
         <div style={s.emptyWrap}>
           <div style={s.emptyIcon}>📋</div>

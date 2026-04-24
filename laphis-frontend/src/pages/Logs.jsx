@@ -4,6 +4,7 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame, Search, Pencil } from "lucide-react";
 import Modal from "../components/Modal";
+import { SkeletonLogs } from "../components/Skeleton";
 
 const TABS = [
   { key: "treino", label: "Treino", icon: Dumbbell, color: "var(--primary)", shadow: "var(--btn-primary-shadow)" },
@@ -111,15 +112,26 @@ export default function Logs() {
     }
   };
 
+  /**
+   * Optimistic delete: remove the log from the UI immediately and fire the
+   * API call in the background. Roll the entry back into the list if the
+   * server rejects the operation so data stays consistent without making
+   * the user wait for the round-trip.
+   */
   const handleDelete = async (logId, logType) => {
+    const snapshot = logs;
+    setLogs((prev) => prev.filter((l) => !(l.id === logId && l.log_type === logType)));
+    setDeleteTarget(null);
+    setSuccess("Registo apagado ✓");
+    setTimeout(() => setSuccess(null), 2000);
     try {
       await ApiService.deleteLog(logId, logType);
-      await loadLogs();
-      setDeleteTarget(null);
-      setSuccess("Registo apagado ✓");
-      setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
       console.error(err);
+      /* Rollback on failure so the UI never lies to the user */
+      setLogs(snapshot);
+      setError("Não foi possível apagar. Tenta de novo.");
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -357,9 +369,7 @@ export default function Logs() {
 
       {/* Logs list */}
       {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: 40 }}>
-          <div className="spinner" />
-        </div>
+        <SkeletonLogs count={5} />
       ) : searched.length === 0 ? (
         <div style={s.emptyState}>
           {search ? (
@@ -397,7 +407,7 @@ export default function Logs() {
       ) : (
         <div style={s.logsList}>
           {searched.map((log) => (
-            <div key={`${log.log_type}-${log.id}`} style={s.logCard}>
+            <div key={`${log.log_type}-${log.id}`} className="card-lift" style={s.logCard}>
               <div style={s.logTop}>
                 <div style={s.logIconWrap}>
                   {tab === "treino"

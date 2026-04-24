@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import ExerciseCard from "../components/ExerciseCard";
+import { SkeletonCard, SkeletonLine } from "../components/Skeleton";
 import jsPDF from "jspdf";
 import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
 
@@ -540,7 +541,29 @@ export default function PlanDetail() {
   };
 
   if (loading) {
-    return <div style={s.loaderArea}><div className="spinner" /></div>;
+    /* Detail-page skeleton: back-button placeholder + hero card + two
+       content cards — mirrors the final layout so the page does not
+       flash or jump when the real plan arrives. */
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease" }}>
+        <SkeletonLine width={90} height={28} style={{ borderRadius: 14 }} />
+        <div style={{
+          background: "var(--card-bg)",
+          borderRadius: "var(--radius)",
+          border: "1px solid var(--border)",
+          padding: 24,
+        }}>
+          <SkeletonLine width="65%" height={22} style={{ marginBottom: 10 }} />
+          <SkeletonLine width="40%" height={13} style={{ marginBottom: 16 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <SkeletonLine width={72} height={26} style={{ borderRadius: 13 }} />
+            <SkeletonLine width={72} height={26} style={{ borderRadius: 13 }} />
+          </div>
+        </div>
+        <SkeletonCard lines={5} />
+        <SkeletonCard lines={4} />
+      </div>
+    );
   }
 
   if (error && !plan) {

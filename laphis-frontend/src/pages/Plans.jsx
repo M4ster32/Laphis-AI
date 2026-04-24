@@ -4,6 +4,7 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
+import { SkeletonPlans } from "../components/Skeleton";
 import { Tag, Plus, Archive, Copy, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap, X } from "lucide-react";
 
 const PLAN_TYPES = [
@@ -115,23 +116,42 @@ export default function Plans() {
     }
   };
 
+  /**
+   * Optimistic archive: move the plan out of the active list immediately
+   * and fire the API call in the background. Roll back if the server
+   * rejects so the UI never shows a stale state.
+   */
   const handleArchive = async (planId) => {
+    const planSnapshot = plans;
+    const archivedSnapshot = archivedPlans;
+    const target = plans.find((p) => p.id === planId);
+    setPlans((prev) => prev.filter((p) => p.id !== planId));
+    if (target) setArchivedPlans((prev) => [{ ...target, status: "archived" }, ...prev]);
     try {
       await ApiService.updatePlan(planId, { status: "archived" });
-      await loadPlans();
-      await loadArchivedPlans();
     } catch (err) {
       console.error(err);
+      setPlans(planSnapshot);
+      setArchivedPlans(archivedSnapshot);
     }
   };
 
+  /**
+   * Optimistic restore: mirror of handleArchive — move a plan out of the
+   * archive and back into the active list with instant feedback.
+   */
   const handleRestore = async (planId) => {
+    const planSnapshot = plans;
+    const archivedSnapshot = archivedPlans;
+    const target = archivedPlans.find((p) => p.id === planId);
+    setArchivedPlans((prev) => prev.filter((p) => p.id !== planId));
+    if (target) setPlans((prev) => [{ ...target, status: "active" }, ...prev]);
     try {
       await ApiService.updatePlan(planId, { status: "active" });
-      await loadPlans();
-      await loadArchivedPlans();
     } catch (err) {
       console.error(err);
+      setPlans(planSnapshot);
+      setArchivedPlans(archivedSnapshot);
     }
   };
 
@@ -357,7 +377,7 @@ export default function Plans() {
 
       {/* Plans List */}
       {loading ? (
-        <div style={s.loaderArea}><div className="spinner" /></div>
+        <SkeletonPlans count={3} />
       ) : plans.length === 0 ? (
         <EmptyState
           icon="📋"
@@ -383,7 +403,7 @@ export default function Plans() {
               combined: "var(--p3)",
             };
             return (
-            <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
+            <div key={plan.id} className="card-lift" style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
               <div style={s.planTop}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {getTypeIcon(plan.type)}

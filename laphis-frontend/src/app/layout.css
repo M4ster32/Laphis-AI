@@ -643,14 +643,177 @@ body[style*="overflow: hidden"] .layout-main {
   outline-offset: 2px;
 }
 
-/* ---------- PAGE TRANSITIONS ---------- */
+/* ---------- PAGE TRANSITIONS ----------
+   Default: soft continuity (subtle fade + lift).
+   Drill:  used when navigating into a detail view (slide in from right).
+   Staggered children animate into place for a premium, organic feel.
+----------------------------------------- */
 .page-transition {
-  animation: pageIn 0.3s var(--ease-out) both;
+  animation: pageIn 0.32s var(--ease-out) both;
+  will-change: transform, opacity;
+}
+
+/* Drill-in variant: used when entering a deeper context (e.g. detail pages) */
+.page-transition--drill {
+  animation: pageDrillIn 0.36s var(--ease-out) both;
+}
+
+/* Fade-only variant for tab/context swaps where spatial motion would feel wrong */
+.page-transition--fade {
+  animation: pageFadeIn 0.25s var(--ease-out) both;
 }
 
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(8px) scale(0.99); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(10px) scale(0.995); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+@keyframes pageDrillIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Staggered entrance for direct children of .page-transition--stagger
+   — creates a cascading reveal for cards/lists/stats. */
+.page-transition--stagger > * {
+  animation: staggerIn 0.45s var(--ease-out) both;
+  opacity: 0;
+}
+.page-transition--stagger > *:nth-child(1) { animation-delay: 0.00s; }
+.page-transition--stagger > *:nth-child(2) { animation-delay: 0.04s; }
+.page-transition--stagger > *:nth-child(3) { animation-delay: 0.08s; }
+.page-transition--stagger > *:nth-child(4) { animation-delay: 0.12s; }
+.page-transition--stagger > *:nth-child(5) { animation-delay: 0.16s; }
+.page-transition--stagger > *:nth-child(6) { animation-delay: 0.20s; }
+.page-transition--stagger > *:nth-child(7) { animation-delay: 0.24s; }
+.page-transition--stagger > *:nth-child(n+8) { animation-delay: 0.28s; }
+
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- MICRO-INTERACTIONS ----------
+   Premium feel comes from small responses to every input:
+   press, hover, pending, success — each has a distinct motion
+   so the interface never feels static or unresponsive.
+----------------------------------------- */
+
+/* Button press feedback — every .btn gets a snappy scale-down on tap.
+   Combined with existing hover states this gives the "squishy" iOS-like
+   feel users expect from a premium app. */
+.btn {
+  transition: transform 0.12s var(--ease-out),
+              box-shadow 0.2s var(--ease-out),
+              background 0.2s var(--ease-out),
+              opacity 0.2s var(--ease-out);
+  will-change: transform;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Card-lift: apply .card-lift to a card to get a subtle hover elevation.
+   The shadow deepens and the card floats ~2px to communicate interactivity
+   without screaming for attention. */
+.card-lift {
+  transition: transform 0.25s var(--ease-out),
+              box-shadow 0.25s var(--ease-out),
+              border-color 0.25s var(--ease-out);
+  will-change: transform;
+}
+@media (hover: hover) {
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.18);
+    border-color: var(--border-strong, var(--border));
+  }
+}
+.card-lift:active {
+  transform: translateY(0) scale(0.995);
+  transition-duration: 0.12s;
+}
+
+/* Pressable list rows: used for log entries, plan cards, etc. */
+.pressable {
+  transition: transform 0.15s var(--ease-out), background 0.2s var(--ease-out);
+  cursor: pointer;
+}
+.pressable:active { transform: scale(0.985); }
+
+/* Pending / optimistic state — apply when a row is awaiting server
+   confirmation. Gives a gentle pulsing opacity so the user knows the
+   change is not fully committed yet, without blocking interaction. */
+.is-pending {
+  animation: pendingPulse 1.4s var(--ease-out) infinite;
+}
+@keyframes pendingPulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.9; }
+}
+
+/* Success pulse — brief green halo when an action succeeds.
+   Drop .just-succeeded on a container after a successful write. */
+.just-succeeded {
+  animation: successPulse 0.9s var(--ease-out);
+}
+@keyframes successPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.35); }
+  70%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* Shake on error — subtle lateral wobble to draw attention without
+   being obnoxious. Use .shake-once for a single pass. */
+.shake-once {
+  animation: shakeX 0.45s var(--ease-out);
+}
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+
+/* Progress illusion — indeterminate bar useful when a request could
+   complete in milliseconds OR seconds. Feels like "something is
+   happening" without committing to a bogus percentage. */
+.progress-indeterminate {
+  position: relative;
+  height: 3px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-indeterminate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  animation: progressSlide 1.2s var(--ease-out) infinite;
+}
+@keyframes progressSlide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(370%); }
+}
+
+/* Icon nudge — gentle wiggle used for empty-state icons / first-time hints */
+.icon-nudge {
+  animation: iconNudge 2.4s var(--ease-out) infinite;
+  transform-origin: 50% 90%;
+}
+@keyframes iconNudge {
+  0%, 92%, 100% { transform: rotate(0); }
+  94%           { transform: rotate(-6deg); }
+  96%           { transform: rotate(6deg); }
+  98%           { transform: rotate(-3deg); }
 }
 
 /* ---------- TOUCH TARGETS ---------- */

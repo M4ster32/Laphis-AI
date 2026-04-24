@@ -5,6 +5,7 @@ import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import { Award, Edit3, LogOut, Settings, Calendar, ChevronRight, ChevronLeft, Leaf, AlertTriangle } from "lucide-react";
 import AvatarPicker, { AvatarDisplay } from "../components/AvatarPicker";
+import { SkeletonProfile } from "../components/Skeleton";
 
 const ACHIEVEMENTS = [
   { key: "first_workout", label: "First Workout", desc: "Completou o primeiro treino" },
@@ -177,6 +178,14 @@ export default function Profile() {
     { num: 2, label: "Objetivos" },
     { num: 3, label: "Preferências" },
   ];
+
+  /* While the profile is being fetched for the first time and the user has
+     not opened the wizard, show a skeleton that mirrors the final layout.
+     This prevents the full-screen empty flash that happens when the
+     context is still loading. */
+  if (profileLoading && !editing) {
+    return <SkeletonProfile />;
+  }
 
   // ====== EDIT FORM VIEW (WIZARD) ======
   if (editing) {

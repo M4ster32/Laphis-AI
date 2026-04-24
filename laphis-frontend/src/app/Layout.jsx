@@ -13,12 +13,32 @@ const NAV_RIGHT = [
   { to: "/profile", label: "Perfil", icon: User },
 ];
 
+/**
+ * Pick a page-transition variant based on the destination path so that
+ * navigation *feels* spatial: drilling into detail screens uses a
+ * horizontal slide (drill); swapping between top-level tabs uses the
+ * default soft lift; chat uses a pure fade (it is its own full-height
+ * context and a slide would compete with the message list animation).
+ *
+ * @param {string} pathname - Current location pathname.
+ * @returns {string} Class name to apply to the transition wrapper.
+ */
+function resolveTransitionClass(pathname) {
+  if (pathname === "/chat") return "page-transition page-transition--fade";
+  // Detail / nested screens — horizontal drill-in feels like "going deeper"
+  if (pathname.startsWith("/plans/")) return "page-transition page-transition--drill";
+  if (pathname === "/settings") return "page-transition page-transition--drill";
+  // Default: soft entrance with staggered children for list/dashboard pages
+  return "page-transition page-transition--stagger";
+}
+
 export default function Layout() {
   const { profile } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isChatActive = location.pathname === "/chat";
+  const transitionClass = resolveTransitionClass(location.pathname);
 
   return (
     <div className="layout-container">
@@ -40,9 +60,9 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* Main content — keyed on pathname for page-enter animation */}
+      {/* Main content — keyed on pathname so React remounts + re-runs animation */}
       <main className={`layout-main${isChatActive ? " layout-main--fill" : ""}`}>
-        <div className="page-transition" key={location.pathname}>
+        <div className={transitionClass} key={location.pathname}>
           <Outlet />
         </div>
       </main>
