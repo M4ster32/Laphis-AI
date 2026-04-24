@@ -163,22 +163,89 @@ def _calc_nutrition(profile) -> dict:
 #  1. AI CHAT — Respostas de chat inteligentes
 # =====================================================================
 
-CHAT_SYSTEM = """És o LAPHIS, um assistente AI pessoal de saúde, treino e nutrição.
-Responde SEMPRE em português de Portugal.
+CHAT_SYSTEM = """És o LAPHIS — um coach pessoal de saúde, treino e nutrição.
+Fala SEMPRE em português de Portugal, tu-a-tu (2ª pessoa do singular), tom de treinador pessoal: firme, caloroso, motivador, direto.
 
-Regras:
-- Personaliza TODAS as respostas com os dados do utilizador fornecidos
-- Sê direto, amigável e profissional. Usa emojis com moderação
-- Formata respostas com bullet points (•) e secções quando apropriado
-- Para planos de treino: especifica exercícios, séries, reps e descanso
-- Para nutrição: inclui calorias aproximadas e macros baseados no perfil
-- Se não souberes algo com certeza, diz honestamente
-- Nunca inventes dados científicos ou valores sem base
-- Sê conciso mas completo — parágrafos curtos
-- Começa a resposta com um título curto e descritivo (com emoji)
-- Depois do título, usa bullet points para organizar a informação
+VOZ:
+- Trata o utilizador pelo primeiro nome quando disponível. Cumprimenta de forma natural; não robotizes.
+- Sê conciso: respostas curtas quando a pergunta é curta. Nunca enches chouriços.
+- Zero linguagem corporativa ("nesta resposta vou…"). Vai direto ao valor.
+- Dá *conselhos concretos e numéricos* (cargas, reps, calorias, minutos) — não platitudes ("tenta comer melhor").
 
-Disclaimer implícito: as tuas sugestões não substituem aconselhamento médico/nutricional profissional."""
+REGRAS DE RESPOSTA:
+- **Personaliza com os dados fornecidos** (perfil, logs recentes, adaptações). Se referes dados, cita o número real.
+- Quando existem logs recentes, refere-te a eles ("vi que treinaste 3× esta semana"). Mostra que prestas atenção.
+- Usa emojis *com intenção* (no título e para separar secções), nunca a cada bullet.
+- Se a pergunta é técnica, dá a resposta certa + *uma* linha sobre porquê.
+- Se a pergunta é vaga ("o que faço hoje?"), assume o contexto e recomenda — não peças detalhes extra.
+- Se a pergunta está fora do domínio (política, religião, etc.), redireciona de forma simpática para saúde/treino.
+
+FORMATO:
+- Linha 1: título curto com emoji principal (ex: "💪 Treino de peito em casa")
+- Linhas seguintes: bullets (•). 3-7 bullets na maioria dos casos.
+- Se dás um plano de treino: **exercício — séries × reps (descanso)**.
+- Se dás nutrição: **alimento (quantidade) — ~Xcal, Yg proteína**.
+- Termina com *uma* frase motivadora curta *só* quando faz sentido (progresso, dúvidas, começo).
+
+NUNCA:
+- Inventes dados científicos, estudos ou valores que não conheces.
+- Prometas resultados garantidos ou deem conselhos médicos específicos para patologias.
+- Sejas paternalista ou dês sermões sobre saúde.
+
+Disclaimer implícito: sugestões não substituem aconselhamento médico/nutricional profissional."""
+
+
+# --------- RECENT LOGS CONTEXT ---------
+
+def _build_recent_activity_context(recent_workouts: list, recent_meals: list,
+                                    recent_weight: list, water_today: int = None) -> str:
+    """
+    Build a compact snapshot of the last-week activity so the model can
+    refer to concrete numbers ("you trained 3× this week", "yesterday you
+    had 2100 kcal"). Each section is dropped when empty so we never waste
+    context on zeros.
+
+    :param recent_workouts: list of dicts {description, duration_min, calories, date}
+    :param recent_meals:    list of dicts {foods, calories, meal_type, date}
+    :param recent_weight:   list of dicts {weight_kg, date}
+    :param water_today:     glasses consumed today (optional)
+    :returns: plain-text context block, or empty string if nothing to say.
+    """
+    blocks: list[str] = []
+
+    if recent_workouts:
+        count = len(recent_workouts)
+        total_min = sum((w.get("duration_min") or 0) for w in recent_workouts)
+        total_cal = sum((w.get("calories") or 0) for w in recent_workouts)
+        lines = [f"TREINOS (últimos 7 dias): {count} sessões, {total_min} min, {total_cal} kcal"]
+        for w in recent_workouts[:5]:
+            lines.append(
+                f"  • {w.get('date', '?')} — {w.get('description') or 'treino'}"
+                f" ({w.get('duration_min') or '?'} min, {w.get('calories') or '?'} kcal)"
+            )
+        blocks.append("\n".join(lines))
+
+    if recent_meals:
+        total_cal = sum((m.get("calories") or 0) for m in recent_meals)
+        days = len({m.get("date") for m in recent_meals if m.get("date")})
+        avg_day = int(total_cal / days) if days else 0
+        blocks.append(
+            f"REFEIÇÕES (últimos 7 dias): {len(recent_meals)} registos, "
+            f"média ~{avg_day} kcal/dia"
+        )
+
+    if recent_weight and len(recent_weight) >= 2:
+        first = recent_weight[0].get("weight_kg")
+        last = recent_weight[-1].get("weight_kg")
+        if first and last:
+            delta = round(last - first, 1)
+            trend = "estável" if abs(delta) < 0.3 else (f"+{delta}kg" if delta > 0 else f"{delta}kg")
+            blocks.append(f"PESO: tendência {trend} ({len(recent_weight)} pesagens recentes)")
+
+    if water_today is not None:
+        blocks.append(f"HIDRATAÇÃO HOJE: {water_today} copos registados")
+
+    return "\n\n".join(blocks)
 
 
 async def ai_chat(
@@ -186,30 +253,41 @@ async def ai_chat(
     question: str,
     chat_history: list[dict] = None,
     adaptation_ctx: str = "",
+    recent_activity_ctx: str = "",
 ) -> tuple[str, list[str]]:
     """
     Gera resposta de chat via OpenAI.
-    Retorna (title, bullets) compatível com AskOut.
+
+    :param profile: ORM profile.
+    :param question: User question.
+    :param chat_history: Last N messages {role, content}.
+    :param adaptation_ctx: Pending adaptation suggestions block (optional).
+    :param recent_activity_ctx: Recent logs snapshot block (optional).
+    :returns: (title, bullets) compatible with AskOut.
     """
     profile_ctx = _build_profile_context(profile)
     nutrition = _calc_nutrition(profile)
 
-    system_content = (
-        f"PERFIL DO UTILIZADOR:\n{profile_ctx}\n\n"
-        f"DADOS NUTRICIONAIS:\n"
-        f"- TDEE: ~{nutrition['tdee']} cal/dia\n"
-        f"- Calorias alvo: ~{nutrition['target_cal']} cal/dia\n"
-        f"- Proteína recomendada: ~{nutrition['protein_g']}g/dia"
-    )
+    system_parts = [
+        f"PERFIL DO UTILIZADOR:\n{profile_ctx}",
+        (
+            "DADOS NUTRICIONAIS CALCULADOS:\n"
+            f"- TDEE: ~{nutrition['tdee']} cal/dia\n"
+            f"- Calorias alvo: ~{nutrition['target_cal']} cal/dia\n"
+            f"- Proteína recomendada: ~{nutrition['protein_g']}g/dia"
+        ),
+    ]
+    if recent_activity_ctx:
+        system_parts.append(f"ATIVIDADE RECENTE:\n{recent_activity_ctx}")
     if adaptation_ctx:
-        system_content += f"\n\n{adaptation_ctx}"
+        system_parts.append(adaptation_ctx)
 
     messages = [
         {"role": "system", "content": CHAT_SYSTEM},
-        {"role": "system", "content": system_content},
+        {"role": "system", "content": "\n\n".join(system_parts)},
     ]
 
-    # Incluir histórico de chat para contexto conversacional
+    # Include conversation history so follow-ups feel continuous
     if chat_history:
         for msg in chat_history[-8:]:
             messages.append({"role": msg["role"], "content": msg["content"]})

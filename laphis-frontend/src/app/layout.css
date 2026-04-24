@@ -816,6 +816,92 @@ body[style*="overflow: hidden"] .layout-main {
   98%           { transform: rotate(-3deg); }
 }
 
+/* ---------- PREMIUM SURFACES ----------
+   A set of opt-in utility classes that bring higher-end visual treatment
+   to specific surfaces. Applied surgically to hero cards, feature cards,
+   and primary CTAs so the rest of the layout stays calm.
+---------------------------------------- */
+
+/* Premium hero: subtle gradient + soft glow + layered shadow.
+   Use on single-featured cards ("Plano do Dia", etc.) */
+.hero-premium {
+  position: relative;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,0.06) 0%, transparent 55%),
+    linear-gradient(135deg, var(--card-bg) 0%, var(--primary-bg, var(--card-bg)) 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.04) inset,
+    0 10px 28px -16px rgba(0, 0, 0, 0.25),
+    0 2px 6px -2px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+.hero-premium::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0;
+  width: 140px; height: 140px;
+  background: radial-gradient(closest-side, var(--primary-bg, rgba(28,28,30,0.08)), transparent);
+  opacity: 0.6;
+  pointer-events: none;
+  transform: translate(30%, -30%);
+}
+
+/* Elevated card — stronger shadow for "above the fold" content */
+.card-elevated {
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.03) inset,
+    0 8px 24px -12px rgba(0, 0, 0, 0.22),
+    0 2px 4px -2px rgba(0, 0, 0, 0.06);
+}
+
+/* Glass surface — for overlays / modals / sheets that sit on content */
+.surface-glass {
+  background: var(--glass-bg, rgba(255,255,255,0.7));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
+
+/* Soft divider — uses a gradient so it feels integrated, not a hard line */
+.divider-soft {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
+  border: 0;
+  margin: 16px 0;
+}
+
+/* Gradient text — headings that deserve a little extra focus */
+.text-gradient-primary {
+  background: var(--gradient-primary, linear-gradient(135deg, var(--primary), var(--primary-light)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Icon chip — rounded accent container for feature icons */
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--primary-bg, rgba(28,28,30,0.08));
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: transform 0.25s var(--ease-spring), background 0.2s var(--ease-out);
+}
+.card-lift:hover .icon-chip,
+.pressable:hover .icon-chip {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+/* Subtle number / stat emphasis */
+.stat-emphasis {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01", "tnum";
+}
+
 /* ---------- TOUCH TARGETS ---------- */
 @media (pointer: coarse) {
   .btn { min-height: 44px; }

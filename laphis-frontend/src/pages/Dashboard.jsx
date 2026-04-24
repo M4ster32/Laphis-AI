@@ -374,9 +374,9 @@ export default function Dashboard() {
  </div>
  </div>
 
- <div className="card-lift" style={s.heroCard} onClick={() => navigate("/daily-plan")}>
+ <div className="card-lift hero-premium" style={s.heroCard} onClick={() => navigate("/daily-plan")}>
  <div style={s.heroLeft}>
- <div style={s.heroIcon}><CalendarClock size={22} color="var(--primary)" /></div>
+ <div className="icon-chip"><CalendarClock size={22} color="var(--primary)" strokeWidth={1.75} /></div>
  <div>
  <h2 style={s.heroTitle}>Plano do Dia</h2>
  <p style={s.heroSub}>Treino + refeições personalizados</p>
@@ -394,7 +394,7 @@ export default function Dashboard() {
  { v: totalDuration, l: "Min" },
  ].map((st, i) => (
  <div key={i} style={s.statCell}>
- <span style={s.statVal}>{st.v}</span>
+ <span className="stat-emphasis" style={s.statVal}>{st.v}</span>
  <span style={s.statLbl}>{st.l}</span>
  </div>
  ))}
@@ -568,22 +568,17 @@ const s = {
  greetingSub: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 600, margin: 0, letterSpacing: "0.06em", textTransform: "uppercase" },
  greetingName: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "2px 0 0", letterSpacing: "-0.035em", lineHeight: 1.1 },
 
- /* Hero Card — primary focus */
+ /* Hero Card — primary focus. The .hero-premium class adds gradient +
+    layered shadows; this object defines only the structural parts. */
  heroCard: {
  display: "flex", alignItems: "center", justifyContent: "space-between",
- padding: "14px 16px", borderRadius: 14,
- background: "var(--card-bg)", border: "1.5px solid var(--primary)",
- cursor: "pointer", boxShadow: "var(--shadow-md)",
- transition: "transform 0.15s var(--ease-spring), box-shadow 0.15s",
+ padding: "18px 20px", borderRadius: 18,
+ border: "1px solid var(--border)",
+ cursor: "pointer",
  },
- heroLeft: { display: "flex", alignItems: "center", gap: 12 },
- heroIcon: {
- width: 38, height: 38, borderRadius: 10,
- background: "var(--primary-bg)",
- display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
- },
- heroTitle: { fontSize: "var(--text-body)", fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.01em" },
- heroSub: { fontSize: "var(--text-overline)", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 500 },
+ heroLeft: { display: "flex", alignItems: "center", gap: 14 },
+ heroTitle: { fontSize: 17, fontWeight: 700, color: "var(--text)", margin: 0, letterSpacing: "-0.015em" },
+ heroSub: { fontSize: 12, color: "var(--text-muted)", margin: "4px 0 0", fontWeight: 500 },
 
  /* 2. Stats Strip */
  statsStrip: {

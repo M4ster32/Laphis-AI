@@ -1,12 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date as date_cls
 import jwt, os, logging
 from ..core.db import get_db
-from ..core.models import Profile, ChatMessage, ChatSession, User, AdaptationLog
+from ..core.models import (
+    Profile, ChatMessage, ChatSession, User, AdaptationLog,
+    WorkoutLog, MealLog, WeightEntry, WaterLog,
+)
 from ..core.schemas import AskIn, AskOut, ProfileOut
 from ..core.recommender import recommend
-from ..core.ai_engine import is_ai_available, ai_chat
+from ..core.ai_engine import (
+    is_ai_available, ai_chat, _build_recent_activity_context,
+)
 
 logger = logging.getLogger("laphis.ask")
 
@@ -22,6 +27,66 @@ def _load_profile(profile_id: int, db: Session) -> Profile:
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
+
+
+def _load_recent_activity(profile: Profile, db: Session) -> str:
+    """
+    Assemble a week of recent activity (workouts, meals, weight, water) into
+    a compact text block for the AI. We keep it small on purpose — the model
+    only needs enough to say "I see you trained 3× this week" without us
+    paying for a 5k-token prompt.
+
+    :returns: Text block ready to inject, or empty string if no data.
+    """
+    today = date_cls.today()
+    week_ago_str = (today - timedelta(days=7)).isoformat()
+
+    workouts = (
+        db.query(WorkoutLog)
+        .filter(WorkoutLog.profile_id == profile.id,
+                WorkoutLog.date >= week_ago_str)
+        .order_by(WorkoutLog.date.desc())
+        .limit(14)
+        .all()
+    )
+    meals = (
+        db.query(MealLog)
+        .filter(MealLog.profile_id == profile.id,
+                MealLog.date >= week_ago_str)
+        .order_by(MealLog.date.desc())
+        .limit(28)
+        .all()
+    )
+    weights = (
+        db.query(WeightEntry)
+        .filter(WeightEntry.user_id == profile.user_id,
+                WeightEntry.date >= (today - timedelta(days=30)).isoformat())
+        .order_by(WeightEntry.date.asc())
+        .limit(10)
+        .all()
+    )
+    water_today = (
+        db.query(WaterLog)
+        .filter(WaterLog.user_id == profile.user_id,
+                WaterLog.date == today.isoformat())
+        .first()
+    )
+
+    return _build_recent_activity_context(
+        recent_workouts=[
+            {"description": w.description, "duration_min": w.duration_min,
+             "calories": w.calories, "date": w.date}
+            for w in workouts
+        ],
+        recent_meals=[
+            {"foods": m.foods, "calories": m.calories, "meal_type": m.meal, "date": m.date}
+            for m in meals
+        ],
+        recent_weight=[
+            {"weight_kg": w.weight_kg, "date": w.date} for w in weights
+        ],
+        water_today=water_today.glasses if water_today else None,
+    )
 
 
 def _get_or_create_session(user_id: int, session_id: int | None, db: Session) -> ChatSession:
@@ -96,11 +161,21 @@ async def ask(payload: AskIn, db: Session = Depends(get_db)):
                      "Caso contrário, responde normalmente à pergunta.")
         adaptation_ctx = "\n".join(lines)
 
-    # Tentar IA real, fallback para recommender
+    # Build the recent-activity snapshot once — used by the AI path and also
+    # kept around in case the recommender fallback wants to reference it.
+    recent_activity_ctx = _load_recent_activity(profile, db)
+
+    # Try real AI first, fall back to rule-based recommender on any failure.
     ai_used = False
     if is_ai_available():
         try:
-            title, bullets = await ai_chat(profile, payload.question, chat_history, adaptation_ctx)
+            title, bullets = await ai_chat(
+                profile,
+                payload.question,
+                chat_history=chat_history,
+                adaptation_ctx=adaptation_ctx,
+                recent_activity_ctx=recent_activity_ctx,
+            )
             ai_used = True
             logger.info("AI chat response generated for profile %d", profile.id)
         except Exception as e:
