@@ -29,33 +29,46 @@ def render(prs):
                  "API stateless, async, OpenAPI auto-doc.")
 
     # Summary bar.
-    textbox(slide, Inches(0.6), Inches(2.3), Inches(12.1), Inches(0.35),
+    textbox(slide, Inches(0.6), Inches(2.35), Inches(12.1), Inches(0.3),
             "Estrutura de routers por domínio funcional.",
-            size=13, color=TEXT_MUTED, italic=True)
+            size=12, color=TEXT_MUTED, italic=True)
 
-    # Two-column layout for routers.
-    col_w = Inches(5.8)
-    col_h = Inches(3.8)
-    col_y = Inches(2.8)
+    # Two-column layout for routers. The slide bottom (footer) sits
+    # around y=6.9", so the panel needs to fit between 2.75 and 6.7.
+    # 10 items per column × 0.39" stride = 3.9" inside a 3.95" panel.
+    col_w = Inches(6.0)
+    col_h = Inches(4.05)
+    col_y = Inches(2.75)
     col_x1 = Inches(0.6)
-    col_x2 = Inches(6.5)
+    col_x2 = Inches(6.75)
+    item_stride = Inches(0.39)
+    name_h = Inches(0.2)
+    desc_h = Inches(0.18)
 
     routers_col1 = BACKEND_ROUTERS[:10]
     routers_col2 = BACKEND_ROUTERS[10:]
 
     def render_router_column(x, y, routers):
+        """Render one column of router rows inside its background panel."""
         panel(slide, x, y, col_w, col_h, fill=PANEL)
-        row_y = y
+        # Inset content from the panel edges so text never touches them.
+        inner_x = Emu(x + Inches(0.22))
+        row_y = Emu(y + Inches(0.18))
         for name, count, desc in routers:
-            accent_dot(slide, Emu(x + Inches(0.25)), Emu(row_y + Inches(0.25)), size=Inches(0.08))
-            textbox(slide, Emu(x + Inches(0.5)), row_y,
-                    Inches(4.5), Inches(0.25),
-                    f"{name.upper()}", size=11, bold=True, color=TEXT)
-            chip(slide, Emu(x + Inches(4.8)), row_y, str(count), fg=ACCENT, size=9)
-            textbox(slide, Emu(x + Inches(0.5)), Emu(row_y + Inches(0.25)),
-                    Inches(4.5), Inches(0.3),
+            accent_dot(slide, inner_x, Emu(row_y + Inches(0.07)), size=Inches(0.08))
+            textbox(slide, Emu(inner_x + Inches(0.22)), row_y,
+                    Inches(4.6), name_h,
+                    name.upper(), size=10.5, bold=True, color=TEXT)
+            # Endpoint count on the right edge as a small accent number.
+            textbox(slide, Emu(x + col_w - Inches(0.6)), row_y,
+                    Inches(0.45), name_h,
+                    str(count), size=10.5, bold=True, color=ACCENT,
+                    align=PP_ALIGN.RIGHT)
+            textbox(slide, Emu(inner_x + Inches(0.22)),
+                    Emu(row_y + Inches(0.2)),
+                    Inches(5.0), desc_h,
                     desc, size=8, color=TEXT_DIM)
-            row_y = Emu(row_y + Inches(0.45))
+            row_y = Emu(row_y + item_stride)
 
     render_router_column(col_x1, col_y, routers_col1)
     render_router_column(col_x2, col_y, routers_col2)
