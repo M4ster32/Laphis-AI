@@ -139,20 +139,14 @@ def accent_dot(slide, left, top, size=Inches(0.2), rgb=ACCENT):
     return dot
 
 
-def chip(slide, left, top, text, fg=ACCENT, size=10, width=None):
+def chip(slide, left, top, text, fg=ACCENT, size=10):
     """
     Uppercase, bold, coloured mini-label used as a kicker above titles.
 
-    :param width: Optional width in EMU. Defaults to 2 inches, but long
-        kicker labels (e.g. the cover slide university line) need more
-        room or they wrap and the renderer hides the first line.
     :returns: The textbox.
     """
-    tb = slide.shapes.add_textbox(
-        left, top, width if width is not None else Inches(2), Inches(0.3)
-    )
+    tb = slide.shapes.add_textbox(left, top, Inches(2), Inches(0.3))
     tf = tb.text_frame
-    tf.word_wrap = False
     tf.margin_left = Emu(0)
     tf.margin_right = Emu(0)
     tf.margin_top = Emu(0)

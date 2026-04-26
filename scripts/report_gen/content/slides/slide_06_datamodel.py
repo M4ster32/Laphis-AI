@@ -30,37 +30,37 @@ def render(prs):
     slide_header(slide, "Modelo de Dados", "17 entidades bem estruturadas",
                  "User como raiz. Relações com planos, logs, chat, métricas.")
 
-    # Entity grid: 17 entities in a 5×4 grid (drops the last 3 cells).
-    # The slide is 13.333" wide and the header eats ~2.4" of vertical
-    # space, so 5 cols × 4 rows fits with breathing room above the
-    # footer at ~6.9".
+    # Entity grid: 17 entities in 3 rows (6 + 6 + 5).
     entities_to_show = ENTITIES[:17]
-    cols = 5
-    # Width math: start_x + cols*col_w + (cols-1)*gap_x must be <= SLIDE_W (13.333").
-    # 0.5 + 5*2.4 + 4*0.13 = 13.02" — fits with a 0.3" right margin.
-    col_w = Inches(2.4)
-    row_h = Inches(1.05)
-    start_x = Inches(0.5)
+
+    col_w = Inches(3.8)
+    row_h = Inches(1.8)
+    start_x = Inches(0.6)
     start_y = Inches(2.5)
-    gap_x = Inches(0.13)
-    gap_y = Inches(0.13)
+    gap_x = Inches(0.15)
+    gap_y = Inches(0.15)
 
     for idx, (entity_name, fields, description) in enumerate(entities_to_show):
-        row = idx // cols
-        col = idx % cols
+        row = idx // 6
+        col = idx % 6
         x = Emu(start_x + col * (col_w + gap_x))
         y = Emu(start_y + row * (row_h + gap_y))
 
         panel(slide, x, y, col_w, row_h, fill=PANEL)
 
         # Entity name as title.
-        textbox(slide, Emu(x + Inches(0.18)), Emu(y + Inches(0.12)),
-                col_w, Inches(0.32),
-                entity_name, size=12, bold=True, color=ACCENT)
+        textbox(slide, Emu(x + Inches(0.2)), Emu(y + Inches(0.15)),
+                col_w, Inches(0.35),
+                entity_name, size=14, bold=True, color=ACCENT)
 
-        # Description below — kept short so it fits in one line.
-        textbox(slide, Emu(x + Inches(0.18)), Emu(y + Inches(0.5)),
-                Emu(col_w - Inches(0.36)), Inches(0.5),
-                description, size=8.5, color=TEXT_DIM, italic=True)
+        # Fields summary (first line only, truncated).
+        textbox(slide, Emu(x + Inches(0.2)), Emu(y + Inches(0.55)),
+                Inches(3.5), Inches(0.65),
+                fields, size=8, color=TEXT_MUTED)
+
+        # Description.
+        textbox(slide, Emu(x + Inches(0.2)), Emu(y + Inches(1.25)),
+                Inches(3.5), Inches(0.45),
+                description, size=9, color=TEXT_DIM, italic=True)
 
     footer(slide, 6)

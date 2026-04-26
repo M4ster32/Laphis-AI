@@ -65,23 +65,20 @@ def render(prs):
                 Inches(1.5), Inches(0.6),
                 num, size=28, bold=True, color=ACCENT_SOFT)
 
-        # Title gets a 2-line tall textbox so wrapped titles
-        # ("Recomendações genéricas") don't collide with the accent bar.
         textbox(slide, Emu(left + Inches(0.25)),
                 Emu(card_y + Inches(0.85)),
-                Inches(3.55), Inches(0.95),
-                title, size=19, bold=True, color=TEXT)
+                Inches(3.6), Inches(0.5),
+                title, size=20, bold=True, color=TEXT)
 
-        # Accent rule sits below the reserved title area so it never
-        # crosses through descender characters of a wrapped title.
+        # Short accent rule separating title from description.
         accent_bar(slide,
                    Emu(left + Inches(0.25)),
-                   Emu(card_y + Inches(1.85)),
+                   Emu(card_y + Inches(1.4)),
                    width=Inches(1.2), height=Inches(0.04))
 
         textbox(slide, Emu(left + Inches(0.25)),
-                Emu(card_y + Inches(2.05)),
-                Inches(3.55), Inches(1.1),
+                Emu(card_y + Inches(1.65)),
+                Inches(3.55), Inches(1.5),
                 desc, size=11.5, color=TEXT_DIM)
 
     footer(slide, 2)

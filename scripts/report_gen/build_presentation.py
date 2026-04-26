@@ -15,7 +15,6 @@ from pathlib import Path
 from pptx import Presentation
 
 from .content import PROJECT
-from .pptx_utils import SLIDE_W, SLIDE_H
 from .content.slides import (
     slide_01_cover,
     slide_02_problem,
@@ -46,13 +45,6 @@ def build() -> Path:
     :returns: Path of the generated .pptx file.
     """
     prs = Presentation()
-
-    # Force 16:9 widescreen — every slide module was authored against
-    # SLIDE_W=13.333"/SLIDE_H=7.5". python-pptx defaults to 4:3 (10×7.5"),
-    # which silently chops the right ~3.3" of every slide. Setting these
-    # before the first add_slide() call applies them to all slides.
-    prs.slide_width = SLIDE_W
-    prs.slide_height = SLIDE_H
 
     # Canonical presentation flow — 12 slides in sequence.
     slide_01_cover.render(prs)

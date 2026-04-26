@@ -36,11 +36,8 @@ def render(prs):
         ("Type Safety", "100%", "mypy + TypeScript strict"),
     ]
 
-    # Metrics cards (3 × 2 grid). Heights chosen so the bottom row ends
-    # before y=5.2", leaving 1.5" of vertical space for the strategy
-    # block and the footer at ~6.85".
-    card_w = Inches(4.05)
-    card_h = Inches(1.25)
+    card_w = Inches(3.7)
+    card_h = Inches(1.6)
     gap = Inches(0.15)
     start_x = Inches(0.6)
     start_y = Inches(2.5)
@@ -54,19 +51,16 @@ def render(prs):
         panel(slide, x, y, card_w, card_h, fill=PANEL)
 
         chip(slide, Emu(x + Inches(0.2)), Emu(y + Inches(0.15)), label, fg=ACCENT, size=9)
-        textbox(slide, Emu(x + Inches(0.2)), Emu(y + Inches(0.45)),
-                Inches(3.7), Inches(0.4),
-                value, size=22, bold=True, color=ACCENT)
+        textbox(slide, Emu(x + Inches(0.2)), Emu(y + Inches(0.5)),
+                Inches(3.3), Inches(0.35),
+                value, size=20, bold=True, color=ACCENT)
         textbox(slide, Emu(x + Inches(0.2)), Emu(y + Inches(0.88)),
-                Inches(3.7), Inches(0.32),
+                Inches(3.3), Inches(0.55),
                 desc, size=9, color=TEXT_DIM)
 
-    # Testing strategy panel — placed below the second row of cards
-    # (which ends at start_y + 2*card_h + gap = 2.5 + 2.65 = 5.15) so
-    # it never overlaps. The panel itself runs from 5.35 to 6.65,
-    # comfortably above the footer at 6.85.
-    strat_title_y = Inches(5.3)
-    textbox(slide, Inches(0.6), strat_title_y, Inches(12.1), Inches(0.28),
+    # Testing strategy at bottom.
+    strat_y = Inches(5.2)
+    textbox(slide, Inches(0.6), strat_y, Inches(12.1), Inches(0.3),
             "Estratégia de Testes", size=13, bold=True, color=ACCENT)
 
     strategy_items = [
@@ -76,12 +70,10 @@ def render(prs):
         "Cobertura: target 85%+ de linhas, focus em caminhos de erro",
     ]
 
-    strat_panel_y = Inches(5.65)
-    panel(slide, Inches(0.6), strat_panel_y, Inches(12.1), Inches(1.05), fill=PANEL)
+    panel(slide, Inches(0.6), Emu(strat_y + Inches(0.4)), Inches(12.1), Inches(1.4), fill=PANEL)
     for j, item in enumerate(strategy_items):
-        # 4 items in 0.95" of inner panel = 0.24" stride.
-        y = Emu(strat_panel_y + Inches(0.13 + j * 0.22))
-        textbox(slide, Inches(0.8), y, Inches(11.7), Inches(0.22),
+        y = Emu(strat_y + Inches(0.55 + j * 0.32))
+        textbox(slide, Inches(0.8), y, Inches(11.7), Inches(0.3),
                 f"• {item}", size=9.5, color=TEXT_DIM)
 
     footer(slide, 10)

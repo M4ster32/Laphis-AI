@@ -43,11 +43,10 @@ def render(prs):
     gradient_fill(deco, ACCENT_SOFT, BG_DEEP, angle=135)
     no_line(deco)
 
-    # University chip — long text needs explicit width or python-pptx
-    # wraps it inside the default 2" box and the renderer hides line 1.
+    # University chip.
     chip(slide, Inches(1.0), Inches(0.9),
          f"{PROJECT['university']} · {PROJECT['faculty']}",
-         fg=ACCENT, size=11, width=Inches(11))
+         fg=ACCENT, size=11)
 
     # Wordmark.
     textbox(slide, Inches(1.0), Inches(2.4), Inches(11), Inches(1.5),
