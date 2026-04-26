@@ -681,8 +681,7 @@ body[style*="overflow: hidden"] .layout-main {
 /* Staggered entrance for direct children of .page-transition--stagger
    — creates a cascading reveal for cards/lists/stats. */
 .page-transition--stagger > * {
-  animation: staggerIn 0.45s var(--ease-out) both;
-  opacity: 0;
+  animation: staggerIn 0.45s ease-out both;
 }
 .page-transition--stagger > *:nth-child(1) { animation-delay: 0.00s; }
 .page-transition--stagger > *:nth-child(2) { animation-delay: 0.04s; }
