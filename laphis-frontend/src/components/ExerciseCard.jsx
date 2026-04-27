@@ -13,6 +13,7 @@ import {
   Lightbulb,
   Youtube
 } from "lucide-react";
+import ExerciseImage from "./ExerciseImage";
 
 /**
  * ExerciseCard — Card visual para exercício com imagem, vídeo e instruções
@@ -29,7 +30,6 @@ export default function ExerciseCard({
   showActions = true 
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   if (!exercise) return null;
 
@@ -90,9 +90,6 @@ export default function ExerciseCard({
 
   const diffInfo = difficultyLabels[difficulty] || difficultyLabels.intermedio;
 
-  // Placeholder SVG embutido — nunca falha
-  const placeholderImage = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='250' viewBox='0 0 400 250'%3E%3Crect width='400' height='250' fill='%231a1a1a'/%3E%3Ctext x='200' y='115' font-family='Arial' font-size='40' fill='%23444' text-anchor='middle'%3E%F0%9F%8F%8B%EF%B8%8F%3C/text%3E%3Ctext x='200' y='155' font-family='Arial' font-size='13' fill='%23666' text-anchor='middle'%3E${encodeURIComponent(name)}%3C/text%3E%3C/svg%3E`;
-
   // Modo compacto (para listas)
   if (compact) {
     return (
@@ -127,16 +124,12 @@ export default function ExerciseCard({
           flexShrink: 0,
           background: "var(--bg-tertiary)"
         }}>
-          <img
-            src={imageError ? placeholderImage : image_url}
+          <ExerciseImage
+            src={image_url}
             alt={name}
-            referrerPolicy="no-referrer"
-            onError={() => setImageError(true)}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover"
-            }}
+            category={category}
+            name={name}
+            compact={true}
           />
         </div>
 
@@ -205,17 +198,12 @@ export default function ExerciseCard({
         overflow: "hidden",
         background: "var(--bg-tertiary)"
       }}>
-        <img
-          src={imageError ? placeholderImage : image_url}
+        <ExerciseImage
+          src={image_url}
           alt={name}
-          referrerPolicy="no-referrer"
-          onError={() => setImageError(true)}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "transform 0.3s ease"
-          }}
+          category={category}
+          name={name}
+          compact={false}
         />
         
         {/* Badges no topo */}
