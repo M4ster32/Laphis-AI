@@ -179,6 +179,55 @@ async def rag_ingest_batch(
     }
 
 
+@router.post("/ingest/text")
+async def rag_ingest_text(body: dict):
+    """
+    Ingestão de texto já extraído e anonimizado (usado pelo script local).
+    Body JSON:
+      - filename: str
+      - text: str (texto limpo, sem nomes/instituições)
+      - categories: list[str]
+    """
+    filename = body.get("filename", "documento.txt")
+    text = body.get("text", "").strip()
+    cat_list = body.get("categories", [])
+
+    if not text:
+        raise HTTPException(status_code=400, detail="Texto vazio.")
+    if len(text) > 5_000_000:
+        raise HTTPException(status_code=400, detail="Texto demasiado grande.")
+
+    safe_name = f"{uuid.uuid4().hex[:12]}_{filename}"
+    doc_id = store_document(
+        filename=safe_name,
+        original_name=filename,
+        file_type="text",
+        categories=cat_list,
+    )
+
+    try:
+        cleaned = clean_text(text)
+        chunks = chunk_text(cleaned)
+        if not chunks:
+            mark_document_failed(doc_id, "Texto demasiado curto")
+            return {"doc_id": doc_id, "filename": filename, "status": "failed", "reason": "Texto curto", "chunks": 0}
+
+        embeddings = await get_embeddings(chunks)
+        store_chunks(doc_id, chunks, embeddings, cat_list)
+
+        return {
+            "doc_id": doc_id,
+            "filename": filename,
+            "status": "processed",
+            "chars": len(cleaned),
+            "chunks": len(chunks),
+            "categories": cat_list,
+        }
+    except Exception as e:
+        mark_document_failed(doc_id, str(e))
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
+
 @router.get("/stats")
 def rag_stats():
     """Estatísticas dos documentos indexados."""
