@@ -7,6 +7,49 @@ import { SkeletonCard, SkeletonLine } from "../components/Skeleton";
 import jsPDF from "jspdf";
 import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
 
+/**
+ * Extrai nomes de exercícios de texto livre (resposta IA, plano salvo, etc.).
+ * Procura linhas com padrão "Nome: 3x10", "1. Nome", etc.
+ */
+function extractExerciseNames(text = "") {
+  const lines = String(text).split(/\n+/);
+  const out = [];
+  const seen = new Set();
+  const sxr = /\b\d+\s*[x×]\s*\d+/i;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    let stripped = line.replace(/^[-*•]\s+/, "").replace(/^\d+[.)-]\s+/, "");
+    stripped = stripped.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1");
+    const m = stripped.match(/^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s\-/]{2,40}?)(?:\s*[:–—-]\s*|\s+)(?=.*\d+\s*[x×]\s*\d+)/);
+    let name = null;
+    if (m) name = m[1].trim();
+    else if (sxr.test(stripped)) name = stripped.split(/\d/)[0].replace(/[:–—\-\s]+$/, "").trim();
+    if (!name || name.length < 3 || name.length > 50) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
+}
+
+/**
+ * Categoria estimada do exercício a partir do nome.
+ */
+function guessCategoryFromName(name = "") {
+  const n = name.toLowerCase();
+  if (/(supino|peito|crucifixo|flex(õ|o)es|chest|bench)/.test(n)) return "peito";
+  if (/(remada|pull|terra|deadlift|costas|dorsal|lat|elev(a|á)(c|ç)(õ|o)es)/.test(n)) return "costas";
+  if (/(agacha|squat|leg|stiff|afundo|lunge|perna|panturri|gluteo|gl(ú|u)teo|f(é|e)mur)/.test(n)) return "pernas";
+  if (/(ombro|deltoide|delt(ó|o)ide|press militar|overhead|elev. lateral|arnold)/.test(n)) return "ombros";
+  if (/(b(í|i)cep|curl|rosca)/.test(n)) return "biceps";
+  if (/(tr(í|i)cep|skull|dips|extens(ã|a)o tr(í|i)cep)/.test(n)) return "triceps";
+  if (/(abdom|core|prancha|plank|crunch|obl(í|i)quo)/.test(n)) return "abdomen";
+  if (/(corrida|cardio|burpee|hiit|mountain|jumping|aer(ó|o)bico|bike|bicicleta)/.test(n)) return "cardio";
+  return null;
+}
+
 export default function PlanDetail() {
   const { planId } = useParams();
   const navigate = useNavigate();
@@ -84,9 +127,47 @@ export default function PlanDetail() {
     // Fallback: for training plans always show something
     if (!category) category = "full_body";
 
+    // Extrai nomes de exercícios do plano (texto em bruto) para que possamos
+    // mostrar cards mesmo se a BD não tem entradas seedadas.
+    const rawText = flattenObj(plan.content_json);
+    const extractedNames = extractExerciseNames(rawText).slice(0, 8);
+
     ApiService.listExercises({ category, limit: 6 })
-      .then(items => setPlanExercises(Array.isArray(items) ? items : (items?.items || [])))
-      .catch(() => {});
+      .then(items => {
+        const list = Array.isArray(items) ? items : (items?.items || []);
+        if (list.length === 0 && extractedNames.length > 0) {
+          const synthetic = extractedNames.map((name, idx) => ({
+            id: `synthetic-${planId}-${idx}`,
+            name,
+            category: guessCategoryFromName(name) || category,
+            muscle_primary: category,
+            difficulty: "intermedio",
+            default_sets: 3,
+            default_reps: "10-12",
+            default_rest_sec: 60,
+            calories_per_min: 6,
+          }));
+          setPlanExercises(synthetic);
+        } else {
+          setPlanExercises(list);
+        }
+      })
+      .catch(() => {
+        if (extractedNames.length > 0) {
+          const synthetic = extractedNames.map((name, idx) => ({
+            id: `synthetic-${planId}-${idx}`,
+            name,
+            category: guessCategoryFromName(name) || category,
+            muscle_primary: category,
+            difficulty: "intermedio",
+            default_sets: 3,
+            default_reps: "10-12",
+            default_rest_sec: 60,
+            calories_per_min: 6,
+          }));
+          setPlanExercises(synthetic);
+        }
+      });
   }, [plan]);
 
   const loadPlan = async () => {
