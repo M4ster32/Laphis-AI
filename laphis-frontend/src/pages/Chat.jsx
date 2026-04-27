@@ -109,6 +109,44 @@ function daysLeft(expiresAt) {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
+/**
+ * Extrai nomes de exercícios de uma resposta do AI. Procura padrões como:
+ *   - "Supino reto: 3x10"
+ *   - "1. Agachamento — 4x12"
+ *   - "- **Flexões** 3x15"
+ * Devolve uma lista de strings (nomes) com duplicados removidos.
+ */
+function extractExerciseNames(text = "") {
+  const lines = text.split(/\n+/);
+  const out = [];
+  const seen = new Set();
+  const sxr = /\b\d+\s*[x×]\s*\d+/i;
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    // Tira marcadores comuns no início ("- ", "* ", "1. ", "•")
+    let stripped = line.replace(/^[-*•]\s+/, "").replace(/^\d+[.)-]\s+/, "");
+    // Tira markdown bold/italic
+    stripped = stripped.replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1");
+    // Linhas com padrão "Nome: 3x10" ou "Nome - 3x10" ou "Nome 3x10"
+    const m = stripped.match(/^([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s\-/]{2,40}?)(?:\s*[:–—-]\s*|\s+)(?=.*\d+\s*[x×]\s*\d+)/);
+    let name = null;
+    if (m) {
+      name = m[1].trim();
+    } else if (sxr.test(stripped)) {
+      // fallback: tira tudo a partir do primeiro número
+      name = stripped.split(/\d/)[0].replace(/[:–—\-\s]+$/, "").trim();
+    }
+    if (!name || name.length < 3 || name.length > 50) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out;
+}
+
 export default function Chat() {
   const navigate = useNavigate();
   const { profile } = useApp();
@@ -179,13 +217,47 @@ export default function Chat() {
       return;
     }
 
+    // Extrair nomes de exercícios do texto (linhas com padrão "Nome: 3x10",
+    // "1. Nome", "- Nome 4x12", ou bullets do markdown).
+    const extractedNames = extractExerciseNames(msg.content).slice(0, 6);
+
     // Uma única chamada à API para buscar 3 exercícios da categoria
     ApiService.listExercises({ category: detectedCategory, limit: 3 })
       .then(items => {
         const list = Array.isArray(items) ? items : (items?.items || []);
-        setDetectedExercises(prev => ({ ...prev, [lastIdx]: list }));
+        // Se a BD não tem nada, criamos items sintéticos a partir dos nomes
+        // que a IA mencionou — ainda assim renderiza imagem com a cor da categoria.
+        if (list.length === 0 && extractedNames.length > 0) {
+          const synthetic = extractedNames.map((name, idx) => ({
+            id: `synthetic-${lastIdx}-${idx}`,
+            name,
+            category: detectedCategory,
+            muscle_primary: detectedCategory,
+            difficulty: "intermedio",
+            default_sets: 3,
+            default_reps: "10-12",
+            default_rest_sec: 60,
+            calories_per_min: 6,
+          }));
+          setDetectedExercises(prev => ({ ...prev, [lastIdx]: synthetic }));
+        } else {
+          setDetectedExercises(prev => ({ ...prev, [lastIdx]: list }));
+        }
       })
-      .catch(() => setDetectedExercises(prev => ({ ...prev, [lastIdx]: [] })));
+      .catch(() => {
+        const synthetic = extractedNames.map((name, idx) => ({
+          id: `synthetic-${lastIdx}-${idx}`,
+          name,
+          category: detectedCategory,
+          muscle_primary: detectedCategory,
+          difficulty: "intermedio",
+          default_sets: 3,
+          default_reps: "10-12",
+          default_rest_sec: 60,
+          calories_per_min: 6,
+        }));
+        setDetectedExercises(prev => ({ ...prev, [lastIdx]: synthetic }));
+      });
   }, [messages]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSessions = useCallback(async () => {
