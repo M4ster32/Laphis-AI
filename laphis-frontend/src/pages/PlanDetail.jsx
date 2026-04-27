@@ -8,6 +8,28 @@ import jsPDF from "jspdf";
 import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
 
 /**
+ * Percorre recursivamente um JSON de plano e devolve todas as strings
+ * "folha" como itens individuais — cada item de cada section.items vai
+ * ficar numa linha própria, o que é necessário para o regex de extração.
+ */
+function collectStringItems(obj) {
+  const out = [];
+  const walk = (v) => {
+    if (v == null) return;
+    if (typeof v === "string") { out.push(v); return; }
+    if (typeof v === "number") { out.push(String(v)); return; }
+    if (Array.isArray(v)) { v.forEach(walk); return; }
+    if (typeof v === "object") {
+      // Para sections com header + items, queremos só os items
+      if (v.items && Array.isArray(v.items)) { v.items.forEach(walk); return; }
+      Object.values(v).forEach(walk);
+    }
+  };
+  walk(obj);
+  return out;
+}
+
+/**
  * Extrai nomes de exercícios de texto livre (resposta IA, plano salvo, etc.).
  * Procura linhas com padrão "Nome: 3x10", "1. Nome", etc.
  */
@@ -127,10 +149,11 @@ export default function PlanDetail() {
     // Fallback: for training plans always show something
     if (!category) category = "full_body";
 
-    // Extrai nomes de exercícios do plano (texto em bruto) para que possamos
-    // mostrar cards mesmo se a BD não tem entradas seedadas.
-    const rawText = flattenObj(plan.content_json);
-    const extractedNames = extractExerciseNames(rawText).slice(0, 8);
+    // Extrai nomes de exercícios do plano percorrendo a estrutura JSON
+    // (cada string que pareça "Nome: 3x10" ou "1. Nome 4x12" entra) e
+    // depois faz fallback ao parsing linha-a-linha do texto bruto.
+    const candidateLines = collectStringItems(plan.content_json);
+    const extractedNames = extractExerciseNames(candidateLines.join("\n")).slice(0, 12);
 
     ApiService.listExercises({ category, limit: 6 })
       .then(items => {
