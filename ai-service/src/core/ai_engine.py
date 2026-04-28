@@ -256,7 +256,7 @@ async def ai_chat(
     recent_activity_ctx: str = "",
 ) -> tuple[str, list[str]]:
     """
-    Gera resposta de chat via OpenAI.
+    Gera resposta de chat via OpenAI com contexto RAG dos documentos indexados.
 
     :param profile: ORM profile.
     :param question: User question.
@@ -281,6 +281,20 @@ async def ai_chat(
         system_parts.append(f"ATIVIDADE RECENTE:\n{recent_activity_ctx}")
     if adaptation_ctx:
         system_parts.append(adaptation_ctx)
+
+    # Injetar contexto RAG se houver documentos indexados
+    try:
+        from .rag import get_single_embedding, semantic_search
+        query_embedding = await get_single_embedding(question)
+        rag_chunks = semantic_search(query_embedding, top_k=5)
+        if rag_chunks:
+            rag_parts = []
+            for c in rag_chunks:
+                rag_parts.append(c["content"])
+            rag_ctx = "CONHECIMENTO DOS DOCUMENTOS (usa isto para enriquecer a resposta):\n\n" + "\n\n---\n\n".join(rag_parts)
+            system_parts.append(rag_ctx)
+    except Exception:
+        pass  # Se RAG falhar, continua sem ele
 
     messages = [
         {"role": "system", "content": CHAT_SYSTEM},
