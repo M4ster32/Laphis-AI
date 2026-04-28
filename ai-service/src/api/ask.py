@@ -97,7 +97,11 @@ def _get_or_create_session(user_id: int, session_id: int | None, db: Session) ->
             .filter(ChatSession.id == session_id, ChatSession.user_id == user_id)
             .first()
         )
-        if session and session.expires_at > now:
+        expires = session.expires_at
+        if expires and expires.tzinfo is None:
+            from datetime import timezone as tz
+            expires = expires.replace(tzinfo=tz.utc)
+        if session and expires > now:
             return session
 
     session = ChatSession(
