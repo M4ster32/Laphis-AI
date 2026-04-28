@@ -47,20 +47,43 @@ function parseExerciseLine(raw) {
   line = line.replace(/^[\s\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]+/u, "").trim();
   if (!line) return null;
 
-  // procurar padrão sets×reps
-  const sxr = line.match(/\b(\d+)\s*[x×]\s*([\d-]+)\b/i);
-  if (!sxr) return null;
-  const sets = parseInt(sxr[1], 10);
-  const reps = sxr[2];
+  // procurar padrão sets×reps em vários formatos:
+  //  "4×10", "4 x 10", "4×10-12"
+  //  "4 séries × 10 reps", "4 sets x 10 reps"
+  //  "4 séries de 10", "4 séries de 10-12 reps"
+  let sets, reps, sxrIndex;
+  const compact = line.match(/\b(\d+)\s*[x×]\s*([\d-]+)\b/i);
+  const verbose = line.match(/\b(\d+)\s*(?:s[ée]ries?|sets?)\s*(?:[x×]|de)\s*([\d-]+)/i);
+  const verboseRev = line.match(/\b(\d+)\s*reps?\s*[x×]\s*(\d+)\s*s[ée]ries?/i);
+
+  if (compact) {
+    sets = parseInt(compact[1], 10);
+    reps = compact[2];
+    sxrIndex = compact.index;
+  } else if (verbose) {
+    sets = parseInt(verbose[1], 10);
+    reps = verbose[2];
+    sxrIndex = verbose.index;
+  } else if (verboseRev) {
+    reps = verboseRev[1];
+    sets = parseInt(verboseRev[2], 10);
+    sxrIndex = verboseRev.index;
+  } else {
+    return null;
+  }
 
   // tudo antes do sets×reps é o nome
-  const nameMatch = line.slice(0, sxr.index).trim();
-  let name = nameMatch.replace(/[:\-–—]+\s*$/, "").trim();
+  let name = line.slice(0, sxrIndex).trim();
+  // remover separador final (— : - –)
+  name = name.replace(/[:\-–—]+\s*$/, "").trim();
   if (!name || name.length < 2) return null;
   if (name.length > 60) name = name.slice(0, 60);
 
-  // descanso
-  const restMatch = line.match(/descanso[\s:]*(\d+)\s*s/i) || line.match(/\((\d+)\s*s/i);
+  // descanso: aceita "(60 seg)", "(60s)", "descanso 60s", "60 seg"
+  const restMatch =
+    line.match(/descanso[\s:]*(\d+)\s*s/i) ||
+    line.match(/\((\d+)\s*(?:s|seg|segundos?)\)/i) ||
+    line.match(/\b(\d+)\s*(?:seg|segundos?)\b/i);
   const rest = restMatch ? parseInt(restMatch[1], 10) : 60;
 
   return {
