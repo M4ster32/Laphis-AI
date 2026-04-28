@@ -31,24 +31,57 @@ export default function WorkoutSession() {
   const [showExitModal, setShowExitModal] = useState(false);
   const startedAt = useRef(Date.now());
 
-  // Carregar exercícios se vier sem state (refresh, link direto)
+  // Se já temos exercícios via state (vindo do PlanWorkoutBox), nada a fazer.
+  // Se não há state nem planId válido, voltar.
   useEffect(() => {
     if (exercises.length > 0) return;
-    if (!planId) return;
+    if (!planId || planId === "new") {
+      // Sem dados — volta para o chat
+      navigate("/chat");
+      return;
+    }
     (async () => {
       try {
         const plan = await ApiService.getPlanDetail(planId);
         setPlanTitle(plan?.title || "Treino");
-        // Fallback: tentar obter exercícios placeholder
-        const cat = "full_body";
-        const items = await ApiService.listExercises({ category: cat, limit: 5 });
-        const list = Array.isArray(items) ? items : (items?.items || []);
-        setExercises(list);
+        // Reconstruir exercícios a partir do content_json (sections.items)
+        const sections = plan?.content_json?.sections || [];
+        const parsed = [];
+        let idx = 0;
+        for (const sec of sections) {
+          for (const item of (sec.items || [])) {
+            const sxr = item.match(/(\d+)\s*[x×]\s*([\d-]+)/i);
+            if (!sxr) continue;
+            const sets = parseInt(sxr[1], 10);
+            const reps = sxr[2];
+            const restMatch = item.match(/(\d+)\s*s/);
+            const rest = restMatch ? parseInt(restMatch[1], 10) : 60;
+            const name = item.slice(0, sxr.index).trim().replace(/[:\-–—]+\s*$/, "");
+            if (!name) continue;
+            parsed.push({
+              id: `db-${idx++}`,
+              name,
+              category: "full_body",
+              muscle_primary: "full_body",
+              difficulty: "intermedio",
+              default_sets: sets,
+              default_reps: reps,
+              default_rest_sec: rest,
+              calories_per_min: 6,
+            });
+          }
+        }
+        if (parsed.length === 0) {
+          navigate("/chat");
+          return;
+        }
+        setExercises(parsed);
       } catch (e) {
         console.error(e);
+        navigate("/chat");
       }
     })();
-  }, [planId, exercises.length]);
+  }, [planId, exercises.length, navigate]);
 
   // Cronómetro total do treino
   useEffect(() => {

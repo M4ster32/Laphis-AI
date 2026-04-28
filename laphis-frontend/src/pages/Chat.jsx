@@ -643,17 +643,27 @@ export default function Chat() {
         {messages.map((msg, i) => (
           <div key={i} style={msg.role === "user" ? s.userBubbleWrap : s.assistantBubbleWrap}>
             <div style={msg.role === "user" ? s.userBubble : s.assistantBubble}>
-              <div style={s.msgContent}>
-                {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
-              </div>
-
-              {/* Box interativa do plano com lista de exercícios e Iniciar Treino */}
-              {msg.role === "assistant" && msg.planId && (
-                <PlanWorkoutBox planId={msg.planId} planTitle={msg.planTitle} />
+              {/* Se for plano (gerado via /plans ou texto plan-like), mostrar SÓ a box bonita */}
+              {msg.role === "assistant" && (msg.planId || looksLikePlan(msg.content)) ? (
+                <PlanWorkoutBox
+                  rawText={msg.planId ? null : msg.content}
+                  planId={msg.planId || null}
+                  planTitle={msg.planTitle || null}
+                  profileId={profile?.id}
+                  onPlanSaved={(newId) => {
+                    setMessages((prev) =>
+                      prev.map((m, idx) => idx === i ? { ...m, planId: newId } : m)
+                    );
+                  }}
+                />
+              ) : (
+                <div style={s.msgContent}>
+                  {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
+                </div>
               )}
               
-              {/* Exercícios detectados na mensagem */}
-              {msg.role === "assistant" && !msg.planId && detectedExercises[i]?.length > 0 && (
+              {/* Exercícios detectados em mensagens não-plano (ex: pergunta avulsa) */}
+              {msg.role === "assistant" && !msg.planId && !looksLikePlan(msg.content) && detectedExercises[i]?.length > 0 && (
                 <div style={s.exercisesSection}>
                   <div style={s.exercisesHeader}>
                     <Dumbbell size={14} />
@@ -669,31 +679,6 @@ export default function Chat() {
                       />
                     ))}
                   </div>
-                </div>
-              )}
-              
-              {msg.role === "assistant" && !msg.content.startsWith("Erro") && looksLikePlan(msg.content) && (
-                <div style={s.msgActions}>
-                  <button
-                    style={{
-                      ...s.actionBtn,
-                      ...(savingPlan === msg.content ? { opacity: 0.6, cursor: "wait" } : {}),
-                      ...(saveSuccess && saveSuccess.startsWith("✅") && savingPlan === null
-                        ? { background: "var(--primary-bg)", borderColor: "var(--primary)", color: "var(--primary)" }
-                        : {}),
-                    }}
-                    onClick={(e) => { e.stopPropagation(); handleSaveAsPlan(msg.content); }}
-                    disabled={savingPlan === msg.content}
-                    title="Guardar como plano"
-                  >
-                    {savingPlan === msg.content ? (
-                      <><span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> A guardar...</>
-                    ) : saveSuccess && saveSuccess.startsWith("✅") ? (
-                      <><Check size={14} strokeWidth={2} /> Guardado!</>
-                    ) : (
-                      <><Save size={14} strokeWidth={1.5} /> Guardar Plano</>
-                    )}
-                  </button>
                 </div>
               )}
             </div>
