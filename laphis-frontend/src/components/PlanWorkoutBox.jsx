@@ -124,6 +124,13 @@ function parsePlanDays({ rawText, contentJson }) {
   return days;
 }
 
+export function hasParseableWorkout(text) {
+  if (!text || text.length < 100) return false;
+  const days = parsePlanDays({ rawText: text });
+  const total = days.reduce((s, d) => s + d.exercises.length, 0);
+  return total >= 2; // pelo menos 2 exercícios para considerar um plano
+}
+
 function flatExercises(days) {
   const out = [];
   let idx = 0;

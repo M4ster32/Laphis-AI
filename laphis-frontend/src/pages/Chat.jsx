@@ -5,7 +5,7 @@ import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
 import ExerciseCard, { ExerciseList } from "../components/ExerciseCard";
-import PlanWorkoutBox from "../components/PlanWorkoutBox";
+import PlanWorkoutBox, { hasParseableWorkout } from "../components/PlanWorkoutBox";
 import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check, Zap, Dumbbell } from "lucide-react";
 
 /* Detect if message content looks like a training/nutrition plan */
@@ -643,24 +643,33 @@ export default function Chat() {
         {messages.map((msg, i) => (
           <div key={i} style={msg.role === "user" ? s.userBubbleWrap : s.assistantBubbleWrap}>
             <div style={msg.role === "user" ? s.userBubble : s.assistantBubble}>
-              {/* Se for plano (gerado via /plans ou texto plan-like), mostrar SÓ a box bonita */}
-              {msg.role === "assistant" && (msg.planId || looksLikePlan(msg.content)) ? (
-                <PlanWorkoutBox
-                  rawText={msg.planId ? null : msg.content}
-                  planId={msg.planId || null}
-                  planTitle={msg.planTitle || null}
-                  profileId={profile?.id}
-                  onPlanSaved={(newId) => {
-                    setMessages((prev) =>
-                      prev.map((m, idx) => idx === i ? { ...m, planId: newId } : m)
-                    );
-                  }}
-                />
-              ) : (
-                <div style={s.msgContent}>
-                  {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
-                </div>
-              )}
+              {(() => {
+                const isPlanMsg =
+                  msg.role === "assistant" &&
+                  (msg.planId || (looksLikePlan(msg.content) && hasParseableWorkout(msg.content)));
+
+                if (isPlanMsg) {
+                  return (
+                    <PlanWorkoutBox
+                      rawText={msg.planId ? null : msg.content}
+                      planId={msg.planId || null}
+                      planTitle={msg.planTitle || null}
+                      profileId={profile?.id}
+                      onPlanSaved={(newId) => {
+                        setMessages((prev) =>
+                          prev.map((m, idx) => idx === i ? { ...m, planId: newId } : m)
+                        );
+                      }}
+                    />
+                  );
+                }
+
+                return (
+                  <div style={s.msgContent}>
+                    {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
+                  </div>
+                );
+              })()}
               
               {/* Exercícios detectados em mensagens não-plano (ex: pergunta avulsa) */}
               {msg.role === "assistant" && !msg.planId && !looksLikePlan(msg.content) && detectedExercises[i]?.length > 0 && (
