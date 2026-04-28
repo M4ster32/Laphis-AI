@@ -5,6 +5,7 @@ import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
 import ExerciseCard, { ExerciseList } from "../components/ExerciseCard";
+import PlanWorkoutBox from "../components/PlanWorkoutBox";
 import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check, Zap, Dumbbell } from "lucide-react";
 
 /* Detect if message content looks like a training/nutrition plan */
@@ -369,12 +370,13 @@ export default function Chat() {
         const planId = plan?.id || plan?.plan?.id;
         const planTitle = plan?.title || plan?.plan?.title || "Plano gerado";
 
-        const confirmMsg = `✅ **${planTitle}** criado com sucesso!\n\nPodes ver todos os exercícios com imagens e detalhes nos teus **Planos**.`;
+        const confirmMsg = `✅ **${planTitle}** criado!`;
         setMessages((prev) => [...prev, {
           role: "assistant",
           content: confirmMsg,
           created_at: new Date().toISOString(),
           planId,
+          planTitle,
         }]);
       } catch {
         // fallback para resposta normal do AI
@@ -645,18 +647,9 @@ export default function Chat() {
                 {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
               </div>
 
-              {/* Botão "Ver Plano" quando plano foi criado automaticamente */}
+              {/* Box interativa do plano com lista de exercícios e Iniciar Treino */}
               {msg.role === "assistant" && msg.planId && (
-                <div style={{ marginTop: 12 }}>
-                  <button
-                    className="btn btn-primary"
-                    style={{ fontSize: 13, padding: "9px 18px", width: "100%" }}
-                    onClick={() => navigate(`/plans/${msg.planId}`)}
-                  >
-                    <Dumbbell size={15} strokeWidth={1.5} style={{ marginRight: 6, verticalAlign: -2 }} />
-                    Ver Plano com Exercícios
-                  </button>
-                </div>
+                <PlanWorkoutBox planId={msg.planId} planTitle={msg.planTitle} />
               )}
               
               {/* Exercícios detectados na mensagem */}

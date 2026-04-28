@@ -20,6 +20,8 @@ import Settings from "./pages/Settings";
 import Zen from "./pages/Zen";
 import Reports from "./pages/Reports";
 import DailyPlan from "./pages/DailyPlan";
+import WorkoutSession from "./pages/WorkoutSession";
+import WorkoutSummary from "./pages/WorkoutSummary";
 
 // Route protection component
 const ProtectedRoute = ({ children }) => {
@@ -60,6 +62,8 @@ export default function AppRouter() {
             <Route path="/zen" element={<Zen />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/daily-plan" element={<DailyPlan />} />
+            <Route path="/workout-session/:planId" element={<WorkoutSession />} />
+            <Route path="/workout-summary" element={<WorkoutSummary />} />
           </Route>
 
           {/* Fallback */}
