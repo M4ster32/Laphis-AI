@@ -147,6 +147,166 @@ function flatExercises(days) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
+ * GIF FALLBACK MAPPING — chave normalizada → URL pública
+ * Fonte: free-exercise-db (yuhonas/free-exercise-db) no GitHub
+ * ────────────────────────────────────────────────────────────────────── */
+const FALLBACK_GIF_MAP = {
+  // Peito
+  "supino": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+  "supino reto": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
+  "supino inclinado": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
+  "supino declinado": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Decline_Barbell_Bench_Press/0.jpg",
+  "crucifixo": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Flyes/0.jpg",
+  "flexao": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups/0.jpg",
+  "flexoes": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pushups/0.jpg",
+  "peck deck": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Butterfly_Machine/0.jpg",
+
+  // Costas
+  "remada": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg",
+  "remada curvada": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg",
+  "remada unilateral": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Dumbbell_Row/0.jpg",
+  "remada baixa": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Cable_Rows/0.jpg",
+  "remada cavalinho": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/T-Bar_Row/0.jpg",
+  "puxada": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
+  "lat pulldown": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide-Grip_Lat_Pulldown/0.jpg",
+  "elevacoes": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pullups/0.jpg",
+  "pull up": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pullups/0.jpg",
+  "pullup": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pullups/0.jpg",
+  "deadlift": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg",
+  "levantamento terra": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg",
+  "peso morto": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Deadlift/0.jpg",
+
+  // Pernas
+  "agachamento": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Squat/0.jpg",
+  "agachamento livre": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Squat/0.jpg",
+  "agachamento frontal": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Barbell_Squat/0.jpg",
+  "agachamento sumo": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Wide_Stance_Barbell_Squat/0.jpg",
+  "leg press": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg",
+  "cadeira extensora": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg",
+  "cadeira flexora": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg",
+  "leg curl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg",
+  "extensao de pernas": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg",
+  "stiff": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Romanian_Deadlift/0.jpg",
+  "stiff romeno": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Romanian_Deadlift/0.jpg",
+  "afundo": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+  "afundos": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+  "lunges": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+  "estocada": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg",
+  "panturrilha": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg",
+  "elevacao de gemeos": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg",
+  "abdutora": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Thigh_Abductor/0.jpg",
+  "adutora": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Thigh_Adductor/0.jpg",
+
+  // Ombros
+  "press militar": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg",
+  "desenvolvimento militar": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg",
+  "elevacao lateral": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg",
+  "elevacao frontal": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Dumbbell_Raise/0.jpg",
+  "face pull": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Face_Pull/0.jpg",
+  "arnold press": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Arnold_Dumbbell_Press/0.jpg",
+  "encolhimento": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg",
+  "shrug": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shrug/0.jpg",
+
+  // Bíceps
+  "curl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg",
+  "rosca direta": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg",
+  "rosca martelo": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg",
+  "curl martelo": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg",
+  "curl inclinado": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Curl/0.jpg",
+  "rosca scott": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Preacher_Curl/0.jpg",
+  "preacher": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Preacher_Curl/0.jpg",
+
+  // Tríceps
+  "tricep dips": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_-_Triceps_Version/0.jpg",
+  "dips": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_-_Triceps_Version/0.jpg",
+  "extensao triceps": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown/0.jpg",
+  "triceps polia": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown/0.jpg",
+  "skull crusher": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ-Bar_Skullcrusher/0.jpg",
+  "frances": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ-Bar_Skullcrusher/0.jpg",
+  "rosca testa": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ-Bar_Skullcrusher/0.jpg",
+
+  // Abdómen
+  "abdominal": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/0.jpg",
+  "crunch": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/0.jpg",
+  "prancha": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg",
+  "plank": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg",
+  "elevacao de pernas": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hanging_Leg_Raise/0.jpg",
+  "russian twist": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Russian_Twist/0.jpg",
+
+  // Cardio
+  "burpee": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Burpee/0.jpg",
+  "mountain climber": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Mountain_Climbers/0.jpg",
+  "jumping jack": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Jumping_Jack/0.jpg",
+};
+
+const _normalize = (s) =>
+  (s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Procura o melhor match para um nome de exercício no FALLBACK_GIF_MAP.
+ * Estratégia: procura a chave mais longa que esteja contida no nome.
+ */
+function findFallbackImage(exerciseName) {
+  const normalized = _normalize(exerciseName);
+  if (!normalized) return null;
+
+  // Ordenar chaves por tamanho desc para preferir matches mais específicos
+  const keys = Object.keys(FALLBACK_GIF_MAP).sort((a, b) => b.length - a.length);
+  for (const k of keys) {
+    if (normalized.includes(k)) return FALLBACK_GIF_MAP[k];
+  }
+  return null;
+}
+
+/**
+ * Match fuzzy entre exercício parseado e exercícios da BD.
+ * Score: contagem de palavras em comum (>3 chars).
+ */
+function findDbMatch(parsedName, dbExercises) {
+  const tokens = _normalize(parsedName).split(" ").filter((t) => t.length > 3);
+  if (tokens.length === 0) return null;
+  let best = null;
+  let bestScore = 0;
+  for (const db of dbExercises) {
+    const dbTokens = _normalize(db.name).split(" ");
+    let score = 0;
+    for (const t of tokens) {
+      if (dbTokens.some((dt) => dt.includes(t) || t.includes(dt))) score++;
+    }
+    if (score > bestScore) { bestScore = score; best = db; }
+  }
+  return bestScore >= 1 ? best : null;
+}
+
+/**
+ * Enriquece exercícios parseados com image_url da BD ou do fallback.
+ */
+function enrichExercises(parsedList, dbExercises) {
+  return parsedList.map((ex) => {
+    const dbMatch = findDbMatch(ex.name, dbExercises || []);
+    if (dbMatch) {
+      return {
+        ...ex,
+        image_url: dbMatch.image_url || findFallbackImage(ex.name),
+        video_url: dbMatch.video_url,
+        instructions: dbMatch.instructions,
+        tips: dbMatch.tips,
+        common_mistakes: dbMatch.common_mistakes,
+        equipment: dbMatch.equipment,
+        muscle_primary: dbMatch.muscle_primary || ex.muscle_primary,
+        muscle_secondary: dbMatch.muscle_secondary,
+      };
+    }
+    return { ...ex, image_url: findFallbackImage(ex.name) };
+  });
+}
+
+/* ──────────────────────────────────────────────────────────────────────
  * COMPONENT
  * ────────────────────────────────────────────────────────────────────── */
 
@@ -165,6 +325,23 @@ export default function PlanWorkoutBox({
   const [savedPlanId, setSavedPlanId] = useState(planId);
   const [saving, setSaving] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
+  const [dbExercises, setDbExercises] = useState([]);
+
+  // Carregar todos os exercícios da BD uma vez (para fuzzy match com imagens)
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const items = await ApiService.listExercises({ limit: 200 });
+        if (cancel) return;
+        const list = Array.isArray(items) ? items : (items?.items || []);
+        setDbExercises(list);
+      } catch {
+        if (!cancel) setDbExercises([]);
+      }
+    })();
+    return () => { cancel = true; };
+  }, []);
 
   // Carregar plano da BD se planId
   useEffect(() => {
@@ -205,7 +382,10 @@ export default function PlanWorkoutBox({
     () => parsePlanDays({ rawText, contentJson }),
     [rawText, contentJson]
   );
-  const allExercises = useMemo(() => flatExercises(days), [days]);
+  const allExercises = useMemo(
+    () => enrichExercises(flatExercises(days), dbExercises),
+    [days, dbExercises]
+  );
 
   const totalExercises = allExercises.length;
   const totalSets = allExercises.reduce((s, e) => s + (e.default_sets || 0), 0);
@@ -321,17 +501,7 @@ export default function PlanWorkoutBox({
           {currentDay.exercises.map((ex, i) => {
             const exObj = allExercises.find(
               (a) => a._day === currentDay.header && a.name === ex.name
-            ) || {
-              id: `view-${i}`,
-              name: ex.name,
-              category: ex.category,
-              muscle_primary: ex.category,
-              difficulty: "intermedio",
-              default_sets: ex.sets,
-              default_reps: ex.reps,
-              default_rest_sec: ex.rest,
-              calories_per_min: 6,
-            };
+            ) || ex;
             return (
               <button
                 key={i}
@@ -342,8 +512,9 @@ export default function PlanWorkoutBox({
                 <div style={s.exNumber}>{i + 1}</div>
                 <div style={s.exThumb}>
                   <ExerciseImage
-                    category={ex.category}
-                    name={ex.name}
+                    src={exObj.image_url}
+                    category={exObj.category}
+                    name={exObj.name}
                     compact={true}
                   />
                 </div>
