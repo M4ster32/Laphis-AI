@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dumbbell,
   Heart,
@@ -8,6 +8,7 @@ import {
   Zap,
   Target,
 } from "lucide-react";
+import ExerciseDBAPI from "../services/ExerciseDBAPI";
 
 const CATEGORY_VISUAL = {
   peito:    { from: "#7f1d1d", to: "#dc2626", accent: "#fecaca", Icon: Dumbbell,   label: "Peito" },
@@ -35,8 +36,38 @@ export default function ExerciseImage({
   compact = false,
 }) {
   const [failed, setFailed] = useState(false);
+  const [gifUrl, setGifUrl] = useState(src || null);
+  const [loading, setLoading] = useState(!!name && !src);
+
   const visual = pickVisual(category);
-  const showFallback = !src || failed;
+  const showFallback = !gifUrl || failed;
+
+  // Fetch GIF do RapidAPI ExerciseDB quando o nome do exercício muda
+  useEffect(() => {
+    if (!name) {
+      setGifUrl(src || null);
+      return;
+    }
+
+    setLoading(true);
+    (async () => {
+      try {
+        const result = await ExerciseDBAPI.searchGifByName(name);
+        if (result.gifUrl) {
+          setGifUrl(result.gifUrl);
+          setFailed(false);
+        } else {
+          // Se não encontrar, usar a src padrão ou fallback
+          setGifUrl(src || null);
+        }
+      } catch (err) {
+        console.warn("Erro ao buscar GIF do ExerciseDB:", err);
+        setGifUrl(src || null);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [name, src]);
 
   const wrapperStyle = {
     position: "relative",
@@ -53,19 +84,35 @@ export default function ExerciseImage({
 
   return (
     <div style={wrapperStyle}>
-      <img
-        src={src}
-        alt={alt || name || "Exercício"}
-        referrerPolicy="no-referrer"
-        loading="lazy"
-        onError={() => setFailed(true)}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          display: "block",
-        }}
-      />
+      {gifUrl ? (
+        <img
+          src={gifUrl}
+          alt={alt || name || "Exercício"}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          onError={() => setFailed(true)}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "rgba(255,255,255,0.6)",
+            fontSize: 12,
+          }}
+        >
+          A carregar GIF...
+        </div>
+      )}
     </div>
   );
 }
