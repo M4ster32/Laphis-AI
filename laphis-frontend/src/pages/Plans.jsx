@@ -5,7 +5,9 @@ import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
 import { SkeletonPlans } from "../components/Skeleton";
-import { Tag, Plus, Archive, Copy, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap, X } from "lucide-react";
+import { Tag, Plus, Archive, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap, X, MoreVertical, Trash2 } from "lucide-react";
+
+const VISIBLE_COUNT_DEFAULT = 5;
 
 const PLAN_TYPES = [
   { value: "training",  label: "Treino",     Icon: Dumbbell,         color: "var(--primary)", bg: "var(--primary-bg)" },
@@ -47,6 +49,20 @@ export default function Plans() {
   const [genType, setGenType] = useState("combined");
   const [genPrompt, setGenPrompt] = useState("");
   const [genCategory, setGenCategory] = useState(null);
+
+  // UI state — actions popup + show more
+  const [openMenuFor, setOpenMenuFor] = useState(null); // planId com menu aberto
+  const [confirmDelete, setConfirmDelete] = useState(null); // plano a apagar (objecto)
+  const [showAllActive, setShowAllActive] = useState(false);
+  const [showAllArchived, setShowAllArchived] = useState(false);
+
+  // Fechar menu ao clicar fora
+  useEffect(() => {
+    if (!openMenuFor) return;
+    const close = () => setOpenMenuFor(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [openMenuFor]);
 
   useEffect(() => {
     if (profile) {
@@ -155,12 +171,22 @@ export default function Plans() {
     }
   };
 
-  const handleDuplicate = async (planId) => {
+  /**
+   * Optimistic delete — remove imediatamente da UI e chama API em background.
+   * Faz rollback se falhar.
+   */
+  const handleDelete = async (planId) => {
+    const planSnapshot = plans;
+    const archivedSnapshot = archivedPlans;
+    setPlans((prev) => prev.filter((p) => p.id !== planId));
+    setArchivedPlans((prev) => prev.filter((p) => p.id !== planId));
+    setConfirmDelete(null);
     try {
-      await ApiService.duplicatePlan(planId);
-      await loadPlans();
+      await ApiService.deletePlan(planId);
     } catch (err) {
       console.error(err);
+      setPlans(planSnapshot);
+      setArchivedPlans(archivedSnapshot);
     }
   };
 
@@ -388,7 +414,7 @@ export default function Plans() {
         />
       ) : (
         <div style={s.plansList}>
-          {plans.map((plan) => {
+          {(showAllActive ? plans : plans.slice(0, VISIBLE_COUNT_DEFAULT)).map((plan) => {
             const getTypeIcon = (type) => {
               switch (type) {
                 case "training": return <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />;
@@ -402,6 +428,7 @@ export default function Plans() {
               nutrition: "var(--p2)",
               combined: "var(--p3)",
             };
+            const isMenuOpen = openMenuFor === plan.id;
             return (
             <div key={plan.id} className="card-lift" style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
               <div style={s.planTop}>
@@ -420,19 +447,58 @@ export default function Plans() {
                     )}
                   </p>
                 </div>
-                <ChevronRight size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-              </div>
-              <div style={s.planActions} onClick={(e) => e.stopPropagation()}>
-                <button style={s.planActionBtn} onClick={() => handleArchive(plan.id)} title="Arquivar">
-                  <Archive size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Arquivar
-                </button>
-                <button style={s.planActionBtn} onClick={() => handleDuplicate(plan.id)} title="Duplicar">
-                  <Copy size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Duplicar
-                </button>
+                {/* Botão de menu (3 pontinhos) */}
+                <div style={{ position: "relative", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                  <button
+                    style={s.menuBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuFor(isMenuOpen ? null : plan.id);
+                    }}
+                    aria-label="Mais opções"
+                  >
+                    <MoreVertical size={16} color="var(--text-muted)" />
+                  </button>
+                  {isMenuOpen && (
+                    <div style={s.menuPopup} onClick={(e) => e.stopPropagation()}>
+                      <button
+                        style={s.menuItem}
+                        onClick={() => { handleArchive(plan.id); setOpenMenuFor(null); }}
+                      >
+                        <Archive size={14} strokeWidth={1.5} /> Arquivar
+                      </button>
+                      <button
+                        style={{ ...s.menuItem, color: "var(--danger)" }}
+                        onClick={() => { setConfirmDelete(plan); setOpenMenuFor(null); }}
+                      >
+                        <Trash2 size={14} strokeWidth={1.5} /> Apagar
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             );
           })}
+
+          {/* Botão "Ver Mais" (active) */}
+          {plans.length > VISIBLE_COUNT_DEFAULT && (
+            <button
+              style={s.showMoreBtn}
+              onClick={() => setShowAllActive(!showAllActive)}
+            >
+              {showAllActive
+                ? `Ver menos`
+                : `Ver mais (${plans.length - VISIBLE_COUNT_DEFAULT})`}
+              <ChevronDown
+                size={14}
+                style={{
+                  transition: "transform 0.2s",
+                  transform: showAllActive ? "rotate(180deg)" : "rotate(0)",
+                }}
+              />
+            </button>
+          )}
         </div>
       )}
 
@@ -462,8 +528,8 @@ export default function Plans() {
 
           {showArchived && (
             <div style={{ ...s.plansList, marginTop: 10, opacity: 0.85 }}>
-              {archivedPlans.map((plan) => {
-                const typeColors = { training: "var(--primary)", nutrition: "var(--p2)", combined: "var(--p3)" };
+              {(showAllArchived ? archivedPlans : archivedPlans.slice(0, VISIBLE_COUNT_DEFAULT)).map((plan) => {
+                const isMenuOpen = openMenuFor === plan.id;
                 return (
                   <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid var(--border)` }} onClick={() => navigate(`/plans/${plan.id}`)}>
                     <div style={s.planTop}>
@@ -475,23 +541,76 @@ export default function Plans() {
                           {new Date(plan.created_at).toLocaleDateString("pt-PT")}
                         </p>
                       </div>
-                      <ChevronRight size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-                    </div>
-                    <div style={s.planActions} onClick={(e) => e.stopPropagation()}>
-                      <button style={s.planActionBtn} onClick={() => handleRestore(plan.id)} title="Restaurar">
-                        <RotateCcw size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Restaurar
-                      </button>
-                      <button style={s.planActionBtn} onClick={() => handleDuplicate(plan.id)} title="Duplicar">
-                        <Copy size={14} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -2 }} />Duplicar
-                      </button>
+                      <div style={{ position: "relative", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                        <button
+                          style={s.menuBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuFor(isMenuOpen ? null : plan.id);
+                          }}
+                          aria-label="Mais opções"
+                        >
+                          <MoreVertical size={16} color="var(--text-muted)" />
+                        </button>
+                        {isMenuOpen && (
+                          <div style={s.menuPopup} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              style={s.menuItem}
+                              onClick={() => { handleRestore(plan.id); setOpenMenuFor(null); }}
+                            >
+                              <RotateCcw size={14} strokeWidth={1.5} /> Restaurar
+                            </button>
+                            <button
+                              style={{ ...s.menuItem, color: "var(--danger)" }}
+                              onClick={() => { setConfirmDelete(plan); setOpenMenuFor(null); }}
+                            >
+                              <Trash2 size={14} strokeWidth={1.5} /> Apagar
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
               })}
+
+              {/* Botão "Ver Mais" (archived) */}
+              {archivedPlans.length > VISIBLE_COUNT_DEFAULT && (
+                <button
+                  style={s.showMoreBtn}
+                  onClick={() => setShowAllArchived(!showAllArchived)}
+                >
+                  {showAllArchived
+                    ? `Ver menos`
+                    : `Ver mais (${archivedPlans.length - VISIBLE_COUNT_DEFAULT})`}
+                  <ChevronDown
+                    size={14}
+                    style={{
+                      transition: "transform 0.2s",
+                      transform: showAllArchived ? "rotate(180deg)" : "rotate(0)",
+                    }}
+                  />
+                </button>
+              )}
             </div>
           )}
         </div>
       )}
+
+      {/* ====== DELETE CONFIRMATION MODAL ====== */}
+      <Modal
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        title="Apagar plano?"
+        confirmText="Apagar"
+        confirmVariant="danger"
+        onConfirm={() => confirmDelete && handleDelete(confirmDelete.id)}
+      >
+        <p style={{ margin: 0, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          Tens a certeza que queres apagar <strong style={{ color: "var(--text)" }}>"{confirmDelete?.title || "este plano"}"</strong>?
+          Esta ação é permanente e não pode ser desfeita.
+        </p>
+      </Modal>
 
       {/* ====== CATEGORY MANAGEMENT MODAL ====== */}
       <Modal
@@ -627,9 +746,42 @@ const s = {
   },
   planActionBtn: {
     background: "var(--card-bg)", border: "1px solid var(--border)",
-    borderRadius: 8, padding: "6px 12px", fontSize: 16,
+    borderRadius: 8, padding: "6px 12px",
     cursor: "pointer", transition: "background 0.15s",
     fontSize: 12, fontWeight: 600, color: "var(--text-muted)",
+  },
+
+  /* Menu de ações (3 pontinhos) */
+  menuBtn: {
+    width: 32, height: 32, borderRadius: 8,
+    background: "transparent", border: "none",
+    cursor: "pointer", display: "flex", alignItems: "center",
+    justifyContent: "center", flexShrink: 0,
+    transition: "background 0.15s",
+  },
+  menuPopup: {
+    position: "absolute", top: "100%", right: 0, marginTop: 4,
+    minWidth: 150, padding: 4,
+    background: "var(--card-bg)", border: "1px solid var(--border)",
+    borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+    zIndex: 100, display: "flex", flexDirection: "column", gap: 2,
+    animation: "fadeUp 0.15s ease",
+  },
+  menuItem: {
+    display: "flex", alignItems: "center", gap: 8,
+    padding: "8px 12px", border: "none", background: "transparent",
+    cursor: "pointer", fontSize: 13, fontWeight: 600,
+    color: "var(--text)", textAlign: "left", borderRadius: 6,
+    transition: "background 0.12s",
+    fontFamily: "inherit",
+  },
+  showMoreBtn: {
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+    padding: "10px 14px", marginTop: 4,
+    background: "transparent", border: "1px dashed var(--border)",
+    borderRadius: 10, cursor: "pointer",
+    fontSize: 13, fontWeight: 600, color: "var(--text-muted)",
+    fontFamily: "inherit", transition: "background 0.15s",
   },
 
   /* Inline generate form */
