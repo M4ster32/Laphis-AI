@@ -346,6 +346,8 @@ export default function PlanWorkoutBox({
   planTitle: propTitle = null,
   profileId = null,
   onPlanSaved = null,
+  hideHero = false,
+  hideActions = false,
 }) {
   const navigate = useNavigate();
   const [contentJson, setContentJson] = useState(null);
@@ -486,22 +488,24 @@ export default function PlanWorkoutBox({
 
   return (
     <>
-      <div style={s.box}>
+      <div style={hideHero ? s.boxFlat : s.box}>
         {/* HERO */}
-        <div style={s.hero}>
-          <div style={s.heroPattern} />
-          <div style={s.heroContent}>
-            <div style={s.heroIcon}><Dumbbell size={20} strokeWidth={2.5} /></div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={s.heroTitle}>{planTitle}</div>
-              <div style={s.heroStats}>
-                <span><Calendar size={11} /> {days.length} {days.length === 1 ? "dia" : "dias"}</span>
-                <span><Dumbbell size={11} /> {totalExercises} exercícios</span>
-                <span><Clock size={11} /> ~{estDuration}min</span>
+        {!hideHero && (
+          <div style={s.hero}>
+            <div style={s.heroPattern} />
+            <div style={s.heroContent}>
+              <div style={s.heroIcon}><Dumbbell size={20} strokeWidth={2.5} /></div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={s.heroTitle}>{planTitle}</div>
+                <div style={s.heroStats}>
+                  <span><Calendar size={11} /> {days.length} {days.length === 1 ? "dia" : "dias"}</span>
+                  <span><Dumbbell size={11} /> {totalExercises} exercícios</span>
+                  <span><Clock size={11} /> ~{estDuration}min</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* TABS de dias (se mais que 1) */}
         {days.length > 1 && (
@@ -562,21 +566,23 @@ export default function PlanWorkoutBox({
         </div>
 
         {/* AÇÕES */}
-        <div style={s.actions}>
-          {!savedPlanId && profileId && (
-            <button
-              style={s.btnSecondary}
-              onClick={handleSave}
-              disabled={saving}
-            >
-              <Save size={14} /> {saving ? "..." : "Guardar"}
+        {!hideActions && (
+          <div style={s.actions}>
+            {!savedPlanId && profileId && (
+              <button
+                style={s.btnSecondary}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                <Save size={14} /> {saving ? "..." : "Guardar"}
+              </button>
+            )}
+            <button style={s.btnPrimary} onClick={handleStart} disabled={saving}>
+              <Play size={16} fill="currentColor" />
+              Iniciar Treino
             </button>
-          )}
-          <button style={s.btnPrimary} onClick={handleStart} disabled={saving}>
-            <Play size={16} fill="currentColor" />
-            Iniciar Treino
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL DE EXERCÍCIO */}
@@ -612,6 +618,13 @@ const s = {
     borderRadius: 18,
     overflow: "hidden",
     boxShadow: "0 4px 16px rgba(0,0,0,0.06)",
+  },
+  boxFlat: {
+    background: "transparent",
+    border: "none",
+    borderRadius: 0,
+    overflow: "visible",
+    boxShadow: "none",
   },
 
   // Hero header

@@ -9,25 +9,31 @@ import {
   Zap, Send, ChevronDown, ChevronUp, Flame,
   Droplets, Sparkles, RefreshCw,
 } from "lucide-react";
-import ExerciseImage from "../components/ExerciseImage";
+import PlanWorkoutBox from "../components/PlanWorkoutBox";
 
 /**
- * Adivinha a categoria do exercício a partir do nome para podermos
- * pintar o ExerciseImage com a cor certa, mesmo quando o backend só
- * devolve nome+sets+reps (sem id de exercício na BD).
+ * Converte os exercícios do plano diário para o formato markdown
+ * que o PlanWorkoutBox sabe parsear.
+ *
+ * Output:
+ *   Treino do Dia
+ *   1. Agachamento 4×10 (descanso 90s)
+ *   2. Supino reto 3×8-10 (descanso 60s)
+ *   ...
  */
-function guessCategory(name = "") {
-  const n = name.toLowerCase();
-  if (/(supino|peito|crucifixo|flex(õ|o)es|chest|bench)/.test(n)) return "peito";
-  if (/(remada|pull|terra|deadlift|costas|dorsal|lat|elev(a|á)(c|ç)(õ|o)es)/.test(n)) return "costas";
-  if (/(agacha|squat|leg|stiff|afundo|lunge|perna|panturri|gluteo|gl(ú|u)teo|f(é|e)mur)/.test(n)) return "pernas";
-  if (/(ombro|deltoide|delt(ó|o)ide|press militar|overhead|elev. lateral|arnold)/.test(n)) return "ombros";
-  if (/(b(í|i)cep|curl|rosca)/.test(n)) return "biceps";
-  if (/(tr(í|i)cep|skull|dips|extens(ã|a)o tr(í|i)cep)/.test(n)) return "triceps";
-  if (/(abdom|core|prancha|plank|crunch|obl(í|i)quo)/.test(n)) return "abdomen";
-  if (/(corrida|cardio|burpee|hiit|mountain|jumping|aer(ó|o)bico|bike|bicicleta)/.test(n)) return "cardio";
-  if (/(kettlebell|funcional|corpo inteiro|full body)/.test(n)) return "full_body";
-  return "default";
+function buildWorkoutRawText(workout) {
+  if (!workout || !Array.isArray(workout.exercises) || workout.exercises.length === 0) {
+    return "";
+  }
+  const header = workout.title || "Treino do Dia";
+  const lines = [header];
+  workout.exercises.forEach((ex, i) => {
+    const sets = ex.sets || 3;
+    const reps = ex.reps || "10-12";
+    const rest = ex.rest_sec || 60;
+    lines.push(`${i + 1}. ${ex.name} ${sets}×${reps} (descanso ${rest}s)`);
+  });
+  return lines.join("\n");
 }
 
 const QUICK_ADJUSTS = [
@@ -49,7 +55,6 @@ export default function DailyPlan() {
   const [constraint, setConstraint] = useState("");
   const [showWorkout, setShowWorkout] = useState(true);
   const [showMeals, setShowMeals] = useState(true);
-  const [expandedExerciseIdx, setExpandedExerciseIdx] = useState(null);
   const inputRef = useRef(null);
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -190,59 +195,12 @@ export default function DailyPlan() {
                 )}
 
                 {plan.workout?.exercises?.length > 0 ? (
-                  <div style={s.exerciseList}>
-                    {plan.workout.exercises.map((ex, i) => {
-                      const cat = ex.category || guessCategory(ex.name);
-                      const isOpen = expandedExerciseIdx === i;
-                      return (
-                        <div key={i} style={s.exerciseItemRich}>
-                          <button
-                            type="button"
-                            style={s.exerciseRow}
-                            onClick={() => setExpandedExerciseIdx(isOpen ? null : i)}
-                          >
-                            <div style={s.exerciseThumb}>
-                              <ExerciseImage
-                                src={ex.image_url}
-                                alt={ex.name}
-                                category={cat}
-                                name={ex.name}
-                                compact={true}
-                              />
-                            </div>
-                            <div style={s.exerciseInfo}>
-                              <span style={s.exerciseName}>{ex.name}</span>
-                              <span style={s.exerciseDetail}>
-                                {ex.sets && ex.reps ? `${ex.sets}×${ex.reps}` : ex.reps || ""}
-                                {ex.rest_sec ? ` • ${ex.rest_sec}s descanso` : ""}
-                              </span>
-                            </div>
-                            {isOpen ? (
-                              <ChevronUp size={16} color="var(--text-muted)" />
-                            ) : (
-                              <ChevronDown size={16} color="var(--text-muted)" />
-                            )}
-                          </button>
-                          {isOpen && (
-                            <div style={s.exerciseDetails}>
-                              {ex.notes && <p style={s.exerciseNote}>📝 {ex.notes}</p>}
-                              {ex.muscle_primary && (
-                                <p style={s.exerciseMeta}>🎯 <strong>Músculo:</strong> {ex.muscle_primary}</p>
-                              )}
-                              {ex.equipment && (
-                                <p style={s.exerciseMeta}>🏋️ <strong>Equipamento:</strong> {ex.equipment}</p>
-                              )}
-                              <div style={s.exerciseStatsRow}>
-                                {ex.sets && <span style={s.statChip}>{ex.sets} séries</span>}
-                                {ex.reps && <span style={s.statChip}>{ex.reps} reps</span>}
-                                {ex.rest_sec && <span style={s.statChip}>{ex.rest_sec}s descanso</span>}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <PlanWorkoutBox
+                    rawText={buildWorkoutRawText(plan.workout)}
+                    planTitle={plan.workout?.title || "Treino do Dia"}
+                    profileId={profile?.id}
+                    hideHero={true}
+                  />
                 ) : (
                   <p style={s.restDay}>🧘 Dia de descanso — foca-te na recuperação!</p>
                 )}
