@@ -762,8 +762,11 @@ const s = {
   menuPopup: {
     position: "absolute", top: "100%", right: 0, marginTop: 4,
     minWidth: 150, padding: 4,
-    background: "var(--card-bg)", border: "1px solid var(--border)",
-    borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+    background: "var(--bg-surface, #1f1f23)",
+    border: "1px solid var(--border)",
+    borderRadius: 10,
+    boxShadow: "0 12px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35)",
+    backdropFilter: "none", WebkitBackdropFilter: "none",
     zIndex: 1000, display: "flex", flexDirection: "column", gap: 2,
     animation: "fadeUp 0.15s ease",
   },
