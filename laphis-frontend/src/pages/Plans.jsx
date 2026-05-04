@@ -430,7 +430,7 @@ export default function Plans() {
             };
             const isMenuOpen = openMenuFor === plan.id;
             return (
-            <div key={plan.id} className="card-lift" style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}` }} onClick={() => navigate(`/plans/${plan.id}`)}>
+            <div key={plan.id} className="card-lift" style={{ ...s.planCard, borderLeft: `3px solid ${typeColors[plan.type] || "var(--border)"}`, zIndex: isMenuOpen ? 50 : "auto" }} onClick={() => navigate(`/plans/${plan.id}`)}>
               <div style={s.planTop}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   {getTypeIcon(plan.type)}
@@ -722,7 +722,7 @@ const s = {
     background: "var(--bg-card)", borderRadius: "var(--radius)",
     padding: "16px 18px", cursor: "pointer",
     boxShadow: "var(--shadow)", transition: "transform 0.2s, box-shadow 0.2s",
-    border: "1px solid var(--border)", position: "relative", overflow: "hidden",
+    border: "1px solid var(--border)", position: "relative",
   },
   planTop: { display: "flex", alignItems: "flex-start", gap: 12 },
   planIcon: { fontSize: 26, marginTop: 2 },
@@ -763,8 +763,8 @@ const s = {
     position: "absolute", top: "100%", right: 0, marginTop: 4,
     minWidth: 150, padding: 4,
     background: "var(--card-bg)", border: "1px solid var(--border)",
-    borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-    zIndex: 100, display: "flex", flexDirection: "column", gap: 2,
+    borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+    zIndex: 1000, display: "flex", flexDirection: "column", gap: 2,
     animation: "fadeUp 0.15s ease",
   },
   menuItem: {
