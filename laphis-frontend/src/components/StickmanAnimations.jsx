@@ -335,66 +335,49 @@ function StandingBody({ x = 100, y = 130, accent, bendAngle = 0, bendAngles, dur
 // EXERCICIOS
 // ==========================================================================
 
-/** SUPINO RETO — vista lateral; cabeca a esquerda, pes a direita; um braco
- *  empurra a barra para cima. */
+/** SUPINO RETO — vista lateral; cabeca a esquerda, pes a direita.
+ *  Movimento amplo: upper sweep 180->95 (UP -> UP-LEFT-far), forearm 0->150
+ *  para o hand cair de y=86 (extendido) ate y~118 (perto do peito).
+ *  Geometria validada: foot encosta no chao com thigh=-30, shin=+3. */
 function BenchPress({ accent }) {
-  // Eixo do corpo: cabeca em (52, 117) -> pelvis em (130, 117)
-  const SHOULDER = { x: 78, y: 117 };
   return (
     <g>
       <Floor color={accent} />
-      <Bench x={32} y={130} w={130} color={accent} />
-      <Head cx={52} cy={117} color={accent} />
-      <Bone x1={59} y1={117} x2={130} y2={117} color={accent} w={P.STROKE_BODY} />
-      <Joint cx={130} cy={117} color={accent} r={P.JOINT_R + 0.4} />
-      {/* Pernas: thigh down-and-right (-30°), shin verticalish */}
+      <rect x={32} y={140} width={130} height={6} rx={2} fill={accent} opacity={0.55} />
+      <rect x={42} y={146} width={5} height={32} fill={accent} opacity={0.4} />
+      <rect x={148} y={146} width={5} height={32} fill={accent} opacity={0.4} />
+
+      <Head cx={52} cy={130} color={accent} />
+      <Bone x1={59} y1={130} x2={132} y2={130} color={accent} w={P.STROKE_BODY} />
+      <Joint cx={132} cy={130} color={accent} r={P.JOINT_R + 0.4} />
+
+      {/* Perna dobrada com pe no chao (calculado: foot y ≈ 177.4) */}
       <ArticulatedLeg
-        pivotX={130}
-        pivotY={117}
-        thighAngle={-25}
-        shinAngle={25}
+        pivotX={132}
+        pivotY={130}
+        thighAngle={-30}
+        shinAngle={3}
         color={accent}
         footAngle={-90}
-        thighLen={P.THIGH * 0.85}
-        shinLen={P.SHIN * 0.95}
       />
 
-      {/* Bracos verticais (perpendicular ao corpo): upperAngle=180 (UP) */}
-      {/* Movimento: cotovelo flecte de 0 (estendido) a 90 (flectido) */}
+      {/* Braco com barra ligada ao hand via endItem */}
       <ArticulatedArm
-        pivotX={SHOULDER.x}
-        pivotY={SHOULDER.y - 4}
-        upperAngle={180}
-        forearmAngles="0; 80; 0"
+        pivotX={78}
+        pivotY={128}
+        upperAngles="180; 95; 180"
+        forearmAngles="0; 150; 0"
         duration="2.6s"
         keySplines={EASE}
         color={accent}
         hand={false}
+        endItem={
+          <g>
+            <circle cx={0} cy={0} r={5.5} fill={accent} />
+            <circle cx={0} cy={0} r={3} fill="rgba(0,0,0,0.25)" />
+          </g>
+        }
       />
-      <ArticulatedArm
-        pivotX={SHOULDER.x}
-        pivotY={SHOULDER.y + 4}
-        upperAngle={180}
-        forearmAngles="0; -80; 0"
-        duration="2.6s"
-        keySplines={EASE}
-        color={accent}
-        hand={false}
-      />
-
-      {/* Barra que oscila vertical sobre os ombros */}
-      <g>
-        <animateTransform
-          attributeName="transform"
-          type="translate"
-          values="0 0; 0 26; 0 0"
-          dur="2.6s"
-          repeatCount="indefinite"
-          calcMode="spline"
-          keySplines={EASE}
-        />
-        <Barbell x={SHOULDER.x} y={SHOULDER.y - 44} scale={0.85} color={accent} rotation={90} />
-      </g>
     </g>
   );
 }
@@ -407,16 +390,19 @@ function InclineBench({ accent }) {
   );
 }
 
-/** FLEXOES — vista lateral; corpo em prancha; cotovelos flectem. */
+/** FLEXOES — vista lateral; corpo em prancha; cotovelos flectem. Bracos apontam
+ *  para BAIXO (upperAngle=0), cotovelos flectem para tras quando o corpo desce. */
 function PushUp({ accent }) {
   return (
     <g>
       <Floor color={accent} />
+      {/* Tronco em prancha: head LEFT, pelvis RIGHT-DOWN ligeiramente */}
       <g>
+        {/* corpo desce 8 px para o chao (em sincronia com flexao do cotovelo) */}
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 12; 0 0"
+          values="0 0; 0 8; 0 0"
           dur="2.2s"
           repeatCount="indefinite"
           calcMode="spline"
@@ -425,7 +411,7 @@ function PushUp({ accent }) {
         <Head cx={48} cy={120} color={accent} />
         <Bone x1={55} y1={122} x2={150} y2={134} color={accent} w={P.STROKE_BODY} />
         <Joint cx={150} cy={134} color={accent} r={P.JOINT_R + 0.4} />
-        {/* Pernas estendidas para tras: thigh -85° (right), shin continues */}
+        {/* Pernas estendidas para tras */}
         <ArticulatedLeg
           pivotX={150}
           pivotY={134}
@@ -434,14 +420,16 @@ function PushUp({ accent }) {
           color={accent}
           footAngle={-90}
         />
-
-        {/* Bracos: ombros nas pontas, antebracos verticais ate ao chao */}
-        {/* upper arm vai a -90 (right) ate ao chao, forearm continua para baixo */}
+        {/* Bracos perpendiculares ao corpo, apontam para BAIXO ate ao chao.
+            Para Δ=8px de descida, geometria: shoulder-hand=36 (era 44 stretchedt).
+            knee_int = acos((484+484-1296)/968) ≈ 110°; flex 70°.
+            half-shoulder ≈ 35°; upper tilts -35 (elbow flares para tras = direita).
+            forearm relativo +70 mantem hand planted. */}
         <ArticulatedArm
           pivotX={62}
           pivotY={123}
-          upperAngles="-180; -160; -180"
-          forearmAngles="0; -40; 0"
+          upperAngles="0; -35; 0"
+          forearmAngles="0; 70; 0"
           duration="2.2s"
           keySplines={EASE}
           color={accent}
@@ -451,8 +439,8 @@ function PushUp({ accent }) {
         <ArticulatedArm
           pivotX={70}
           pivotY={125}
-          upperAngles="-180; -160; -180"
-          forearmAngles="0; -40; 0"
+          upperAngles="0; -35; 0"
+          forearmAngles="0; 70; 0"
           duration="2.2s"
           keySplines={EASE}
           color={accent}
@@ -516,35 +504,32 @@ function OverheadPress({ accent }) {
   );
 }
 
-/** ROSCA / CURL — em pe; antebracos rodam no cotovelo. */
+/** ROSCA / CURL — vista de lado (perfil), pessoa virada para a direita.
+ *  Tronco vertical sem ombros bilaterais; um braco visivel a curvar. */
 function BicepCurl({ accent }) {
   const PELV_Y = 132;
-  const ShoulderY = PELV_Y - P.TORSO;
+  const SHOULDER_X = 105; // ombro ligeiramente a frente do tronco (perfil direita)
+  const SHOULDER_Y = PELV_Y - P.TORSO;
   return (
     <g>
       <Floor color={accent} />
-      <StandingBody x={100} y={PELV_Y} accent={accent} />
+      {/* Pernas (vista de lado, mesma direcao com slight offset para profundidade) */}
+      <ArticulatedLeg pivotX={98} pivotY={PELV_Y} thighAngle={0} shinAngle={0} color={accent} footAngle={-30} />
+      <ArticulatedLeg pivotX={102} pivotY={PELV_Y} thighAngle={0} shinAngle={0} color={accent} footAngle={-30} />
 
-      {/* LEFT arm: upper hangs at slight outward (+5), forearm flexes 0 -> -170 */}
-      {/* forearm goes from "down" (0) to "up against body" (-170 means in local
-          frame rotated CW; global = 5 + (-170) = -165 ≈ up-right. For LEFT arm,
-          forearm tip ends near shoulder slightly toward midline. */}
+      {/* Tronco vertical sem ombros bilaterais (vista de perfil) */}
+      <Bone x1={100} y1={PELV_Y} x2={100} y2={PELV_Y - P.TORSO} color={accent} w={P.STROKE_BODY} />
+      <Bone x1={100} y1={PELV_Y - P.TORSO} x2={100} y2={PELV_Y - P.TORSO - P.NECK} color={accent} w={P.STROKE_BODY * 0.7} />
+      <Head cx={100} cy={PELV_Y - P.TORSO - P.NECK - P.HEAD_R} color={accent} />
+
+      {/* Um unico braco visivel: upper estatico (apontar para baixo, ligeiramente
+          afastado do tronco). Forearm roda 0 -> -175 (sweep para a frente e cima
+          em perfil). Hand termina perto do ombro. */}
       <ArticulatedArm
-        pivotX={100 - P.SHOULDER_W}
-        pivotY={ShoulderY}
-        upperAngle={5}
-        forearmAngles="0; -160; 0"
-        duration="2.4s"
-        keySplines={EASE}
-        color={accent}
-        hand={false}
-        endItem={<Dumbbell scale={1.1} color={accent} rotation={90} />}
-      />
-      <ArticulatedArm
-        pivotX={100 + P.SHOULDER_W}
-        pivotY={ShoulderY}
-        upperAngle={-5}
-        forearmAngles="0; 160; 0"
+        pivotX={SHOULDER_X}
+        pivotY={SHOULDER_Y}
+        upperAngle={0}
+        forearmAngles="0; -175; 0"
         duration="2.4s"
         keySplines={EASE}
         color={accent}
@@ -681,10 +666,15 @@ function FrontRaise({ accent }) {
   );
 }
 
-/** PULL UP — pendurado em barra; corpo sobe e desce, cotovelos flectem. */
+/** PULL UP — pendurado em barra. Corpo sobe ate o queixo passar a barra.
+ *  Bar a y=32. Para queixo a passar bar (head center ~y=40), pelvisY=87.5.
+ *  Bracos ARM length 44: shoulder = bar+44 = 76 (extendido), pelvisY=112.
+ *  Translate "0 0; 0 -25; 0 0" leva pelvis de 112 a 87. */
 function PullUp({ accent }) {
+  const PELVIS_Y_BASE = 112; // posicao com bracos esticados (extended hang)
   return (
     <g>
+      {/* Barra fixa */}
       <line x1="40" y1="32" x2="160" y2="32" stroke={accent} strokeWidth={5} strokeLinecap="round" />
       <line x1="40" y1="14" x2="40" y2="32" stroke={accent} strokeWidth={3} />
       <line x1="160" y1="14" x2="160" y2="32" stroke={accent} strokeWidth={3} />
@@ -693,17 +683,17 @@ function PullUp({ accent }) {
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 22; 0 -8; 0 22"
+          values="0 0; 0 -25; 0 0"
           dur="2.6s"
           repeatCount="indefinite"
           calcMode="spline"
           keySplines={EASE}
         />
-        <Torso pelvisX={100} pelvisY={140} color={accent} />
-        {/* Pernas verticais (slight bend at knee) */}
+        <Torso pelvisX={100} pelvisY={PELVIS_Y_BASE} color={accent} />
+        {/* Pernas pendulando (slight bend) */}
         <ArticulatedLeg
           pivotX={100 - P.HIP_W}
-          pivotY={140}
+          pivotY={PELVIS_Y_BASE}
           thighAngle={5}
           shinAngle={-8}
           color={accent}
@@ -711,18 +701,17 @@ function PullUp({ accent }) {
         />
         <ArticulatedLeg
           pivotX={100 + P.HIP_W}
-          pivotY={140}
+          pivotY={PELVIS_Y_BASE}
           thighAngle={-5}
           shinAngle={8}
           color={accent}
           footAngle={-90}
         />
-        {/* Bracos: upper a apontar para CIMA (180), forearm flecte de 0 a 90 */}
-        {/* Quando braco estendido: upper=180, forearm=0 (continua para cima) */}
-        {/* Quando flectido: upper~135 (out-up-LEFT), forearm~90 (perpendicular) */}
+        {/* Bracos: do extendido (upper=180, vertical UP) ao flectido
+            (upper=130, forearm=80). Cotovelos abrem para fora ao subir. */}
         <ArticulatedArm
           pivotX={100 - P.SHOULDER_W}
-          pivotY={140 - P.TORSO}
+          pivotY={PELVIS_Y_BASE - P.TORSO}
           upperAngles="180; 130; 180"
           forearmAngles="0; 80; 0"
           duration="2.6s"
@@ -731,7 +720,7 @@ function PullUp({ accent }) {
         />
         <ArticulatedArm
           pivotX={100 + P.SHOULDER_W}
-          pivotY={140 - P.TORSO}
+          pivotY={PELVIS_Y_BASE - P.TORSO}
           upperAngles="-180; -130; -180"
           forearmAngles="0; -80; 0"
           duration="2.6s"
@@ -955,8 +944,11 @@ function Deadlift({ accent }) {
   );
 }
 
-/** AGACHAMENTO — pelvis desce, joelhos e ancas flectem. */
+/** AGACHAMENTO — vista de lado, pernas para o mesmo lado. Pelvis desce 18 px,
+ *  thigh roda 0->-46 (forward tilt), shin local 0->+97 (compensa para foot
+ *  ficar planted). Numeros calculados para hip-foot = 36 (squat moderado). */
 function Squat({ accent }) {
+  // pelvisY=124 standing -> 142 squat. Floor at 178. Foot at 178 (planted).
   return (
     <g>
       <Floor color={accent} />
@@ -964,58 +956,45 @@ function Squat({ accent }) {
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 26; 0 0"
+          values="0 0; 0 18; 0 0"
           dur="2.8s"
           repeatCount="indefinite"
           calcMode="spline"
           keySplines={EASE}
         />
-        {/* Pernas flectem: thigh tilts back (forward in side view), shin tilts forward */}
+        {/* Pernas vista de lado, AMBAS para o mesmo lado (frente). Pivots
+            ligeiramente offset para sugerir profundidade (3D em 2D). */}
         <ArticulatedLeg
-          pivotX={100 - P.HIP_W}
-          pivotY={130}
-          thighAngles="0; -28; 0"
-          shinAngles="0; 50; 0"
+          pivotX={98}
+          pivotY={124}
+          thighAngles="0; -46; 0"
+          shinAngles="0; 97; 0"
           duration="2.8s"
           keySplines={EASE}
           color={accent}
-          footAngle={-5}
+          footAngle={-30}
         />
         <ArticulatedLeg
-          pivotX={100 + P.HIP_W}
-          pivotY={130}
-          thighAngles="0; 28; 0"
-          shinAngles="0; -50; 0"
+          pivotX={102}
+          pivotY={124}
+          thighAngles="0; -46; 0"
+          shinAngles="0; 97; 0"
           duration="2.8s"
           keySplines={EASE}
           color={accent}
-          footAngle={5}
+          footAngle={-30}
         />
-        {/* Tronco inclina ligeiramente para a frente */}
+        {/* Tronco inclina forward (-22°) para manter o centro de massa */}
         <Torso
           pelvisX={100}
-          pelvisY={130}
-          bendAngles="0; -16; 0"
+          pelvisY={124}
+          bendAngles="0; -22; 0"
           duration="2.8s"
           keySplines={EASE}
           color={accent}
         />
-        {/* Bracos a segurar barra atras dos ombros */}
-        <Bone
-          x1={100 - P.SHOULDER_W}
-          y1={130 - P.TORSO}
-          x2={100 - P.SHOULDER_W - 14}
-          y2={130 - P.TORSO + 8}
-          color={accent}
-        />
-        <Bone
-          x1={100 + P.SHOULDER_W}
-          y1={130 - P.TORSO}
-          x2={100 + P.SHOULDER_W + 14}
-          y2={130 - P.TORSO + 8}
-          color={accent}
-        />
-        <Barbell x={100} y={130 - P.TORSO + 4} scale={1.15} color={accent} />
+        {/* Barra alta atras dos ombros (high-bar squat) */}
+        <Barbell x={100} y={124 - P.TORSO + 4} scale={1.05} color={accent} />
       </g>
     </g>
   );
@@ -1358,37 +1337,40 @@ function Plank({ accent }) {
   );
 }
 
-/** CRUNCH / ABDOMINAL. */
+/** CRUNCH / ABDOMINAL — deitado de costas; tronco enrola para cima.
+ *  Head vai UP (e ligeiramente RIGHT, em direcao aos joelhos). */
 function Crunch({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Pernas dobradas (fixas) */}
+      {/* Pernas dobradas (fixas), pes apoiados no chao */}
       <ArticulatedLeg
         pivotX={130}
         pivotY={140}
-        thighAngle={-130}
-        shinAngle={90}
+        thighAngle={-50}
+        shinAngle={100}
         color={accent}
-        footAngle={0}
+        footAngle={-90}
       />
       <ArticulatedLeg
         pivotX={130}
         pivotY={146}
-        thighAngle={-130}
-        shinAngle={90}
+        thighAngle={-50}
+        shinAngle={100}
         color={accent}
-        footAngle={0}
+        footAngle={-90}
       />
-      {/* Tronco — rota no quadril; deitado entao tronco aponta para -90 (LEFT) */}
-      {/* bendAngle = +90 do default (que aponta -y up) -> aponta -x (LEFT) */}
+      {/* Tronco — rota no quadril. Default Torso aponta UP (-y).
+          rotate(-90) faz spine apontar LEFT (deitado de costas, head a esquerda).
+          Animacao 0 -> +45 leva spine de LEFT (-90 total) a UP-LEFT-curled (-45 total),
+          o que move a head para cima e ligeiramente em direcao aos joelhos. */}
       <g transform="translate(130 140)">
         <g transform="rotate(-90)">
           <g>
             <animateTransform
               attributeName="transform"
               type="rotate"
-              values="0; -45; 0"
+              values="0; 45; 0"
               dur="1.8s"
               repeatCount="indefinite"
               calcMode="spline"
@@ -1396,6 +1378,7 @@ function Crunch({ accent }) {
             />
             <Bone x1={0} y1={0} x2={0} y2={-P.TORSO} color={accent} w={P.STROKE_BODY} />
             <Head cx={0} cy={-P.TORSO - P.NECK - P.HEAD_R} color={accent} />
+            {/* Bracos cruzados sobre o peito */}
             <Bone x1={-6} y1={-P.TORSO * 0.55} x2={4} y2={-P.TORSO * 0.7} color={accent} />
             <Bone x1={6} y1={-P.TORSO * 0.55} x2={-4} y2={-P.TORSO * 0.7} color={accent} />
           </g>
