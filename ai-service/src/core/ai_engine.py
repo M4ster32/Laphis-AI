@@ -27,6 +27,94 @@ CHAT_MODEL = os.getenv("LAPHIS_CHAT_MODEL", "gpt-4o-mini")
 API_URL = "https://api.openai.com/v1/chat/completions"
 
 
+# --------------- CATALOGO DE EXERCICIOS COM ANIMACAO ---------------
+# Lista canonica dos 33 exercicios que tem stickman animation no frontend.
+# A IA SO pode recomendar exercicios desta lista — assim cada exercicio
+# recomendado tem uma animacao dedicada (sem cair em fallbacks genericos).
+# Se a IA precisar de mencionar variacoes, deve usar o nome canonico mais proximo.
+
+ANIMATED_EXERCISES = {
+    "Peito": [
+        "Supino reto com barra",
+        "Supino inclinado com halteres",
+        "Flexões",
+        "Crucifixo com halteres",
+        "Dips / Fundos em paralelas",
+    ],
+    "Costas": [
+        "Pull-up / Barra fixa",
+        "Lat pulldown / Puxada frontal",
+        "Remada com barra",
+        "Levantamento terra / Deadlift",
+        "Face pull",
+    ],
+    "Ombros": [
+        "Press militar com barra",
+        "Elevação lateral com halteres",
+        "Elevação frontal com halteres",
+        "Encolhimento / Shrug",
+    ],
+    "Bíceps": [
+        "Rosca direta com barra",
+        "Rosca alternada com halteres",
+        "Rosca martelo",
+    ],
+    "Tríceps": [
+        "Extensão de tríceps na polia",
+        "Tríceps testa / Skull crusher",
+    ],
+    "Pernas": [
+        "Agachamento com barra",
+        "Stiff / Romanian deadlift",
+        "Leg press",
+        "Cadeira extensora / Leg extension",
+        "Mesa flexora / Leg curl",
+        "Afundo / Lunge",
+        "Elevação de panturrilha",
+        "Hip thrust",
+        "Ponte de glúteo / Glute bridge",
+    ],
+    "Abdómen / Core": [
+        "Prancha / Plank",
+        "Crunch / Abdominal",
+        "Elevação de pernas / Leg raise",
+        "Russian twist",
+    ],
+    "Cardio / Full Body": [
+        "Burpee",
+        "Mountain climber / Escalador",
+        "Polichinelos / Jumping jacks",
+        "Kettlebell swing",
+        "Corrida no lugar / High knees",
+    ],
+}
+
+
+def _format_exercise_constraint() -> str:
+    """Constroi o bloco de constraint para injetar nos system prompts."""
+    lines = [
+        "CATÁLOGO OBRIGATÓRIO DE EXERCÍCIOS — usa APENAS estes nomes:",
+        "(cada exercício tem animação dedicada na app; usar nomes fora desta lista resulta em animação genérica)",
+        "",
+    ]
+    for category, items in ANIMATED_EXERCISES.items():
+        lines.append(f"• {category}:")
+        for item in items:
+            lines.append(f"   - {item}")
+    lines.extend([
+        "",
+        "REGRAS:",
+        "- Quando recomendares um exercício, copia o nome EXATAMENTE como está acima",
+        "- Se o nome tem barra (e.g. 'Pull-up / Barra fixa'), usa qualquer dos lados",
+        "- Para variações (ex: agachamento sumo, agachamento hack), usa o nome base ('Agachamento com barra')",
+        "- NÃO inventes exercícios fora desta lista — se uma necessidade não couber, escolhe o mais próximo",
+    ])
+    return "\n".join(lines)
+
+
+EXERCISE_CONSTRAINT = _format_exercise_constraint()
+
+
 def is_ai_available() -> bool:
     """True se a chave OpenAI está configurada e não é placeholder."""
     return bool(OPENAI_API_KEY) and OPENAI_API_KEY not in ("", "sk-xxx", "YOUR_KEY_HERE")
@@ -298,6 +386,7 @@ async def ai_chat(
 
     messages = [
         {"role": "system", "content": CHAT_SYSTEM},
+        {"role": "system", "content": EXERCISE_CONSTRAINT},
         {"role": "system", "content": "\n\n".join(system_parts)},
     ]
 
@@ -424,6 +513,7 @@ DADOS NUTRICIONAIS CALCULADOS:
 
     messages = [
         {"role": "system", "content": f"{PLAN_SYSTEM}\n\nFORMATO DE RESPOSTA — JSON válido:\n{schema}"},
+        {"role": "system", "content": EXERCISE_CONSTRAINT},
         {"role": "user", "content": user_msg},
     ]
 
@@ -520,6 +610,7 @@ async def ai_daily_plan(profile, target_date: str) -> dict:
 
     messages = [
         {"role": "system", "content": DAILY_SYSTEM},
+        {"role": "system", "content": EXERCISE_CONSTRAINT},
         {"role": "user", "content": (
             f"Gera um plano completo para {weekday}, {target_date}.\n\n"
             f"PERFIL:\n{profile_ctx}\n\n"

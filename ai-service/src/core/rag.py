@@ -382,6 +382,13 @@ async def generate_answer(
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
+    # Constraint de exercicios animados (mesmo conjunto que ai_engine usa)
+    try:
+        from .ai_engine import EXERCISE_CONSTRAINT
+        messages.append({"role": "system", "content": EXERCISE_CONSTRAINT})
+    except Exception:
+        pass
+
     # Contexto (como mensagem de sistema adicional)
     context_parts = [doc_context]
     if user_context:
