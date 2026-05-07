@@ -1,34 +1,78 @@
 /**
  * StickmanAnimations.jsx
  *
- * Animacoes SVG de "stickman" para exercicios — sem fotografias de pessoas,
- * apenas figuras esquematicas (cabeca + tronco + membros) que ilustram o
- * movimento. Cada animacao e um subgrafo SVG auto-contido, com SMIL.
+ * Animacoes anatomicas (cabeca + tronco + bracos articulados em ombro/cotovelo
+ * + pernas articuladas em anca/joelho/tornozelo) que ilustram cada exercicio
+ * de forma realista. Sem fotografias nem GIFs externos — SVG puro com SMIL.
  *
- * Uso:
- *   const Anim = resolveStickmanAnimation(name, category);
- *   <svg viewBox="0 0 200 200"><Anim accent="#fff" /></svg>
+ * Hierarquia tipica:
  *
- * Resolucao:
- *   1) match exato pelo nome normalizado (PT/EN)
- *   2) match por substring no mapa PT_TO_KEY
- *   3) fallback por categoria (peito → bench_press, costas → row, etc.)
- *   4) default (jumping jacks)
+ *   <g translate(pelvis)>           ← move o corpo
+ *     <g rotate(spine bend)>        ← inclina tronco no quadril
+ *       spine + head + shoulders
+ *       <g translate(shoulder L)>   ← origem do braco esquerdo
+ *         <g rotate(upper arm L)>   ← roda braco no ombro
+ *           upper arm
+ *           <g translate(elbow)>    ← origem do antebraco
+ *             <g rotate(forearm)>   ← roda antebraco no cotovelo
+ *               forearm + hand
+ *
+ *   <g translate(hip L)>
+ *     <g rotate(thigh L)>
+ *       thigh
+ *       <g translate(knee)>
+ *         <g rotate(shin L)>
+ *           shin + foot
+ *
+ * Cada nivel pode ter o seu proprio <animateTransform>, sincronizado com
+ * os outros pela mesma duracao.
  */
+
+// ==========================================================================
+// PROPORCOES ANATOMICAS (em unidades do viewBox 200x200)
+// ==========================================================================
+
+const P = {
+  HEAD_R: 7.5,
+  NECK: 4,
+  TORSO: 36,
+  SHOULDER_W: 11,   // metade da largura entre ombros
+  HIP_W: 7,         // metade da largura entre ancas
+  UPPER_ARM: 22,
+  FOREARM: 22,
+  HAND: 5,
+  THIGH: 28,
+  SHIN: 26,
+  FOOT_LEN: 9,
+  STROKE_BODY: 5,
+  STROKE_LIMB: 4.5,
+  JOINT_R: 2.6,
+};
+
+// Curvas de easing reaproveitadas
+const EASE = "0.42 0 0.58 1; 0.42 0 0.58 1";
+const EASE_OUT = "0.16 1 0.3 1; 0.16 1 0.3 1";
 
 // ==========================================================================
 // PRIMITIVAS GRAFICAS
 // ==========================================================================
 
-const STROKE_W = 4;
-
-/** Circulo simples para cabecas e juntas. */
-function Joint({ cx, cy, r = 7, fill }) {
-  return <circle cx={cx} cy={cy} r={r} fill={fill} />;
+function Head({ cx = 0, cy = 0, color, eyes = false }) {
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={P.HEAD_R} fill={color} />
+      {eyes && (
+        <circle cx={cx + 2.5} cy={cy - 0.5} r={1} fill="rgba(0,0,0,0.4)" />
+      )}
+    </g>
+  );
 }
 
-/** Linha grossa para membros (com cap arredondado). */
-function Limb({ x1, y1, x2, y2, color, w = STROKE_W }) {
+function Joint({ cx = 0, cy = 0, r = P.JOINT_R, color }) {
+  return <circle cx={cx} cy={cy} r={r} fill={color} />;
+}
+
+function Bone({ x1, y1, x2, y2, color, w = P.STROKE_LIMB }) {
   return (
     <line
       x1={x1}
@@ -42,66 +86,252 @@ function Limb({ x1, y1, x2, y2, color, w = STROKE_W }) {
   );
 }
 
-/** Halter pequeno para varios exercicios de bracos. */
-function MiniDumbbell({ x, y, scale = 1, color, rotation = 0 }) {
-  const w = 18 * scale;
-  const r = 5 * scale;
+function Hand({ cx = 0, cy = 0, color, scale = 1 }) {
+  return <circle cx={cx} cy={cy} r={P.HAND * scale * 0.55} fill={color} />;
+}
+
+/** Pe — pequena elipse a apontar para a frente. */
+function Foot({ cx = 0, cy = 0, color, angle = 0, scale = 1 }) {
   return (
-    <g transform={`translate(${x} ${y}) rotate(${rotation})`}>
-      <rect
-        x={-w / 2}
-        y={-1.5}
-        width={w}
-        height={3}
-        rx={1.5}
+    <g transform={`translate(${cx} ${cy}) rotate(${angle})`}>
+      <ellipse
+        cx={P.FOOT_LEN * scale * 0.4}
+        cy={0}
+        rx={P.FOOT_LEN * scale * 0.55}
+        ry={2.5 * scale}
         fill={color}
       />
+    </g>
+  );
+}
+
+/**
+ * Braco articulado em 2 segmentos:
+ * <g translate(pivot)> rotate(upper) [upper bone + elbow] <g translate(elbow)> rotate(forearm) [forearm + hand]
+ *
+ * As animacoes sao opcionais — se passares `upperAngles`/`forearmAngles`,
+ * cada segmento ganha o seu animateTransform de rotacao.
+ */
+function ArticulatedArm({
+  pivotX,
+  pivotY,
+  upperAngle = 0,
+  forearmAngle = 0,
+  upperLen = P.UPPER_ARM,
+  forearmLen = P.FOREARM,
+  upperAngles, // string SMIL "a; b; a"
+  forearmAngles,
+  duration = "2.4s",
+  begin,
+  keySplines = EASE,
+  color,
+  hand = true,
+  endItem,
+}) {
+  return (
+    <g transform={`translate(${pivotX} ${pivotY})`}>
+      <Joint color={color} r={P.JOINT_R + 0.4} />
+      <g transform={`rotate(${upperAngle})`}>
+        {upperAngles && (
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values={upperAngles}
+            dur={duration}
+            begin={begin}
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines={keySplines}
+          />
+        )}
+        <Bone x1={0} y1={0} x2={0} y2={upperLen} color={color} />
+        <g transform={`translate(0 ${upperLen})`}>
+          <Joint color={color} />
+          <g transform={`rotate(${forearmAngle})`}>
+            {forearmAngles && (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                values={forearmAngles}
+                dur={duration}
+                begin={begin}
+                repeatCount="indefinite"
+                calcMode="spline"
+                keySplines={keySplines}
+              />
+            )}
+            <Bone x1={0} y1={0} x2={0} y2={forearmLen} color={color} />
+            {hand && <Hand cx={0} cy={forearmLen} color={color} />}
+            {endItem && (
+              <g transform={`translate(0 ${forearmLen})`}>{endItem}</g>
+            )}
+          </g>
+        </g>
+      </g>
+    </g>
+  );
+}
+
+/**
+ * Perna articulada em 2 segmentos com pe.
+ */
+function ArticulatedLeg({
+  pivotX,
+  pivotY,
+  thighAngle = 0,
+  shinAngle = 0,
+  thighLen = P.THIGH,
+  shinLen = P.SHIN,
+  thighAngles,
+  shinAngles,
+  duration = "2.4s",
+  begin,
+  keySplines = EASE,
+  color,
+  footAngle = 0,
+  showFoot = true,
+}) {
+  return (
+    <g transform={`translate(${pivotX} ${pivotY})`}>
+      <Joint color={color} r={P.JOINT_R + 0.4} />
+      <g transform={`rotate(${thighAngle})`}>
+        {thighAngles && (
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values={thighAngles}
+            dur={duration}
+            begin={begin}
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines={keySplines}
+          />
+        )}
+        <Bone x1={0} y1={0} x2={0} y2={thighLen} color={color} w={P.STROKE_BODY} />
+        <g transform={`translate(0 ${thighLen})`}>
+          <Joint color={color} />
+          <g transform={`rotate(${shinAngle})`}>
+            {shinAngles && (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                values={shinAngles}
+                dur={duration}
+                begin={begin}
+                repeatCount="indefinite"
+                calcMode="spline"
+                keySplines={keySplines}
+              />
+            )}
+            <Bone x1={0} y1={0} x2={0} y2={shinLen} color={color} w={P.STROKE_BODY} />
+            {showFoot && <Foot cx={0} cy={shinLen} color={color} angle={footAngle} />}
+          </g>
+        </g>
+      </g>
+    </g>
+  );
+}
+
+/**
+ * Tronco — coluna + cabeca + indicacao dos ombros.
+ * Pode receber `bendAngles` se o tronco se inclina (RDL, deadlift, row, etc.).
+ */
+function Torso({
+  pelvisX,
+  pelvisY,
+  bendAngle = 0,
+  bendAngles,
+  duration = "2.4s",
+  begin,
+  keySplines = EASE,
+  color,
+  showShoulders = true,
+}) {
+  return (
+    <g transform={`translate(${pelvisX} ${pelvisY})`}>
+      <g transform={`rotate(${bendAngle})`}>
+        {bendAngles && (
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values={bendAngles}
+            dur={duration}
+            begin={begin}
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines={keySplines}
+          />
+        )}
+        {/* coluna */}
+        <Bone x1={0} y1={0} x2={0} y2={-P.TORSO} color={color} w={P.STROKE_BODY} />
+        {/* linha dos ombros */}
+        {showShoulders && (
+          <Bone
+            x1={-P.SHOULDER_W}
+            y1={-P.TORSO}
+            x2={P.SHOULDER_W}
+            y2={-P.TORSO}
+            color={color}
+            w={P.STROKE_BODY}
+          />
+        )}
+        {/* pescoco + cabeca */}
+        <Bone x1={0} y1={-P.TORSO} x2={0} y2={-P.TORSO - P.NECK} color={color} w={P.STROKE_BODY * 0.7} />
+        <Head cx={0} cy={-P.TORSO - P.NECK - P.HEAD_R} color={color} />
+      </g>
+    </g>
+  );
+}
+
+/** Equipamento: barra olimpica simples. */
+function Barbell({ x = 0, y = 0, scale = 1, color, rotation = 0 }) {
+  const w = 90 * scale;
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${rotation})`}>
+      <rect x={-w / 2} y={-2} width={w} height={4} rx={2} fill={color} />
+      <rect x={-w / 2 - 6} y={-13} width={6} height={26} rx={2} fill={color} />
+      <rect x={w / 2} y={-13} width={6} height={26} rx={2} fill={color} />
+    </g>
+  );
+}
+
+/** Halter pequeno (curl, lateral raise). */
+function Dumbbell({ x = 0, y = 0, scale = 1, color, rotation = 0 }) {
+  const w = 18 * scale;
+  const r = 5.5 * scale;
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${rotation})`}>
+      <rect x={-w / 2} y={-2} width={w} height={4} rx={2} fill={color} />
       <circle cx={-w / 2} cy={0} r={r} fill={color} />
       <circle cx={w / 2} cy={0} r={r} fill={color} />
     </g>
   );
 }
 
-/** Barra olimpica com discos. */
-function Barbell({ x, y, scale = 1, color, rotation = 0 }) {
-  const w = 90 * scale;
+/** Kettlebell. */
+function Kettlebell({ color, scale = 1 }) {
   return (
-    <g transform={`translate(${x} ${y}) rotate(${rotation})`}>
-      <rect
-        x={-w / 2}
-        y={-2}
-        width={w}
-        height={4}
-        rx={2}
-        fill={color}
+    <g transform={`scale(${scale})`}>
+      <ellipse cx={0} cy={6} rx={12} ry={13} fill={color} />
+      <path
+        d="M -8 -2 Q -8 -10 0 -10 Q 8 -10 8 -2"
+        stroke={color}
+        strokeWidth={3}
+        fill="none"
       />
-      <rect
-        x={-w / 2 - 5}
-        y={-12}
-        width={5}
-        height={24}
-        rx={2}
-        fill={color}
-      />
-      <rect
-        x={w / 2}
-        y={-12}
-        width={5}
-        height={24}
-        rx={2}
-        fill={color}
-      />
+      <rect x={-9} y={-4} width={18} height={5} rx={2} fill={color} />
+      <ellipse cx={-3} cy={2} rx={3.5} ry={2} fill="rgba(255,255,255,0.25)" />
     </g>
   );
 }
 
-/** Chao / linha de referencia. */
-function Floor({ y = 175, color, opacity = 0.3 }) {
+/** Linha de chao. */
+function Floor({ y = 178, color, opacity = 0.32 }) {
   return (
     <line
-      x1={10}
+      x1={6}
       y1={y}
-      x2={190}
+      x2={194}
       y2={y}
       stroke={color}
       strokeWidth={2}
@@ -110,123 +340,160 @@ function Floor({ y = 175, color, opacity = 0.3 }) {
   );
 }
 
+/** Banco (horizontal). */
+function Bench({ x = 50, y = 130, w = 100, h = 7, color }) {
+  return (
+    <g>
+      <rect x={x} y={y} width={w} height={h} rx={2} fill={color} opacity={0.55} />
+      <rect x={x + 6} y={y + h} width={5} height={28} fill={color} opacity={0.4} />
+      <rect x={x + w - 11} y={y + h} width={5} height={28} fill={color} opacity={0.4} />
+    </g>
+  );
+}
+
 // ==========================================================================
-// ANIMACOES (cada uma e uma <g> auto-contida)
+// ANIMACOES — cada exercicio e uma <g> auto-contida
 // ==========================================================================
 
-/** SUPINO — deitado, bracos a empurrar barra para cima. */
+/**
+ * SUPINO RETO — deitado de costas; bracos rodam no ombro e flectem
+ * no cotovelo em sincronia para mover a barra na vertical.
+ */
 function BenchPress({ accent }) {
+  // Pivot dos ombros (deitado, pessoa orientada para a esquerda)
+  const shoulderL_X = 80;
+  const shoulderR_X = 80;
+  const shoulderY_top = 113;     // ombro lado de cima
+  const shoulderY_bot = 121;     // ombro lado de baixo
   return (
     <g>
       <Floor color={accent} />
-      {/* Banco */}
-      <rect x="35" y="125" width="120" height="6" rx="2" fill={accent} opacity="0.5" />
-      <rect x="42" y="131" width="6" height="20" fill={accent} opacity="0.4" />
-      <rect x="142" y="131" width="6" height="20" fill={accent} opacity="0.4" />
+      <Bench x={28} y={130} w={130} color={accent} />
+      <Joint cx={50} cy={117} color={accent} r={P.HEAD_R} />
+      {/* coluna deitada */}
+      <Bone x1={57} y1={117} x2={120} y2={117} color={accent} w={P.STROKE_BODY} />
+      {/* anca */}
+      <Joint cx={120} cy={117} color={accent} r={P.JOINT_R + 0.4} />
+      {/* perna direita (frente, dobrada) */}
+      <ArticulatedLeg
+        pivotX={120}
+        pivotY={117}
+        thighAngle={62}
+        shinAngle={-42}
+        thighLen={P.THIGH * 0.75}
+        shinLen={P.SHIN * 0.95}
+        color={accent}
+        footAngle={-90}
+      />
+      {/* perna tras (atras, mais dobrada para implicar profundidade) */}
+      <ArticulatedLeg
+        pivotX={120}
+        pivotY={117}
+        thighAngle={70}
+        shinAngle={-50}
+        thighLen={P.THIGH * 0.75}
+        shinLen={P.SHIN * 0.85}
+        color={accent}
+        footAngle={-90}
+      />
 
-      {/* Stickman deitado de costas */}
-      <Joint cx={45} cy={115} fill={accent} />
-      {/* Tronco horizontal */}
-      <Limb x1={51} y1={117} x2={130} y2={120} color={accent} />
-      {/* Pernas dobradas para baixo */}
-      <Limb x1={130} y1={120} x2={148} y2={140} color={accent} />
-      <Limb x1={148} y1={140} x2={155} y2={155} color={accent} />
-      <Limb x1={130} y1={120} x2={142} y2={142} color={accent} />
-      <Limb x1={142} y1={142} x2={150} y2={155} color={accent} />
+      {/* Bracos articulados — empurram para cima */}
+      <ArticulatedArm
+        pivotX={shoulderL_X}
+        pivotY={shoulderY_top}
+        upperAngles="-105; -90; -105"
+        forearmAngles="50; 0; 50"
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+      <ArticulatedArm
+        pivotX={shoulderR_X}
+        pivotY={shoulderY_bot}
+        upperAngles="-75; -90; -75"
+        forearmAngles="-50; 0; -50"
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
 
-      {/* Bracos + barra que sobe e desce */}
+      {/* Barra que oscila vertical (sincronizada com bracos) */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 18; 0 0"
-          dur="2.4s"
+          values="0 28; 0 -10; 0 28"
+          dur="2.6s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        {/* Bracos a apontar para cima */}
-        <Limb x1={85} y1={117} x2={85} y2={75} color={accent} />
-        <Limb x1={95} y1={117} x2={95} y2={75} color={accent} />
-        {/* Barra horizontal */}
-        <Barbell x={90} y={70} scale={0.85} color={accent} />
+        <Barbell x={80} y={50} scale={0.85} color={accent} rotation={90} />
       </g>
     </g>
   );
 }
 
-/** SUPINO INCLINADO — banco em angulo, mesma logica. */
+/** SUPINO INCLINADO — banco em angulo, mesma cinematica mas inclinada. */
 function InclineBench({ accent }) {
   return (
-    <g>
-      <Floor color={accent} />
-      {/* Banco inclinado */}
-      <rect
-        x="50"
-        y="105"
-        width="100"
-        height="6"
-        rx="2"
-        fill={accent}
-        opacity="0.5"
-        transform="rotate(-22 100 108)"
-      />
-      <rect x="60" y="135" width="6" height="30" fill={accent} opacity="0.4" />
-      <rect x="135" y="115" width="6" height="50" fill={accent} opacity="0.4" />
-
-      {/* Stickman inclinado */}
-      <g transform="rotate(-22 100 110)">
-        <Joint cx={55} cy={97} fill={accent} />
-        <Limb x1={61} y1={99} x2={140} y2={102} color={accent} />
-        <Limb x1={140} y1={102} x2={156} y2={120} color={accent} />
-        <Limb x1={156} y1={120} x2={162} y2={138} color={accent} />
-        <Limb x1={140} y1={102} x2={150} y2={122} color={accent} />
-        <Limb x1={150} y1={122} x2={158} y2={138} color={accent} />
-
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            values="0 0; 0 16; 0 0"
-            dur="2.4s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={90} y1={98} x2={90} y2={58} color={accent} />
-          <Limb x1={100} y1={98} x2={100} y2={58} color={accent} />
-          <Barbell x={95} y={54} scale={0.85} color={accent} />
-        </g>
-      </g>
+    <g transform="rotate(-22 100 110)">
+      <BenchPress accent={accent} />
     </g>
   );
 }
 
-/** FLEXOES — prancha, corpo desce e sobe. */
+/** FLEXOES — prancha; corpo desce e sobe, ombros aproximam-se do chao. */
 function PushUp({ accent }) {
   return (
     <g>
       <Floor color={accent} />
       <g>
+        {/* corpo desce ~10px */}
         <animateTransform
           attributeName="transform"
           type="translate"
           values="0 0; 0 12; 0 0"
-          dur="2s"
+          dur="2.2s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        {/* Cabeca */}
-        <Joint cx={45} cy={120} fill={accent} />
-        {/* Corpo em prancha */}
-        <Limb x1={51} y1={122} x2={155} y2={132} color={accent} />
-        {/* Bracos verticais */}
-        <Limb x1={70} y1={122} x2={70} y2={170} color={accent} />
-        <Limb x1={80} y1={123} x2={80} y2={170} color={accent} />
-        {/* Pernas estendidas */}
-        <Limb x1={155} y1={132} x2={175} y2={170} color={accent} />
-        <Limb x1={155} y1={132} x2={170} y2={170} color={accent} />
+        {/* cabeca e ombros */}
+        <Head cx={48} cy={120} color={accent} />
+        {/* coluna inclinada (ombros mais altos, ancas mais baixas) */}
+        <Bone x1={55} y1={122} x2={150} y2={134} color={accent} w={P.STROKE_BODY} />
+        <Joint cx={150} cy={134} color={accent} r={P.JOINT_R + 0.4} />
+        {/* pernas estendidas para tras */}
+        <Bone x1={150} y1={134} x2={185} y2={172} color={accent} w={P.STROKE_BODY} />
+        <Joint cx={167} cy={153} color={accent} />
+        <Foot cx={185} cy={172} color={accent} angle={-30} />
+
+        {/* Bracos articulados — flectem no cotovelo */}
+        <ArticulatedArm
+          pivotX={62}
+          pivotY={123}
+          upperAngles="120; 100; 120"
+          forearmAngles="-90; -60; -90"
+          duration="2.2s"
+          keySplines={EASE}
+          color={accent}
+          upperLen={P.UPPER_ARM * 0.95}
+          forearmLen={P.FOREARM * 0.95}
+        />
+        <ArticulatedArm
+          pivotX={70}
+          pivotY={125}
+          upperAngles="120; 100; 120"
+          forearmAngles="-90; -60; -90"
+          duration="2.2s"
+          keySplines={EASE}
+          color={accent}
+          upperLen={P.UPPER_ARM * 0.95}
+          forearmLen={P.FOREARM * 0.95}
+        />
       </g>
     </g>
   );
@@ -234,114 +501,139 @@ function PushUp({ accent }) {
 
 /** PRESS MILITAR — em pe, bracos empurram barra acima da cabeca. */
 function OverheadPress({ accent }) {
+  // pelvis em (100, 130)
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
-      {/* Stickman de pe */}
-      <Joint cx={100} cy={70} fill={accent} />
-      <Limb x1={100} y1={77} x2={100} y2={130} color={accent} />
-      <Limb x1={100} y1={130} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={130} x2={112} y2={170} color={accent} />
+      {/* Pernas (em pe, ligeiramente abertas) */}
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={177} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={183} shinAngle={-2} color={accent} footAngle={5} />
+      {/* Tronco vertical */}
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
 
-      {/* Bracos + barra que sobe (de altura do peito ate acima da cabeca) */}
+      {/* Bracos — partem do ombro, empurram para cima
+          Em baixo: upper a ~135° (cotovelos ao lado), forearm 90° (a 45°)
+          Em cima: upper a 180° (vertical), forearm 0° (vertical) */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="135; 175; 135"
+        forearmAngles="-50; -5; -50"
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="-135; -175; -135"
+        forearmAngles="50; 5; 50"
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+
+      {/* Barra que sobe e desce */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 -32; 0 0"
-          dur="2.4s"
+          values="0 0; 0 -38; 0 0"
+          dur="2.6s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Limb x1={85} y1={85} x2={75} y2={75} color={accent} />
-        <Limb x1={115} y1={85} x2={125} y2={75} color={accent} />
-        <Barbell x={100} y={70} scale={0.95} color={accent} />
+        <Barbell x={100} y={pelvisY - P.TORSO + 4} scale={0.95} color={accent} />
       </g>
     </g>
   );
 }
 
-/** ROSCA / CURL — em pe, antebraco roda do lado para o ombro. */
+/** ROSCA / CURL — em pe; antebracos rodam no cotovelo. */
 function BicepCurl({ accent }) {
+  const pelvisY = 132;
   return (
     <g>
       <Floor color={accent} />
-      {/* Stickman base */}
-      <Joint cx={100} cy={60} fill={accent} />
-      <Limb x1={100} y1={67} x2={100} y2={120} color={accent} />
-      <Limb x1={100} y1={120} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={120} x2={112} y2={170} color={accent} />
-      {/* Bracos superiores fixos (descem do ombro ao cotovelo) */}
-      <Limb x1={88} y1={75} x2={84} y2={108} color={accent} />
-      <Limb x1={112} y1={75} x2={116} y2={108} color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
 
-      {/* Antebraco esquerdo + halter — rotaciona no cotovelo */}
-      <g transform="translate(84 108)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="0; -120; 0"
-            dur="2s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={28} color={accent} />
-          <MiniDumbbell x={0} y={32} scale={1} color={accent} />
-        </g>
-      </g>
-
-      {/* Antebraco direito + halter (espelhado) */}
-      <g transform="translate(116 108)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="0; 120; 0"
-            dur="2s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={28} color={accent} />
-          <MiniDumbbell x={0} y={32} scale={1} color={accent} />
-        </g>
-      </g>
+      {/* Bracos — upper fixo ao lado, antebraco roda 0 (estendido para baixo)
+          ate 145 (forearm a apontar para cima, halter perto do ombro). */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngle={170}
+        forearmAngles="0; 145; 0"
+        duration="2.4s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+        endItem={<Dumbbell scale={1.1} color={accent} rotation={90} />}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngle={-170}
+        forearmAngles="0; -145; 0"
+        duration="2.4s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+        endItem={<Dumbbell scale={1.1} color={accent} rotation={90} />}
+      />
     </g>
   );
 }
 
-/** EXTENSAO TRICEP — bracos por cima da cabeca, antebracos descem. */
+/** EXTENSAO TRICEP — bracos por cima da cabeca, antebracos descem para tras. */
 function TricepExtension({ accent }) {
+  const pelvisY = 138;
   return (
     <g>
       <Floor color={accent} />
-      <Joint cx={100} cy={75} fill={accent} />
-      <Limb x1={100} y1={82} x2={100} y2={130} color={accent} />
-      <Limb x1={100} y1={130} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={130} x2={112} y2={170} color={accent} />
-      {/* Bracos sobem verticais ate ao alto */}
-      <Limb x1={92} y1={85} x2={88} y2={48} color={accent} />
-      <Limb x1={108} y1={85} x2={112} y2={48} color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
 
-      {/* Antebraco + halter — flete e estende para tras da cabeca */}
-      <g transform="translate(100 48)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="-25; 80; -25"
-            dur="2s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={-12} y1={0} x2={-12} y2={-28} color={accent} />
-          <Limb x1={12} y1={0} x2={12} y2={-28} color={accent} />
-          <MiniDumbbell x={0} y={-30} scale={1.2} color={accent} />
-        </g>
+      {/* Upper arm vertical para cima; antebraco desce para tras (rotacao no cotovelo) */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngle={172}
+        forearmAngles="170; 70; 170"
+        duration="2.2s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngle={-172}
+        forearmAngles="-170; -70; -170"
+        duration="2.2s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+      {/* Halter unico segurado por ambas as maos no topo */}
+      <g>
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          values="0 0; 0 30; 0 0"
+          dur="2.2s"
+          repeatCount="indefinite"
+          calcMode="spline"
+          keySplines={EASE}
+        />
+        <Dumbbell x={100} y={pelvisY - P.TORSO - P.UPPER_ARM - P.FOREARM + 4} scale={1.3} color={accent} rotation={90} />
       </g>
     </g>
   );
@@ -349,268 +641,375 @@ function TricepExtension({ accent }) {
 
 /** ELEVACAO LATERAL — bracos sobem laterais ate ombros. */
 function LateralRaise({ accent }) {
+  const pelvisY = 132;
   return (
     <g>
       <Floor color={accent} />
-      <Joint cx={100} cy={65} fill={accent} />
-      <Limb x1={100} y1={72} x2={100} y2={125} color={accent} />
-      <Limb x1={100} y1={125} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={125} x2={112} y2={170} color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
 
-      {/* Braco esquerdo a abrir lateralmente */}
-      <g transform="translate(88 78)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="0; -90; 0"
-            dur="2.2s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={42} color={accent} />
-          <MiniDumbbell x={0} y={48} scale={1} color={accent} />
-        </g>
-      </g>
-
-      {/* Braco direito a abrir lateralmente */}
-      <g transform="translate(112 78)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="0; 90; 0"
-            dur="2.2s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={42} color={accent} />
-          <MiniDumbbell x={0} y={48} scale={1} color={accent} />
-        </g>
-      </g>
+      {/* Upper arm roda de 170 (lado) ate 90 (horizontal), com forearm levemente flectido */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="170; 95; 170"
+        forearmAngle={-15}
+        duration="2.4s"
+        keySplines={EASE}
+        color={accent}
+        endItem={<Dumbbell scale={1} color={accent} rotation={90} />}
+        hand={false}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="-170; -95; -170"
+        forearmAngle={15}
+        duration="2.4s"
+        keySplines={EASE}
+        color={accent}
+        endItem={<Dumbbell scale={1} color={accent} rotation={90} />}
+        hand={false}
+      />
     </g>
   );
 }
 
 /** ELEVACAO FRONTAL — bracos sobem pela frente. */
 function FrontRaise({ accent }) {
+  const pelvisY = 132;
   return (
     <g>
       <Floor color={accent} />
-      <Joint cx={100} cy={65} fill={accent} />
-      <Limb x1={100} y1={72} x2={100} y2={125} color={accent} />
-      <Limb x1={100} y1={125} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={125} x2={112} y2={170} color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
 
-      {/* Bracos a subir pela frente — rotacionam de 0 (para baixo) ate -90 (frente) */}
-      <g transform="translate(88 78)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="-15; -100; -15"
-            dur="2.4s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={36} color={accent} />
-          <MiniDumbbell x={0} y={40} scale={0.9} color={accent} />
-        </g>
-      </g>
-      <g transform="translate(112 78)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="15; 100; 15"
-            dur="2.4s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={36} color={accent} />
-          <MiniDumbbell x={0} y={40} scale={0.9} color={accent} />
-        </g>
-      </g>
+      {/* Upper arm sobe ate vertical (180), forearm fica relativo */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="170; 5; 170"
+        forearmAngle={0}
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        endItem={<Dumbbell scale={0.95} color={accent} rotation={90} />}
+        hand={false}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="-170; -5; -170"
+        forearmAngle={0}
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        endItem={<Dumbbell scale={0.95} color={accent} rotation={90} />}
+        hand={false}
+      />
     </g>
   );
 }
 
-/** PULL UP — pendurado em barra, corpo sobe e desce. */
+/** PULL UP — pendurado em barra; corpo sobe e desce, cotovelos flectem. */
 function PullUp({ accent }) {
   return (
     <g>
       {/* Barra fixa */}
-      <line x1="50" y1="35" x2="150" y2="35" stroke={accent} strokeWidth="4" strokeLinecap="round" />
-      <line x1="50" y1="20" x2="50" y2="35" stroke={accent} strokeWidth="2" />
-      <line x1="150" y1="20" x2="150" y2="35" stroke={accent} strokeWidth="2" />
+      <line x1="40" y1="32" x2="160" y2="32" stroke={accent} strokeWidth={5} strokeLinecap="round" />
+      <line x1="40" y1="14" x2="40" y2="32" stroke={accent} strokeWidth={3} />
+      <line x1="160" y1="14" x2="160" y2="32" stroke={accent} strokeWidth={3} />
 
+      {/* Corpo inteiro: bracos esticados em cima (180 - vertical), corpo solto em baixo
+          No topo: cotovelos flectem (~80), corpo sobe ate o queixo passar a barra. */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 18; 0 -2; 0 18"
+          values="0 22; 0 -8; 0 22"
           dur="2.6s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        {/* Bracos verticais agarrados na barra */}
-        <Limb x1={85} y1={37} x2={85} y2={75} color={accent} />
-        <Limb x1={115} y1={37} x2={115} y2={75} color={accent} />
-        {/* Cabeca + tronco */}
-        <Joint cx={100} cy={68} fill={accent} />
-        <Limb x1={100} y1={75} x2={100} y2={130} color={accent} />
+        {/* Bracos invertidos — pivot no ombro, mas o ombro esta abaixo da mao
+            Modela-se com upper a apontar para CIMA (rotacao 0 no ombro = vertical para cima),
+            forearm continua para CIMA (esticado) ou para o lado (flectido). */}
+        {/* Ombros do stickman */}
+        <Torso pelvisX={100} pelvisY={140} color={accent} bendAngle={0} />
         {/* Pernas levemente fletidas */}
-        <Limb x1={100} y1={130} x2={88} y2={160} color={accent} />
-        <Limb x1={100} y1={130} x2={112} y2={160} color={accent} />
+        <ArticulatedLeg pivotX={94} pivotY={140} thighAngle={175} shinAngle={5} color={accent} footAngle={-90} />
+        <ArticulatedLeg pivotX={106} pivotY={140} thighAngle={185} shinAngle={-5} color={accent} footAngle={-90} />
+
+        {/* Bracos a segurar a barra */}
+        <ArticulatedArm
+          pivotX={100 - P.SHOULDER_W}
+          pivotY={140 - P.TORSO}
+          upperAngles="-15; 5; -15"
+          forearmAngles="0; -85; 0"
+          duration="2.6s"
+          keySplines={EASE}
+          color={accent}
+          hand
+        />
+        <ArticulatedArm
+          pivotX={100 + P.SHOULDER_W}
+          pivotY={140 - P.TORSO}
+          upperAngles="15; -5; 15"
+          forearmAngles="0; 85; 0"
+          duration="2.6s"
+          keySplines={EASE}
+          color={accent}
+          hand
+        />
       </g>
     </g>
   );
 }
 
-/** LAT PULLDOWN — sentado, puxa barra para baixo. */
+/** LAT PULLDOWN — sentado; bracos puxam barra para baixo. */
 function LatPulldown({ accent }) {
+  const pelvisY = 142;
   return (
     <g>
-      {/* Polia em cima */}
-      <circle cx="100" cy="25" r="6" fill={accent} opacity="0.6" />
       <Floor color={accent} />
-      {/* Banco */}
-      <rect x="80" y="135" width="40" height="6" rx="2" fill={accent} opacity="0.5" />
-      <rect x="85" y="141" width="4" height="20" fill={accent} opacity="0.4" />
-      <rect x="111" y="141" width="4" height="20" fill={accent} opacity="0.4" />
+      {/* Polia no topo */}
+      <circle cx={100} cy={28} r={5.5} fill={accent} opacity={0.6} />
+      <line x1={100} y1={14} x2={100} y2={28} stroke={accent} strokeWidth={2} opacity={0.4} />
 
-      {/* Stickman sentado */}
-      <Joint cx={100} cy={70} fill={accent} />
-      <Limb x1={100} y1={77} x2={100} y2={130} color={accent} />
-      {/* Pernas em angulo (joelhos para a frente) */}
-      <Limb x1={100} y1={130} x2={130} y2={140} color={accent} />
-      <Limb x1={130} y1={140} x2={130} y2={165} color={accent} />
-      <Limb x1={100} y1={130} x2={70} y2={140} color={accent} />
-      <Limb x1={70} y1={140} x2={70} y2={165} color={accent} />
+      {/* Banco/almofada das coxas */}
+      <rect x={75} y={pelvisY + 4} width={50} height={6} rx={2} fill={accent} opacity={0.5} />
+      <rect x={86} y={pelvisY + 10} width={4} height={28} fill={accent} opacity={0.4} />
+      <rect x={110} y={pelvisY + 10} width={4} height={28} fill={accent} opacity={0.4} />
 
-      {/* Bracos + barra que desce verticalmente */}
+      {/* Tronco vertical (sentado) */}
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} bendAngle={0} />
+      {/* Pernas a 90 (coxa para a frente, tibia para baixo) */}
+      <ArticulatedLeg
+        pivotX={94}
+        pivotY={pelvisY}
+        thighAngle={120}
+        shinAngle={-120}
+        color={accent}
+        footAngle={-15}
+      />
+      <ArticulatedLeg
+        pivotX={106}
+        pivotY={pelvisY}
+        thighAngle={120}
+        shinAngle={-120}
+        color={accent}
+        footAngle={-15}
+      />
+
+      {/* Bracos esticados para cima (a segurar a barra) — flectem ate ~90 */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="-15; -25; -15"
+        forearmAngles="0; -65; 0"
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="15; 25; 15"
+        forearmAngles="0; 65; 0"
+        duration="2.6s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+      />
+      {/* Barra puxada (sincronizada — animateTransform translate) */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 -32; 0 0; 0 -32"
+          values="0 0; 0 36; 0 0"
           dur="2.6s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Limb x1={88} y1={80} x2={75} y2={102} color={accent} />
-        <Limb x1={112} y1={80} x2={125} y2={102} color={accent} />
-        <Barbell x={100} y={102} scale={1} color={accent} />
-        {/* Cabos */}
-        <line x1="75" y1="102" x2="75" y2="35" stroke={accent} strokeWidth="1.5" opacity="0.5" />
-        <line x1="125" y1="102" x2="125" y2="35" stroke={accent} strokeWidth="1.5" opacity="0.5" />
+        <Barbell x={100} y={pelvisY - P.TORSO - P.UPPER_ARM - P.FOREARM + 8} scale={1.05} color={accent} />
       </g>
+      {/* Cabos */}
+      <line x1="76" y1="32" x2="76" y2="80" stroke={accent} strokeWidth={1.5} opacity={0.4} />
+      <line x1="124" y1="32" x2="124" y2="80" stroke={accent} strokeWidth={1.5} opacity={0.4} />
     </g>
   );
 }
 
-/** REMADA — inclinado, puxa barra ate ao tronco. */
+/** REMADA — inclinado para a frente; cotovelos puxam para tras. */
 function Row({ accent }) {
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
-      {/* Stickman inclinado para a frente */}
-      <g transform="translate(100 100) rotate(60)">
-        <Joint cx={0} cy={-50} fill={accent} />
-        <Limb x1={0} y1={-43} x2={0} y2={10} color={accent} />
-      </g>
       {/* Pernas em pe ligeiramente fletidas */}
-      <Limb x1={120} y1={130} x2={108} y2={170} color={accent} />
-      <Limb x1={120} y1={130} x2={130} y2={170} color={accent} />
+      <ArticulatedLeg pivotX={pelvisX(94)} pivotY={pelvisY} thighAngle={170} shinAngle={10} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={pelvisX(106)} pivotY={pelvisY} thighAngle={185} shinAngle={-10} color={accent} footAngle={5} />
 
-      {/* Bracos + barra que vai e vem para o tronco */}
+      {/* Tronco inclinado para a frente (~50°) */}
+      <Torso pelvisX={100} pelvisY={pelvisY} bendAngle={50} color={accent} />
+
+      {/* Bracos partem dos ombros (que estao agora avancados pela inclinacao)
+          Como o tronco esta rodado, os ombros estao a ~ (100 + sin(50°)*36, pelvisY - cos(50°)*36)
+          Vamos hardcodar a posicao final dos ombros. */}
+      {/* sen(50°)≈0.766, cos(50°)≈0.643. Ombro direito = 100 + 36*0.766 = ~127.6, y = 130 - 36*0.643 ≈ 106.8 */}
+      <ArticulatedArm
+        pivotX={123}
+        pivotY={102}
+        upperAngles="-50; -50; -50"
+        forearmAngles="-30; -120; -30"
+        duration="2.4s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+        endItem={<Dumbbell scale={1.05} color={accent} rotation={90} />}
+      />
+      <ArticulatedArm
+        pivotX={130}
+        pivotY={108}
+        upperAngles="-55; -55; -55"
+        forearmAngles="-30; -120; -30"
+        duration="2.4s"
+        keySplines={EASE}
+        color={accent}
+        hand={false}
+        endItem={<Dumbbell scale={1.05} color={accent} rotation={90} />}
+      />
+    </g>
+  );
+}
+function pelvisX(x) { return x; } // util para legibilidade
+
+/** DEADLIFT — em pe; tronco inclina, joelhos flectem, barra sobe. */
+function Deadlift({ accent }) {
+  const pelvisY = 132;
+  return (
+    <g>
+      <Floor color={accent} />
+      {/* Pernas — flectem ligeiramente quando o tronco se inclina */}
+      <ArticulatedLeg
+        pivotX={94}
+        pivotY={pelvisY}
+        thighAngles="178; 165; 178"
+        shinAngles="2; 12; 2"
+        duration="3s"
+        keySplines={EASE}
+        color={accent}
+        footAngle={-5}
+      />
+      <ArticulatedLeg
+        pivotX={106}
+        pivotY={pelvisY}
+        thighAngles="182; 195; 182"
+        shinAngles="-2; -12; -2"
+        duration="3s"
+        keySplines={EASE}
+        color={accent}
+        footAngle={5}
+      />
+      {/* Tronco — inclina a frente ate ~55° */}
+      <Torso
+        pelvisX={100}
+        pelvisY={pelvisY}
+        bendAngles="0; 55; 0"
+        duration="3s"
+        keySplines={EASE}
+        color={accent}
+      />
+      {/* Bracos — partem dos ombros (que rodam com o tronco). Modelados como
+          sempre a apontar para baixo: upper=180, forearm=0. Porque o ombro
+          esta dentro do <Torso> rotation, os bracos seguem a inclinacao. Mas
+          como ArticulatedArm pega coordenadas absolutas, vamos animar a
+          posicao do pivot tambem. Aqui usamos uma versao simplificada com
+          translacao animada. */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 -22; 0 0"
-          dur="2.4s"
-          repeatCount="indefinite"
-          calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-        />
-        <Limb x1={75} y1={100} x2={75} y2={155} color={accent} />
-        <Limb x1={92} y1={108} x2={92} y2={155} color={accent} />
-        <Barbell x={84} y={158} scale={0.85} color={accent} />
-      </g>
-    </g>
-  );
-}
-
-/** DEADLIFT — em pe, ergue barra do chao. */
-function Deadlift({ accent }) {
-  return (
-    <g>
-      <Floor color={accent} />
-      {/* Pernas (em pe) */}
-      <Limb x1={100} y1={120} x2={88} y2={165} color={accent} />
-      <Limb x1={100} y1={120} x2={112} y2={165} color={accent} />
-
-      {/* Tronco que se inclina e endireita */}
-      <g style={{ transformOrigin: "100px 120px" }}>
-        <animateTransform
-          attributeName="transform"
-          type="rotate"
-          values="0 100 120; -55 100 120; 0 100 120"
+          values="0 0; 0 24; 0 0"
           dur="3s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Joint cx={100} cy={70} fill={accent} />
-        <Limb x1={100} y1={77} x2={100} y2={120} color={accent} />
-        {/* Bracos verticais segurando a barra */}
-        <Limb x1={88} y1={80} x2={88} y2={130} color={accent} />
-        <Limb x1={112} y1={80} x2={112} y2={130} color={accent} />
-        <Barbell x={100} y={132} scale={1.05} color={accent} />
+        {/* dois bracos rectos a apontar para baixo */}
+        <Bone x1={100 - P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 - P.SHOULDER_W - 1} y2={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM} color={accent} w={P.STROKE_LIMB} />
+        <Bone x1={100 + P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 + P.SHOULDER_W + 1} y2={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM} color={accent} w={P.STROKE_LIMB} />
+        <Joint cx={100 - P.SHOULDER_W - 0.5} cy={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Joint cx={100 + P.SHOULDER_W + 0.5} cy={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Barbell x={100} y={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM + 1} scale={1.1} color={accent} />
       </g>
     </g>
   );
 }
 
-/** AGACHAMENTO / SQUAT — em pe, desce e sobe. */
+/** AGACHAMENTO — pelvis desce, joelhos e ancas flectem, tronco inclina. */
 function Squat({ accent }) {
   return (
     <g>
       <Floor color={accent} />
       <g>
+        {/* pelvis translada para baixo */}
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 28; 0 0"
-          dur="2.6s"
+          values="0 0; 0 26; 0 0"
+          dur="2.8s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        {/* Stickman em pe com barra nos ombros */}
-        <Joint cx={100} cy={55} fill={accent} />
-        <Limb x1={100} y1={62} x2={100} y2={110} color={accent} />
-        {/* Pernas */}
-        <Limb x1={100} y1={110} x2={86} y2={150} color={accent} />
-        <Limb x1={100} y1={110} x2={114} y2={150} color={accent} />
-        {/* Bracos a segurar a barra atras dos ombros */}
-        <Limb x1={88} y1={68} x2={75} y2={75} color={accent} />
-        <Limb x1={112} y1={68} x2={125} y2={75} color={accent} />
-        <Barbell x={100} y={70} scale={1.1} color={accent} />
+        {/* Pernas — joelhos flectem ate ~85° (thigh~150, shin~50 para baixo do joelho) */}
+        <ArticulatedLeg
+          pivotX={94}
+          pivotY={130}
+          thighAngles="178; 145; 178"
+          shinAngles="2; 50; 2"
+          duration="2.8s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-5}
+        />
+        <ArticulatedLeg
+          pivotX={106}
+          pivotY={130}
+          thighAngles="182; 215; 182"
+          shinAngles="-2; -50; -2"
+          duration="2.8s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={5}
+        />
+        {/* Tronco inclina ligeiramente para a frente */}
+        <Torso
+          pelvisX={100}
+          pelvisY={130}
+          bendAngles="0; 18; 0"
+          duration="2.8s"
+          keySplines={EASE}
+          color={accent}
+        />
+        {/* Bracos — segurar barra atras dos ombros */}
+        <Bone x1={100 - P.SHOULDER_W} y1={130 - P.TORSO} x2={100 - P.SHOULDER_W - 14} y2={130 - P.TORSO + 8} color={accent} />
+        <Bone x1={100 + P.SHOULDER_W} y1={130 - P.TORSO} x2={100 + P.SHOULDER_W + 14} y2={130 - P.TORSO + 8} color={accent} />
+        <Barbell x={100} y={130 - P.TORSO + 4} scale={1.15} color={accent} />
       </g>
     </g>
   );
 }
 
-/** AFUNDO / LUNGE — uma perna a frente, baixa o corpo. */
+/** AFUNDO — uma perna a frente flexiona, perna de tras estende para tras. */
 function Lunge({ accent }) {
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
@@ -618,161 +1017,201 @@ function Lunge({ accent }) {
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 18; 0 0"
+          values="0 0; 0 16; 0 0"
           dur="2.4s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        {/* Cabeca + tronco vertical */}
-        <Joint cx={100} cy={60} fill={accent} />
-        <Limb x1={100} y1={67} x2={100} y2={115} color={accent} />
-        {/* Bracos relaxados */}
-        <Limb x1={92} y1={75} x2={88} y2={105} color={accent} />
-        <Limb x1={108} y1={75} x2={112} y2={105} color={accent} />
-        {/* Perna da frente — joelho a 90 */}
-        <Limb x1={100} y1={115} x2={70} y2={130} color={accent} />
-        <Limb x1={70} y1={130} x2={70} y2={155} color={accent} />
-        {/* Perna de tras — esticada */}
-        <Limb x1={100} y1={115} x2={130} y2={140} color={accent} />
-        <Limb x1={130} y1={140} x2={155} y2={155} color={accent} />
+        {/* Perna da frente — joelho a ~90 */}
+        <ArticulatedLeg
+          pivotX={97}
+          pivotY={pelvisY}
+          thighAngles="155; 130; 155"
+          shinAngles="20; 55; 20"
+          duration="2.4s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-90}
+        />
+        {/* Perna de tras — esticada para tras */}
+        <ArticulatedLeg
+          pivotX={103}
+          pivotY={pelvisY}
+          thighAngles="210; 230; 210"
+          shinAngles="-20; -50; -20"
+          duration="2.4s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-90}
+        />
+        <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
+        {/* Bracos relaxados ao lado */}
+        <Bone x1={100 - P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 - P.SHOULDER_W - 4} y2={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Bone x1={100 + P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 + P.SHOULDER_W + 4} y2={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
       </g>
     </g>
   );
 }
 
-/** ROMANIAN DEADLIFT / STIFF — hip hinge com pernas direitas. */
+/** STIFF / ROMANIAN DEADLIFT — pernas quase rectas, tronco rota no quadril. */
 function RomanianDeadlift({ accent }) {
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
-      {/* Pernas quase rectas */}
-      <Limb x1={100} y1={120} x2={92} y2={165} color={accent} />
-      <Limb x1={100} y1={120} x2={108} y2={165} color={accent} />
-
-      <g style={{ transformOrigin: "100px 120px" }}>
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={175} shinAngle={5} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={185} shinAngle={-5} color={accent} footAngle={5} />
+      <Torso
+        pelvisX={100}
+        pelvisY={pelvisY}
+        bendAngles="0; 70; 0"
+        duration="3s"
+        keySplines={EASE}
+        color={accent}
+      />
+      {/* Bracos rectos a apontar para baixo (relativo ao tronco). Como o tronco roda, simulamos com translate animado da barra */}
+      <g>
         <animateTransform
           attributeName="transform"
-          type="rotate"
-          values="0 100 120; -65 100 120; 0 100 120"
+          type="translate"
+          values="0 0; 0 28; 0 0"
           dur="3s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Joint cx={100} cy={70} fill={accent} />
-        <Limb x1={100} y1={77} x2={100} y2={120} color={accent} />
-        <Limb x1={88} y1={80} x2={88} y2={120} color={accent} />
-        <Limb x1={112} y1={80} x2={112} y2={120} color={accent} />
-        <Barbell x={100} y={123} scale={1} color={accent} />
+        <Bone x1={100 - P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 - P.SHOULDER_W} y2={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM} color={accent} />
+        <Bone x1={100 + P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 + P.SHOULDER_W} y2={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM} color={accent} />
+        <Joint cx={100 - P.SHOULDER_W} cy={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Joint cx={100 + P.SHOULDER_W} cy={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Barbell x={100} y={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM + 2} scale={1.05} color={accent} />
       </g>
     </g>
   );
 }
 
-/** LEG PRESS — sentado/inclinado, empurra plataforma com pernas. */
+/** LEG PRESS — deitado em angulo, pernas empurram plataforma. */
 function LegPress({ accent }) {
   return (
     <g>
       <Floor color={accent} />
       {/* Banco inclinado */}
-      <line x1="35" y1="155" x2="100" y2="115" stroke={accent} strokeWidth="3" opacity="0.5" />
-      <line x1="35" y1="150" x2="35" y2="170" stroke={accent} strokeWidth="2" opacity="0.4" />
+      <line x1="22" y1="170" x2="100" y2="120" stroke={accent} strokeWidth={4} opacity={0.5} strokeLinecap="round" />
+      <line x1="20" y1="155" x2="20" y2="178" stroke={accent} strokeWidth={3} opacity={0.4} />
 
-      {/* Stickman deitado em angulo */}
+      {/* Stickman deitado em angulo (-30°) */}
       <g transform="rotate(-30 75 130)">
-        <Joint cx={50} cy={130} fill={accent} />
-        <Limb x1={56} y1={132} x2={100} y2={130} color={accent} />
-        {/* Bracos para o lado */}
-        <Limb x1={70} y1={132} x2={70} y2={155} color={accent} />
-        <Limb x1={85} y1={132} x2={85} y2={155} color={accent} />
+        <Head cx={50} cy={130} color={accent} />
+        <Bone x1={57} y1={132} x2={110} y2={132} color={accent} w={P.STROKE_BODY} />
+        {/* bracos ao lado */}
+        <Bone x1={70} y1={132} x2={70} y2={155} color={accent} />
+        <Bone x1={88} y1={132} x2={88} y2={155} color={accent} />
+        <Joint cx={70} cy={144} color={accent} />
+        <Joint cx={88} cy={144} color={accent} />
       </g>
 
-      {/* Pernas que empurram a plataforma — animam horizontal */}
+      {/* Pernas empurrando plataforma — estendem (180) → flexionam (90) */}
+      <g transform="translate(115 110)">
+        <ArticulatedLeg
+          pivotX={0}
+          pivotY={0}
+          thighAngles="-50; -10; -50"
+          shinAngles="-20; -50; -20"
+          duration="2.6s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-30}
+        />
+        <ArticulatedLeg
+          pivotX={6}
+          pivotY={6}
+          thighAngles="-50; -10; -50"
+          shinAngles="-20; -50; -20"
+          duration="2.6s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-30}
+        />
+      </g>
+      {/* Plataforma */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; -25 14; 0 0"
-          dur="2.4s"
+          values="0 0; -28 16; 0 0"
+          dur="2.6s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        {/* Pernas estendidas para cima e para a direita */}
-        <Limb x1={113} y1={108} x2={155} y2={75} color={accent} />
-        <Limb x1={120} y1={115} x2={162} y2={82} color={accent} />
-        {/* Plataforma */}
-        <line
-          x1={150}
-          y1={50}
-          x2={170}
-          y2={95}
-          stroke={accent}
-          strokeWidth="6"
-          strokeLinecap="round"
-          opacity="0.7"
-        />
+        <line x1="155" y1="50" x2="178" y2="100" stroke={accent} strokeWidth={7} strokeLinecap="round" opacity={0.75} />
       </g>
     </g>
   );
 }
 
-/** LEG EXTENSION — sentado, pernas estendem na maquina. */
+/** LEG EXTENSION — sentado, tibia roda no joelho. */
 function LegExtension({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Banco */}
-      <rect x="35" y="115" width="55" height="6" rx="2" fill={accent} opacity="0.5" />
-      <rect x="40" y="121" width="4" height="40" fill={accent} opacity="0.4" />
-      <rect x="80" y="121" width="4" height="40" fill={accent} opacity="0.4" />
-
-      {/* Stickman sentado */}
-      <Joint cx={62} cy={70} fill={accent} />
-      <Limb x1={62} y1={77} x2={62} y2={113} color={accent} />
-      {/* Bracos relaxados */}
-      <Limb x1={55} y1={85} x2={50} y2={108} color={accent} />
-      <Limb x1={69} y1={85} x2={74} y2={108} color={accent} />
-      {/* Coxa horizontal */}
-      <Limb x1={62} y1={113} x2={108} y2={115} color={accent} />
-
-      {/* Tibia + pe — rotacionam ate ficar horizontal */}
-      <g transform="translate(108 115)">
+      <Bench x={28} y={120} w={62} color={accent} />
+      <Torso pelvisX={62} pelvisY={120} color={accent} />
+      {/* coxa horizontal ate ao joelho */}
+      <Bone x1={62} y1={120} x2={108} y2={122} color={accent} w={P.STROKE_BODY} />
+      <Joint cx={108} cy={122} color={accent} r={P.JOINT_R + 0.5} />
+      {/* tibia roda 90 → 0 (do baixo para horizontal) */}
+      <g transform="translate(108 122)">
         <g>
           <animateTransform
             attributeName="transform"
             type="rotate"
             values="90; 0; 90"
-            dur="2.2s"
+            dur="2.4s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Limb x1={0} y1={0} x2={45} y2={0} color={accent} />
-          <Joint cx={50} cy={0} r={4} fill={accent} />
+          <Bone x1={0} y1={0} x2={0} y2={P.SHIN} color={accent} w={P.STROKE_BODY} />
+          <Foot cx={0} cy={P.SHIN} color={accent} angle={-15} />
+        </g>
+      </g>
+      {/* segunda perna (mesma animacao) */}
+      <Bone x1={62} y1={126} x2={108} y2={128} color={accent} w={P.STROKE_BODY} />
+      <Joint cx={108} cy={128} color={accent} r={P.JOINT_R + 0.5} />
+      <g transform="translate(108 128)">
+        <g>
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="90; 0; 90"
+            dur="2.4s"
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines={EASE}
+          />
+          <Bone x1={0} y1={0} x2={0} y2={P.SHIN} color={accent} w={P.STROKE_BODY} />
+          <Foot cx={0} cy={P.SHIN} color={accent} angle={-15} />
         </g>
       </g>
     </g>
   );
 }
 
-/** LEG CURL — deitado de bruco, pernas dobram. */
+/** LEG CURL — deitado de bruco, tibia flecte para cima. */
 function LegCurl({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Banco */}
-      <rect x="30" y="125" width="130" height="6" rx="2" fill={accent} opacity="0.5" />
-
-      {/* Stickman deitado de bruco */}
-      <Joint cx={42} cy={120} fill={accent} />
-      <Limb x1={48} y1={122} x2={140} y2={123} color={accent} />
-      {/* Bracos para a frente */}
-      <Limb x1={62} y1={122} x2={45} y2={108} color={accent} />
-      <Limb x1={75} y1={122} x2={58} y2={108} color={accent} />
-
-      {/* Pernas — coxa fixa, tibia rotaciona para cima */}
+      <rect x="25" y="125" width="135" height="7" rx="2" fill={accent} opacity={0.5} />
+      <Head cx={37} cy={120} color={accent} />
+      <Bone x1={43} y1={122} x2={140} y2={123} color={accent} w={P.STROKE_BODY} />
+      {/* bracos para a frente (apoiados) */}
+      <Bone x1={60} y1={122} x2={48} y2={108} color={accent} />
+      <Bone x1={75} y1={122} x2={62} y2={108} color={accent} />
+      <Joint cx={140} cy={123} color={accent} />
+      {/* tibia roda 0 → -100 (de horizontal para vertical para cima) */}
       <g transform="translate(140 123)">
         <g>
           <animateTransform
@@ -782,18 +1221,19 @@ function LegCurl({ accent }) {
             dur="2.2s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Limb x1={0} y1={0} x2={40} y2={0} color={accent} />
-          <Joint cx={45} cy={0} r={4} fill={accent} />
+          <Bone x1={0} y1={0} x2={P.SHIN} y2={0} color={accent} w={P.STROKE_BODY} />
+          <Foot cx={P.SHIN} cy={0} color={accent} angle={0} />
         </g>
       </g>
     </g>
   );
 }
 
-/** CALF RAISE — sobe nas pontas dos pes. */
+/** PANTURRILHA — sobe nas pontas dos pes. */
 function CalfRaise({ accent }) {
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
@@ -801,43 +1241,24 @@ function CalfRaise({ accent }) {
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 6; 0 -8; 0 6"
+          values="0 4; 0 -10; 0 4"
           dur="1.4s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Joint cx={100} cy={60} fill={accent} />
-        <Limb x1={100} y1={67} x2={100} y2={120} color={accent} />
-        <Limb x1={92} y1={78} x2={88} y2={108} color={accent} />
-        <Limb x1={108} y1={78} x2={112} y2={108} color={accent} />
-        <Limb x1={100} y1={120} x2={92} y2={160} color={accent} />
-        <Limb x1={100} y1={120} x2={108} y2={160} color={accent} />
-        {/* Pes — pequenos triangulos a apontar para baixo/frente */}
-        <line
-          x1={92}
-          y1={160}
-          x2={82}
-          y2={160}
-          stroke={accent}
-          strokeWidth={STROKE_W}
-          strokeLinecap="round"
-        />
-        <line
-          x1={108}
-          y1={160}
-          x2={118}
-          y2={160}
-          stroke={accent}
-          strokeWidth={STROKE_W}
-          strokeLinecap="round"
-        />
+        <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
+        <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-30} />
+        <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={-30} />
+        {/* bracos relaxados */}
+        <Bone x1={100 - P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 - P.SHOULDER_W - 4} y2={pelvisY - P.TORSO + P.UPPER_ARM + 4} color={accent} />
+        <Bone x1={100 + P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 + P.SHOULDER_W + 4} y2={pelvisY - P.TORSO + P.UPPER_ARM + 4} color={accent} />
       </g>
     </g>
   );
 }
 
-/** PRANCHA / PLANK — posicao estatica com leve oscilacao. */
+/** PRANCHA — posicao estatica com leve respiracao. */
 function Plank({ accent }) {
   return (
     <g>
@@ -846,227 +1267,247 @@ function Plank({ accent }) {
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 2; 0 0"
-          dur="1.6s"
+          values="0 0; 0 1.5; 0 0"
+          dur="2s"
           repeatCount="indefinite"
         />
-        <Joint cx={45} cy={120} fill={accent} />
-        <Limb x1={51} y1={122} x2={155} y2={132} color={accent} />
-        {/* Antebracos no chao */}
-        <Limb x1={70} y1={122} x2={60} y2={170} color={accent} />
-        <Limb x1={60} y1={170} x2={80} y2={170} color={accent} w={STROKE_W} />
-        <Limb x1={80} y1={122} x2={75} y2={170} color={accent} />
-        {/* Pernas estendidas */}
-        <Limb x1={155} y1={132} x2={175} y2={170} color={accent} />
-        <Limb x1={155} y1={132} x2={170} y2={170} color={accent} />
+        <Head cx={48} cy={120} color={accent} />
+        <Bone x1={55} y1={122} x2={150} y2={134} color={accent} w={P.STROKE_BODY} />
+        {/* antebracos a apoiar no chao (de baixo) */}
+        <Bone x1={65} y1={123} x2={62} y2={158} color={accent} />
+        <Bone x1={62} y1={158} x2={82} y2={170} color={accent} />
+        <Joint cx={62} cy={158} color={accent} />
+        <Bone x1={75} y1={125} x2={72} y2={158} color={accent} />
+        <Bone x1={72} y1={158} x2={90} y2={170} color={accent} />
+        <Joint cx={72} cy={158} color={accent} />
+        {/* pernas estendidas ate aos pes */}
+        <Joint cx={150} cy={134} color={accent} />
+        <Bone x1={150} y1={134} x2={185} y2={172} color={accent} w={P.STROKE_BODY} />
+        <Foot cx={185} cy={172} color={accent} angle={-30} />
       </g>
     </g>
   );
 }
 
-/** CRUNCH / ABDOMINAL — deitado, tronco enrola. */
+/** CRUNCH — deitado, tronco enrola subindo da anca. */
 function Crunch({ accent }) {
   return (
     <g>
       <Floor color={accent} />
       {/* Pernas dobradas (fixas) */}
-      <Limb x1={130} y1={130} x2={150} y2={150} color={accent} />
-      <Limb x1={130} y1={130} x2={155} y2={155} color={accent} />
-      <Limb x1={150} y1={150} x2={170} y2={150} color={accent} />
-      <Limb x1={155} y1={155} x2={170} y2={155} color={accent} />
-
-      {/* Tronco + cabeca — rota a partir da anca */}
-      <g transform="translate(130 130)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="0; -45; 0"
-            dur="1.6s"
-            repeatCount="indefinite"
-            calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-          />
-          <Limb x1={0} y1={0} x2={-65} y2={0} color={accent} />
-          <Joint cx={-72} cy={0} fill={accent} />
-          {/* Bracos cruzados sobre o peito */}
-          <Limb x1={-30} y1={0} x2={-40} y2={-10} color={accent} />
-          <Limb x1={-50} y1={0} x2={-60} y2={-10} color={accent} />
-        </g>
-      </g>
-    </g>
-  );
-}
-
-/** LEG RAISE — deitado de costas, pernas sobem. */
-function LegRaise({ accent }) {
-  return (
-    <g>
-      <Floor color={accent} />
-      {/* Tronco horizontal fixo */}
-      <Joint cx={45} cy={140} fill={accent} />
-      <Limb x1={51} y1={142} x2={130} y2={140} color={accent} />
-      {/* Bracos ao lado */}
-      <Limb x1={75} y1={142} x2={75} y2={170} color={accent} />
-      <Limb x1={95} y1={142} x2={95} y2={170} color={accent} />
-
-      {/* Pernas — rotacionam a partir das ancas */}
+      <ArticulatedLeg pivotX={130} pivotY={140} thighAngle={45} shinAngle={45} color={accent} footAngle={-90} />
+      <ArticulatedLeg pivotX={130} pivotY={146} thighAngle={45} shinAngle={45} color={accent} footAngle={-90} />
+      {/* Tronco — rota no quadril */}
       <g transform="translate(130 140)">
         <g>
           <animateTransform
             attributeName="transform"
             type="rotate"
-            values="0; -85; 0"
-            dur="2.2s"
+            values="180; 135; 180"
+            dur="1.8s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Limb x1={0} y1={0} x2={40} y2={0} color={accent} />
-          <Limb x1={0} y1={0} x2={42} y2={6} color={accent} />
+          <Bone x1={0} y1={0} x2={0} y2={P.TORSO} color={accent} w={P.STROKE_BODY} />
+          {/* head */}
+          <Head cx={0} cy={P.TORSO + P.NECK + P.HEAD_R} color={accent} />
+          {/* bracos cruzados sobre o peito */}
+          <Bone x1={-6} y1={P.TORSO * 0.55} x2={4} y2={P.TORSO * 0.7} color={accent} />
+          <Bone x1={6} y1={P.TORSO * 0.55} x2={-4} y2={P.TORSO * 0.7} color={accent} />
         </g>
       </g>
     </g>
   );
 }
 
-/** RUSSIAN TWIST — sentado, tronco roda lateralmente. */
+/** LEG RAISE — deitado de costas, pernas sobem juntas. */
+function LegRaise({ accent }) {
+  return (
+    <g>
+      <Floor color={accent} />
+      {/* Tronco horizontal */}
+      <Head cx={42} cy={140} color={accent} />
+      <Bone x1={49} y1={142} x2={130} y2={142} color={accent} w={P.STROKE_BODY} />
+      {/* bracos ao lado, palmas no chao */}
+      <Bone x1={75} y1={142} x2={72} y2={172} color={accent} />
+      <Bone x1={95} y1={142} x2={92} y2={172} color={accent} />
+
+      {/* Pernas — coxa rota da anca */}
+      <g transform="translate(130 142)">
+        <g>
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            values="0; -90; 0"
+            dur="2.4s"
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines={EASE}
+          />
+          <Bone x1={0} y1={0} x2={P.THIGH} y2={0} color={accent} w={P.STROKE_BODY} />
+          <Joint cx={P.THIGH} cy={0} color={accent} />
+          <Bone x1={P.THIGH} y1={0} x2={P.THIGH + P.SHIN} y2={2} color={accent} w={P.STROKE_BODY} />
+          <Foot cx={P.THIGH + P.SHIN} cy={2} color={accent} angle={0} />
+        </g>
+      </g>
+    </g>
+  );
+}
+
+/** RUSSIAN TWIST — sentado em V; tronco roda lateral. */
 function RussianTwist({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Pernas levantadas (fixas, em V) */}
-      <Limb x1={100} y1={130} x2={70} y2={108} color={accent} />
-      <Limb x1={100} y1={130} x2={130} y2={108} color={accent} />
+      {/* Pernas levantadas em V (fixas) */}
+      <Bone x1={100} y1={130} x2={68} y2={108} color={accent} w={P.STROKE_BODY} />
+      <Bone x1={100} y1={130} x2={132} y2={108} color={accent} w={P.STROKE_BODY} />
+      <Joint cx={100} cy={130} color={accent} r={P.JOINT_R + 0.5} />
+      {/* Foot tips */}
+      <Foot cx={68} cy={108} color={accent} angle={180} />
+      <Foot cx={132} cy={108} color={accent} angle={0} />
 
-      {/* Tronco que roda lateralmente */}
+      {/* Tronco — roda lateralmente */}
       <g transform="translate(100 130)">
         <g>
           <animateTransform
             attributeName="transform"
             type="rotate"
-            values="-35; 35; -35"
+            values="-30; 30; -30"
             dur="2s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Joint cx={0} cy={-50} fill={accent} />
-          <Limb x1={0} y1={-43} x2={0} y2={0} color={accent} />
-          {/* Bracos juntos a frente */}
-          <Limb x1={-8} y1={-32} x2={0} y2={-10} color={accent} />
-          <Limb x1={8} y1={-32} x2={0} y2={-10} color={accent} />
-          <MiniDumbbell x={0} y={-8} scale={1.1} color={accent} />
+          <Bone x1={0} y1={0} x2={0} y2={-P.TORSO} color={accent} w={P.STROKE_BODY} />
+          <Head cx={0} cy={-P.TORSO - P.NECK - P.HEAD_R} color={accent} />
+          {/* bracos juntos a frente */}
+          <Bone x1={-7} y1={-P.TORSO + 4} x2={0} y2={-12} color={accent} />
+          <Bone x1={7} y1={-P.TORSO + 4} x2={0} y2={-12} color={accent} />
+          <Dumbbell x={0} y={-10} scale={1.2} color={accent} rotation={90} />
         </g>
       </g>
     </g>
   );
 }
 
-/** BURPEE — agacha-se, salta para prancha, salta para o ar. Simplificacao: dois estados. */
+/** BURPEE — squat → prancha → salto. Simplificado em duas fases. */
 function Burpee({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Stickman que alterna entre prancha e em pe (com escala) */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 -10; 0 0"
-          dur="1.6s"
+          values="0 0; 0 -22; 0 0"
+          dur="1.8s"
           repeatCount="indefinite"
+          calcMode="spline"
+          keySplines={EASE}
         />
-        <Joint cx={100} cy={70} fill={accent}>
-          <animate
-            attributeName="cy"
-            values="70; 60; 70"
-            dur="1.6s"
-            repeatCount="indefinite"
-          />
-        </Joint>
-        <Limb x1={100} y1={77} x2={100} y2={130} color={accent} />
-        <Limb x1={100} y1={130} x2={88} y2={170} color={accent} />
-        <Limb x1={100} y1={130} x2={112} y2={170} color={accent} />
-        {/* Bracos sobem no salto */}
-        <g transform="translate(100 80)">
-          <g>
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              values="0; 160; 0"
-              dur="1.6s"
-              repeatCount="indefinite"
-              additive="sum"
-            />
-            <Limb x1={-10} y1={0} x2={-10} y2={30} color={accent} />
-            <Limb x1={10} y1={0} x2={10} y2={30} color={accent} />
-          </g>
-        </g>
+        {/* corpo em pe (no salto) */}
+        <ArticulatedLeg pivotX={94} pivotY={130} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+        <ArticulatedLeg pivotX={106} pivotY={130} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
+        <Torso pelvisX={100} pelvisY={130} color={accent} />
+        {/* bracos sobem no salto */}
+        <ArticulatedArm
+          pivotX={100 - P.SHOULDER_W}
+          pivotY={130 - P.TORSO}
+          upperAngles="170; 5; 170"
+          forearmAngle={0}
+          duration="1.8s"
+          keySplines={EASE}
+          color={accent}
+        />
+        <ArticulatedArm
+          pivotX={100 + P.SHOULDER_W}
+          pivotY={130 - P.TORSO}
+          upperAngles="-170; -5; -170"
+          forearmAngle={0}
+          duration="1.8s"
+          keySplines={EASE}
+          color={accent}
+        />
       </g>
-
-      {/* Setas de movimento (decorativas) */}
+      {/* setas de movimento */}
       <path
-        d="M 60 120 Q 70 90 80 100"
+        d="M 60 100 Q 50 70 75 60"
         stroke={accent}
-        strokeWidth="2"
+        strokeWidth={2}
         fill="none"
-        opacity="0.45"
+        opacity={0.45}
+        strokeDasharray="3 3"
+      />
+      <path
+        d="M 140 100 Q 150 70 125 60"
+        stroke={accent}
+        strokeWidth={2}
+        fill="none"
+        opacity={0.45}
         strokeDasharray="3 3"
       />
     </g>
   );
 }
 
-/** MOUNTAIN CLIMBER — prancha com joelhos a alternar. */
+/** MOUNTAIN CLIMBER — prancha com joelhos a alternar para o peito. */
 function MountainClimber({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Tronco em prancha */}
-      <Joint cx={45} cy={105} fill={accent} />
-      <Limb x1={51} y1={107} x2={155} y2={120} color={accent} />
-      {/* Bracos verticais */}
-      <Limb x1={70} y1={107} x2={70} y2={170} color={accent} />
-      <Limb x1={80} y1={108} x2={80} y2={170} color={accent} />
+      <Head cx={48} cy={118} color={accent} />
+      <Bone x1={55} y1={120} x2={150} y2={132} color={accent} w={P.STROKE_BODY} />
+      {/* Bracos verticais (apoiados) */}
+      <Bone x1={68} y1={120} x2={68} y2={172} color={accent} />
+      <Joint cx={68} cy={146} color={accent} />
+      <Bone x1={80} y1={122} x2={80} y2={172} color={accent} />
+      <Joint cx={80} cy={147} color={accent} />
+      <Joint cx={150} cy={132} color={accent} r={P.JOINT_R + 0.5} />
 
-      {/* Perna 1 — joelho a chegar ao peito */}
-      <g transform="translate(155 120)">
+      {/* Pernas a alternar */}
+      <g transform="translate(150 132)">
         <g>
           <animateTransform
             attributeName="transform"
-            type="translate"
-            values="0 0; -50 10; 0 0"
-            dur="0.8s"
+            type="rotate"
+            values="0; -75; 0"
+            dur="0.7s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Limb x1={0} y1={0} x2={20} y2={45} color={accent} />
+          <Bone x1={0} y1={0} x2={P.THIGH * 0.85} y2={0} color={accent} w={P.STROKE_BODY} />
+          <Joint cx={P.THIGH * 0.85} cy={0} color={accent} />
+          <Bone x1={P.THIGH * 0.85} y1={0} x2={P.THIGH * 0.85 + 6} y2={P.SHIN * 0.7} color={accent} w={P.STROKE_BODY} />
+          <Foot cx={P.THIGH * 0.85 + 6} cy={P.SHIN * 0.7} color={accent} angle={-90} />
         </g>
       </g>
-      {/* Perna 2 — alterna (offset) */}
-      <g transform="translate(155 120)">
+      <g transform="translate(150 138)">
         <g>
           <animateTransform
             attributeName="transform"
-            type="translate"
-            values="0 0; -50 10; 0 0"
-            dur="0.8s"
-            begin="0.4s"
+            type="rotate"
+            values="-75; 0; -75"
+            dur="0.7s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Limb x1={0} y1={0} x2={15} y2={50} color={accent} />
+          <Bone x1={0} y1={0} x2={P.THIGH * 0.85} y2={0} color={accent} w={P.STROKE_BODY} />
+          <Joint cx={P.THIGH * 0.85} cy={0} color={accent} />
+          <Bone x1={P.THIGH * 0.85} y1={0} x2={P.THIGH * 0.85 + 6} y2={P.SHIN * 0.7} color={accent} w={P.STROKE_BODY} />
+          <Foot cx={P.THIGH * 0.85 + 6} cy={P.SHIN * 0.7} color={accent} angle={-90} />
         </g>
       </g>
     </g>
   );
 }
 
-/** JUMPING JACKS — bracos e pernas abrem/fecham no salto. */
+/** POLICHINELOS — bracos abrem por cima, pernas afastam-se. */
 function JumpingJacks({ accent }) {
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
@@ -1078,62 +1519,47 @@ function JumpingJacks({ accent }) {
           dur="0.8s"
           repeatCount="indefinite"
         />
-        <Joint cx={100} cy={60} fill={accent} />
-        <Limb x1={100} y1={67} x2={100} y2={120} color={accent} />
-
-        {/* Braco esquerdo abre */}
-        <g transform="translate(100 75)">
-          <g>
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              values="-15; -160; -15"
-              dur="0.8s"
-              repeatCount="indefinite"
-            />
-            <Limb x1={0} y1={0} x2={0} y2={36} color={accent} />
-          </g>
-        </g>
-        {/* Braco direito abre */}
-        <g transform="translate(100 75)">
-          <g>
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              values="15; 160; 15"
-              dur="0.8s"
-              repeatCount="indefinite"
-            />
-            <Limb x1={0} y1={0} x2={0} y2={36} color={accent} />
-          </g>
-        </g>
-
-        {/* Perna esquerda abre */}
-        <g transform="translate(100 120)">
-          <g>
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              values="-5; -25; -5"
-              dur="0.8s"
-              repeatCount="indefinite"
-            />
-            <Limb x1={0} y1={0} x2={0} y2={45} color={accent} />
-          </g>
-        </g>
-        {/* Perna direita abre */}
-        <g transform="translate(100 120)">
-          <g>
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              values="5; 25; 5"
-              dur="0.8s"
-              repeatCount="indefinite"
-            />
-            <Limb x1={0} y1={0} x2={0} y2={45} color={accent} />
-          </g>
-        </g>
+        <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
+        {/* Bracos */}
+        <ArticulatedArm
+          pivotX={100 - P.SHOULDER_W}
+          pivotY={pelvisY - P.TORSO}
+          upperAngles="170; 10; 170"
+          forearmAngle={0}
+          duration="0.8s"
+          keySplines={EASE}
+          color={accent}
+        />
+        <ArticulatedArm
+          pivotX={100 + P.SHOULDER_W}
+          pivotY={pelvisY - P.TORSO}
+          upperAngles="-170; -10; -170"
+          forearmAngle={0}
+          duration="0.8s"
+          keySplines={EASE}
+          color={accent}
+        />
+        {/* Pernas */}
+        <ArticulatedLeg
+          pivotX={94}
+          pivotY={pelvisY}
+          thighAngles="178; 158; 178"
+          shinAngles="2; 0; 2"
+          duration="0.8s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-12}
+        />
+        <ArticulatedLeg
+          pivotX={106}
+          pivotY={pelvisY}
+          thighAngles="182; 202; 182"
+          shinAngles="-2; 0; -2"
+          duration="0.8s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={12}
+        />
       </g>
     </g>
   );
@@ -1141,114 +1567,100 @@ function JumpingJacks({ accent }) {
 
 /** KETTLEBELL SWING — hip hinge com kettlebell a oscilar. */
 function KettlebellSwing({ accent }) {
+  const pelvisY = 132;
   return (
     <g>
       <Floor color={accent} />
-      {/* Pernas em pe ligeiramente abertas */}
-      <Limb x1={100} y1={120} x2={86} y2={165} color={accent} />
-      <Limb x1={100} y1={120} x2={114} y2={165} color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={170} shinAngle={10} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={185} shinAngle={-10} color={accent} footAngle={5} />
 
-      {/* Tronco que se inclina ligeiramente */}
-      <g style={{ transformOrigin: "100px 120px" }}>
-        <animateTransform
-          attributeName="transform"
-          type="rotate"
-          values="0 100 120; -25 100 120; 0 100 120"
-          dur="2s"
-          repeatCount="indefinite"
-          calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-        />
-        <Joint cx={100} cy={70} fill={accent} />
-        <Limb x1={100} y1={77} x2={100} y2={120} color={accent} />
-      </g>
+      <Torso
+        pelvisX={100}
+        pelvisY={pelvisY}
+        bendAngles="0; -40; 0"
+        duration="2s"
+        keySplines={EASE}
+        color={accent}
+      />
 
-      {/* Bracos + kettlebell a oscilar como pendulo */}
-      <g transform="translate(100 80)">
+      {/* Bracos a oscilar com kettlebell */}
+      <g transform={`translate(100 ${pelvisY - 4})`}>
         <g>
           <animateTransform
             attributeName="transform"
             type="rotate"
-            values="-90; 30; -90"
+            values="-90; 50; -90"
             dur="2s"
             repeatCount="indefinite"
             calcMode="spline"
-            keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+            keySplines={EASE}
           />
-          <Limb x1={-8} y1={0} x2={0} y2={48} color={accent} />
-          <Limb x1={8} y1={0} x2={0} y2={48} color={accent} />
-          {/* Kettlebell */}
-          <ellipse cx={0} cy={56} rx={10} ry={11} fill={accent} />
-          <path
-            d="M -7 50 Q -7 44 0 44 Q 7 44 7 50"
-            stroke={accent}
-            strokeWidth="2.5"
-            fill="none"
-          />
+          <Bone x1={-7} y1={0} x2={0} y2={P.UPPER_ARM + P.FOREARM - 4} color={accent} />
+          <Bone x1={7} y1={0} x2={0} y2={P.UPPER_ARM + P.FOREARM - 4} color={accent} />
+          <g transform={`translate(0 ${P.UPPER_ARM + P.FOREARM + 6})`}>
+            <Kettlebell color={accent} scale={1} />
+          </g>
         </g>
       </g>
     </g>
   );
 }
 
-/** CARDIO RUN — corre no lugar (pernas alternam). */
+/** RUN IN PLACE — corre no lugar; bracos e pernas alternam. */
 function RunInPlace({ accent }) {
+  const pelvisY = 130;
   return (
     <g>
       <Floor color={accent} />
-      <Joint cx={100} cy={60} fill={accent} />
-      <Limb x1={100} y1={67} x2={100} y2={115} color={accent} />
-
-      {/* Bracos a alternar */}
-      <g transform="translate(100 75)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="-50; 30; -50"
-            dur="0.7s"
-            repeatCount="indefinite"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={32} color={accent} />
-        </g>
-      </g>
-      <g transform="translate(100 75)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="30; -50; 30"
-            dur="0.7s"
-            repeatCount="indefinite"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={32} color={accent} />
-        </g>
-      </g>
-
-      {/* Pernas a alternar */}
-      <g transform="translate(100 115)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="-25; 35; -25"
-            dur="0.7s"
-            repeatCount="indefinite"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={45} color={accent} />
-        </g>
-      </g>
-      <g transform="translate(100 115)">
-        <g>
-          <animateTransform
-            attributeName="transform"
-            type="rotate"
-            values="35; -25; 35"
-            dur="0.7s"
-            repeatCount="indefinite"
-          />
-          <Limb x1={0} y1={0} x2={0} y2={45} color={accent} />
-        </g>
+      <g>
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          values="0 0; 0 -3; 0 0"
+          dur="0.45s"
+          repeatCount="indefinite"
+        />
+        <Torso pelvisX={100} pelvisY={pelvisY} bendAngle={5} color={accent} />
+        {/* Bracos a alternar */}
+        <ArticulatedArm
+          pivotX={100 - P.SHOULDER_W}
+          pivotY={pelvisY - P.TORSO}
+          upperAngles="-130; 70; -130"
+          forearmAngles="-80; -80; -80"
+          duration="0.7s"
+          keySplines={EASE}
+          color={accent}
+        />
+        <ArticulatedArm
+          pivotX={100 + P.SHOULDER_W}
+          pivotY={pelvisY - P.TORSO}
+          upperAngles="130; -70; 130"
+          forearmAngles="80; 80; 80"
+          duration="0.7s"
+          keySplines={EASE}
+          color={accent}
+        />
+        {/* Pernas a alternar — uma sobe (anca flecte), outra estica para tras */}
+        <ArticulatedLeg
+          pivotX={94}
+          pivotY={pelvisY}
+          thighAngles="160; 230; 160"
+          shinAngles="20; -90; 20"
+          duration="0.7s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={-30}
+        />
+        <ArticulatedLeg
+          pivotX={106}
+          pivotY={pelvisY}
+          thighAngles="200; 130; 200"
+          shinAngles="-20; 90; -20"
+          duration="0.7s"
+          keySplines={EASE}
+          color={accent}
+          footAngle={30}
+        />
       </g>
     </g>
   );
@@ -1259,11 +1671,10 @@ function Dips({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Barras paralelas */}
-      <line x1="55" y1="90" x2="55" y2="170" stroke={accent} strokeWidth="3" opacity="0.5" />
-      <line x1="145" y1="90" x2="145" y2="170" stroke={accent} strokeWidth="3" opacity="0.5" />
-      <line x1="50" y1="90" x2="80" y2="90" stroke={accent} strokeWidth="3" />
-      <line x1="120" y1="90" x2="150" y2="90" stroke={accent} strokeWidth="3" />
+      <line x1="48" y1="80" x2="48" y2="178" stroke={accent} strokeWidth={3} opacity={0.5} />
+      <line x1="152" y1="80" x2="152" y2="178" stroke={accent} strokeWidth={3} opacity={0.5} />
+      <line x1="40" y1="80" x2="80" y2="80" stroke={accent} strokeWidth={4} />
+      <line x1="120" y1="80" x2="160" y2="80" stroke={accent} strokeWidth={4} />
 
       <g>
         <animateTransform
@@ -1273,130 +1684,175 @@ function Dips({ accent }) {
           dur="2.4s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Joint cx={100} cy={75} fill={accent} />
-        <Limb x1={100} y1={82} x2={100} y2={130} color={accent} />
-        <Limb x1={88} y1={88} x2={70} y2={92} color={accent} />
-        <Limb x1={112} y1={88} x2={130} y2={92} color={accent} />
+        <Torso pelvisX={100} pelvisY={130} bendAngle={10} color={accent} />
+        {/* Bracos — flectem no cotovelo, mao fixa nas barras */}
+        <ArticulatedArm
+          pivotX={100 - P.SHOULDER_W}
+          pivotY={130 - P.TORSO}
+          upperAngles="-30; -90; -30"
+          forearmAngles="20; 90; 20"
+          duration="2.4s"
+          keySplines={EASE}
+          color={accent}
+        />
+        <ArticulatedArm
+          pivotX={100 + P.SHOULDER_W}
+          pivotY={130 - P.TORSO}
+          upperAngles="30; 90; 30"
+          forearmAngles="-20; -90; -20"
+          duration="2.4s"
+          keySplines={EASE}
+          color={accent}
+        />
         {/* Pernas dobradas atras */}
-        <Limb x1={100} y1={130} x2={92} y2={150} color={accent} />
-        <Limb x1={100} y1={130} x2={108} y2={150} color={accent} />
+        <ArticulatedLeg
+          pivotX={94}
+          pivotY={130}
+          thighAngle={205}
+          shinAngle={-90}
+          color={accent}
+          footAngle={-30}
+        />
+        <ArticulatedLeg
+          pivotX={106}
+          pivotY={130}
+          thighAngle={195}
+          shinAngle={-80}
+          color={accent}
+          footAngle={-30}
+        />
       </g>
     </g>
   );
 }
 
-/** SHRUG — encolhe ombros, halteres ao lado. */
+/** ENCOLHIMENTO / SHRUG — sobe ombros segurando halteres. */
 function Shrug({ accent }) {
+  const pelvisY = 132;
   return (
     <g>
       <Floor color={accent} />
-      <Joint cx={100} cy={60} fill={accent} />
-      <Limb x1={100} y1={67} x2={100} y2={120} color={accent} />
-      <Limb x1={100} y1={120} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={120} x2={112} y2={170} color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
 
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 0; 0 -8; 0 0"
-          dur="1.4s"
+          values="0 0; 0 -7; 0 0"
+          dur="1.6s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Limb x1={88} y1={75} x2={84} y2={130} color={accent} />
-        <Limb x1={112} y1={75} x2={116} y2={130} color={accent} />
-        <MiniDumbbell x={84} y={135} scale={1.1} color={accent} rotation={90} />
-        <MiniDumbbell x={116} y={135} scale={1.1} color={accent} rotation={90} />
+        <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
+        {/* bracos rectos para baixo com halteres */}
+        <Bone x1={100 - P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 - P.SHOULDER_W} y2={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM} color={accent} />
+        <Bone x1={100 + P.SHOULDER_W} y1={pelvisY - P.TORSO} x2={100 + P.SHOULDER_W} y2={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM} color={accent} />
+        <Joint cx={100 - P.SHOULDER_W} cy={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Joint cx={100 + P.SHOULDER_W} cy={pelvisY - P.TORSO + P.UPPER_ARM} color={accent} />
+        <Dumbbell x={100 - P.SHOULDER_W} y={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM + 4} scale={1.1} color={accent} rotation={90} />
+        <Dumbbell x={100 + P.SHOULDER_W} y={pelvisY - P.TORSO + P.UPPER_ARM + P.FOREARM + 4} scale={1.1} color={accent} rotation={90} />
       </g>
     </g>
   );
 }
 
-/** FACE PULL — cabo para a cara, abrir cotovelos. */
+/** FACE PULL — cabos puxam para a face, cotovelos altos. */
 function FacePull({ accent }) {
+  const pelvisY = 138;
   return (
     <g>
-      {/* Polia */}
-      <circle cx="100" cy="35" r="6" fill={accent} opacity="0.6" />
+      <circle cx="100" cy="30" r="5" fill={accent} opacity={0.6} />
       <Floor color={accent} />
+      <ArticulatedLeg pivotX={94} pivotY={pelvisY} thighAngle={178} shinAngle={2} color={accent} footAngle={-5} />
+      <ArticulatedLeg pivotX={106} pivotY={pelvisY} thighAngle={182} shinAngle={-2} color={accent} footAngle={5} />
+      <Torso pelvisX={100} pelvisY={pelvisY} color={accent} />
 
-      <Joint cx={100} cy={75} fill={accent} />
-      <Limb x1={100} y1={82} x2={100} y2={130} color={accent} />
-      <Limb x1={100} y1={130} x2={88} y2={170} color={accent} />
-      <Limb x1={100} y1={130} x2={112} y2={170} color={accent} />
-
-      {/* Bracos + corda — cotovelos sobem aos lados */}
-      <g>
-        <animateTransform
-          attributeName="transform"
-          type="translate"
-          values="0 -8; 0 8; 0 -8"
-          dur="2.2s"
-          repeatCount="indefinite"
-          calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
-        />
-        <Limb x1={88} y1={88} x2={70} y2={75} color={accent} />
-        <Limb x1={112} y1={88} x2={130} y2={75} color={accent} />
-        <line x1="70" y1="75" x2="100" y2="40" stroke={accent} strokeWidth="1.5" opacity="0.55" />
-        <line x1="130" y1="75" x2="100" y2="40" stroke={accent} strokeWidth="1.5" opacity="0.55" />
-      </g>
+      {/* Bracos: upper rota -90 (horizontal), forearm flecte para a face */}
+      <ArticulatedArm
+        pivotX={100 - P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="-110; -100; -110"
+        forearmAngles="-30; -100; -30"
+        duration="2.2s"
+        keySplines={EASE}
+        color={accent}
+      />
+      <ArticulatedArm
+        pivotX={100 + P.SHOULDER_W}
+        pivotY={pelvisY - P.TORSO}
+        upperAngles="110; 100; 110"
+        forearmAngles="30; 100; 30"
+        duration="2.2s"
+        keySplines={EASE}
+        color={accent}
+      />
+      {/* cabos */}
+      <line x1="80" y1="85" x2="100" y2="32" stroke={accent} strokeWidth={1.5} opacity={0.5} />
+      <line x1="120" y1="85" x2="100" y2="32" stroke={accent} strokeWidth={1.5} opacity={0.5} />
     </g>
   );
 }
 
-/** HIP THRUST — costas no banco, ancas sobem e descem. */
+/** HIP THRUST — costas no banco, ancas sobem com barra. */
 function HipThrust({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Banco */}
-      <rect x="30" y="105" width="60" height="6" rx="2" fill={accent} opacity="0.5" />
-      <rect x="34" y="111" width="4" height="40" fill={accent} opacity="0.4" />
-      <rect x="80" y="111" width="4" height="40" fill={accent} opacity="0.4" />
+      <Bench x={28} y={108} w={50} color={accent} />
+      <Head cx={48} cy={102} color={accent} />
 
-      {/* Ombros apoiados no banco */}
-      <Joint cx={50} cy={100} fill={accent} />
-
-      {/* Tronco + ancas — sobem e descem */}
       <g>
         <animateTransform
           attributeName="transform"
           type="translate"
-          values="0 12; 0 -6; 0 12"
+          values="0 14; 0 -6; 0 14"
           dur="2.2s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Limb x1={56} y1={102} x2={130} y2={120} color={accent} />
-        {/* Pernas dobradas — pes apoiados */}
-        <Limb x1={130} y1={120} x2={150} y2={160} color={accent} />
-        <Limb x1={130} y1={120} x2={155} y2={155} color={accent} />
-        {/* Barra no quadril */}
-        <Barbell x={120} y={120} scale={0.9} color={accent} />
+        {/* Tronco horizontal-ish */}
+        <Bone x1={55} y1={104} x2={130} y2={120} color={accent} w={P.STROKE_BODY} />
+        <Joint cx={130} cy={120} color={accent} r={P.JOINT_R + 0.5} />
+        {/* Pernas dobradas, pes no chao */}
+        <ArticulatedLeg
+          pivotX={130}
+          pivotY={120}
+          thighAngle={42}
+          shinAngle={48}
+          color={accent}
+          footAngle={-90}
+        />
+        <ArticulatedLeg
+          pivotX={130}
+          pivotY={126}
+          thighAngle={42}
+          shinAngle={48}
+          color={accent}
+          footAngle={-90}
+        />
+        {/* Barra na anca */}
+        <Barbell x={130} y={120} scale={0.95} color={accent} />
       </g>
     </g>
   );
 }
 
-/** GLUTE BRIDGE — deitado, ancas sobem (sem peso). */
+/** GLUTE BRIDGE — deitado, anca sobe sem peso. */
 function GluteBridge({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      {/* Stickman deitado, ombros no chao */}
-      <Joint cx={45} cy={140} fill={accent} />
-      <Limb x1={51} y1={142} x2={75} y2={150} color={accent} />
-      {/* Bracos ao lado no chao */}
-      <Limb x1={60} y1={143} x2={45} y2={170} color={accent} />
-      <Limb x1={60} y1={143} x2={70} y2={170} color={accent} />
+      <Head cx={42} cy={140} color={accent} />
+      <Bone x1={49} y1={142} x2={75} y2={148} color={accent} w={P.STROKE_BODY} />
+      {/* bracos ao lado (no chao) */}
+      <Bone x1={62} y1={143} x2={48} y2={170} color={accent} />
+      <Bone x1={62} y1={143} x2={70} y2={170} color={accent} />
 
-      {/* Anca sobe e desce */}
       <g>
         <animateTransform
           attributeName="transform"
@@ -1405,21 +1861,21 @@ function GluteBridge({ accent }) {
           dur="2.2s"
           repeatCount="indefinite"
           calcMode="spline"
-          keySplines="0.42 0 0.58 1; 0.42 0 0.58 1"
+          keySplines={EASE}
         />
-        <Limb x1={75} y1={150} x2={130} y2={150} color={accent} />
-        <Limb x1={130} y1={150} x2={145} y2={170} color={accent} />
-        <Limb x1={130} y1={150} x2={155} y2={170} color={accent} />
+        <Bone x1={75} y1={148} x2={130} y2={148} color={accent} w={P.STROKE_BODY} />
+        <Joint cx={130} cy={148} color={accent} r={P.JOINT_R + 0.5} />
+        <ArticulatedLeg pivotX={130} pivotY={148} thighAngle={42} shinAngle={48} color={accent} footAngle={-90} />
+        <ArticulatedLeg pivotX={130} pivotY={154} thighAngle={42} shinAngle={48} color={accent} footAngle={-90} />
       </g>
     </g>
   );
 }
 
 // ==========================================================================
-// MAPEAMENTO PT/EN → CHAVE DE ANIMACAO
+// MAPEAMENTO PT/EN
 // ==========================================================================
 
-/** Lista de pares [substring, key]. Match por inclusao no nome normalizado. */
 const PT_PATTERNS = [
   // Peito
   ["supino reto", "bench_press"],
@@ -1449,7 +1905,6 @@ const PT_PATTERNS = [
   ["pullup", "pull_up"],
   ["barra fixa", "pull_up"],
   ["chin up", "pull_up"],
-  ["elevac", "pull_up"],
   ["puxada", "lat_pulldown"],
   ["pulldown", "lat_pulldown"],
   ["lat pull", "lat_pulldown"],
@@ -1566,10 +2021,6 @@ const PT_PATTERNS = [
   ["turkish", "kettlebell_swing"],
 ];
 
-// ==========================================================================
-// FALLBACK POR CATEGORIA
-// ==========================================================================
-
 const CATEGORY_FALLBACK = {
   peito: "bench_press",
   costas: "lat_pulldown",
@@ -1581,10 +2032,6 @@ const CATEGORY_FALLBACK = {
   cardio: "jumping_jacks",
   full_body: "kettlebell_swing",
 };
-
-// ==========================================================================
-// REGISTO DE ANIMACOES
-// ==========================================================================
 
 export const STICKMAN_ANIMATIONS = {
   bench_press: BenchPress,
@@ -1622,11 +2069,6 @@ export const STICKMAN_ANIMATIONS = {
   glute_bridge: GluteBridge,
 };
 
-// ==========================================================================
-// RESOLUCAO
-// ==========================================================================
-
-/** Normaliza o nome para comparacao (lower, sem acentos, sem pontuacao). */
 function normalize(s) {
   if (!s) return "";
   return s
@@ -1638,35 +2080,20 @@ function normalize(s) {
     .trim();
 }
 
-/**
- * Devolve a chave da animacao mais apropriada para um nome+categoria.
- * Cascata: nome exato → substring no PT_PATTERNS → categoria → default.
- */
 export function resolveAnimationKey(name, category) {
   const norm = normalize(name);
-
-  // Match exato
-  if (norm && STICKMAN_ANIMATIONS[norm]) {
-    return norm;
-  }
-
-  // Match por substring no PT_PATTERNS
+  if (norm && STICKMAN_ANIMATIONS[norm]) return norm;
   if (norm) {
     for (const [pattern, key] of PT_PATTERNS) {
       if (norm.includes(pattern)) return key;
     }
   }
-
-  // Fallback por categoria
   if (category && CATEGORY_FALLBACK[category]) {
     return CATEGORY_FALLBACK[category];
   }
-
-  // Default global
   return "jumping_jacks";
 }
 
-/** Devolve o componente React para um nome+categoria. */
 export function resolveStickmanAnimation(name, category) {
   const key = resolveAnimationKey(name, category);
   return STICKMAN_ANIMATIONS[key] || JumpingJacks;
