@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export default function Modal({
@@ -30,7 +31,13 @@ export default function Modal({
     if (e.target === overlayRef.current) onClose();
   };
 
-  return (
+  // Renderizar via portal para garantir que o modal vive em document.body
+  // — sem isto fica preso a contextos de stacking criados por ancestrais
+  // (sticky, transform, filter, etc.), o que provoca o sintoma de "blur
+  // mas sem modal visivel" em paginas com elementos sticky (DailyPlan).
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div ref={overlayRef} onClick={handleOverlayClick} style={s.overlay}>
       <div style={s.modal}>
         {/* Header */}
@@ -65,25 +72,38 @@ export default function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 const s = {
   overlay: {
-    position: "fixed", inset: 0, zIndex: 9999,
-    paddingTop: "50vh",
+    // position fixed cobre todo o viewport. Sem paddingTop forçado —
+    // alignItems: flex-end já posiciona o modal no fundo, e a maxHeight
+    // do modal evita que ultrapasse o ecra.
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
     background: "rgba(0, 0, 0, 0.5)",
-    backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-    display: "flex", alignItems: "flex-end", justifyContent: "center",
+    backdropFilter: "blur(8px)",
+    WebkitBackdropFilter: "blur(8px)",
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "center",
     animation: "fadeIn 0.15s ease",
     boxSizing: "border-box",
+    overflow: "hidden",
   },
   modal: {
-    background: "var(--bg-surface)", borderRadius: "20px 20px 0 0",
-    width: "100%", maxWidth: 500,
+    background: "var(--bg-surface)",
+    borderRadius: "20px 20px 0 0",
+    width: "100%",
+    maxWidth: 500,
+    // dvh para se ajustar a chrome dinamico do browser mobile
     maxHeight: "92dvh",
-    display: "flex", flexDirection: "column",
+    display: "flex",
+    flexDirection: "column",
     animation: "slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
     boxShadow: "0 -8px 32px rgba(0, 0, 0, 0.18)",
     border: "none",
