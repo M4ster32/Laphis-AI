@@ -101,6 +101,7 @@ export default function PlanDetail() {
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [respondingId, setRespondingId] = useState(null);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Exercises for this plan
@@ -988,7 +989,7 @@ export default function PlanDetail() {
           </div>
         )}
 
-        {suggestions.map(sug => {
+        {(showAllSuggestions ? suggestions : suggestions.slice(0, 2)).map(sug => {
           const typeLabelsAdapt = {
             increase_volume: "↑ Volume",
             decrease_intensity: "↓ Intensidade",
@@ -1050,6 +1051,18 @@ export default function PlanDetail() {
             </div>
           );
         })}
+
+        {/* Toggle Ver mais / Ver menos quando ha mais de 2 sugestoes */}
+        {suggestions.length > 2 && (
+          <button
+            style={s.suggestionToggleAll}
+            onClick={() => setShowAllSuggestions(v => !v)}
+          >
+            {showAllSuggestions
+              ? "Mostrar menos"
+              : `Ver mais (${suggestions.length - 2})`}
+          </button>
+        )}
       </div>
 
       {/* Weekly Calendar View — only for training/combined plans */}
@@ -1286,15 +1299,34 @@ const s = {
     transition: "all 0.15s",
   },
 
-  // Weekly calendar styles
+  // Weekly calendar styles — scroll horizontal com snap nos cartoes
   calendarGrid: {
-    display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8,
+    display: "flex",
+    gap: 10,
     marginTop: 12,
+    overflowX: "auto",
+    overflowY: "hidden",
+    WebkitOverflowScrolling: "touch",
+    scrollSnapType: "x mandatory",
+    scrollPaddingLeft: 4,
+    paddingBottom: 6,
+    // esconder scrollbar visualmente em cima do conteudo (mobile)
+    msOverflowStyle: "none",
+    scrollbarWidth: "thin",
   },
   calendarDay: {
-    borderRadius: 10, padding: "10px 8px", border: "1.5px solid",
-    textAlign: "center", minHeight: 90, display: "flex",
-    flexDirection: "column", alignItems: "center", gap: 4,
+    flex: "0 0 auto",
+    width: 130,
+    scrollSnapAlign: "start",
+    borderRadius: 12,
+    padding: "12px 10px",
+    border: "1.5px solid",
+    textAlign: "center",
+    minHeight: 110,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
     transition: "transform 0.15s, box-shadow 0.15s",
   },
   calendarDayHeader: {
@@ -1302,19 +1334,35 @@ const s = {
     marginBottom: 2,
   },
   calendarDayName: {
-    fontSize: 11, fontWeight: 700, color: "var(--text-secondary)",
+    fontSize: 12, fontWeight: 700, color: "var(--text-secondary)",
     textTransform: "uppercase", letterSpacing: 0.5,
   },
   calendarDayTitle: {
-    fontSize: 11, fontWeight: 600, color: "var(--text)", margin: 0,
-    lineHeight: 1.3, overflow: "hidden", textOverflow: "ellipsis",
+    fontSize: 12, fontWeight: 600, color: "var(--text)", margin: 0,
+    lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis",
     display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+    width: "100%",
   },
   calendarDayCount: {
-    fontSize: 10, color: "var(--primary)", fontWeight: 600, marginTop: "auto",
+    fontSize: 11, color: "var(--primary)", fontWeight: 600, marginTop: "auto",
   },
   calendarDayRest: {
-    fontSize: 11, color: "var(--text-muted)", fontStyle: "italic",
+    fontSize: 12, color: "var(--text-muted)", fontStyle: "italic",
     margin: "auto 0",
+  },
+  // Botao toggle "Ver mais" para sugestoes
+  suggestionToggleAll: {
+    width: "100%",
+    marginTop: 10,
+    padding: "8px 12px",
+    background: "transparent",
+    border: "1px dashed var(--border)",
+    borderRadius: 10,
+    color: "var(--text-secondary)",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    transition: "background 0.15s, color 0.15s",
   },
 };

@@ -55,6 +55,7 @@ export default function DailyPlan() {
   const [constraint, setConstraint] = useState("");
   const [showWorkout, setShowWorkout] = useState(true);
   const [showMeals, setShowMeals] = useState(true);
+  const [showAllAdjustments, setShowAllAdjustments] = useState(false);
   const inputRef = useRef(null);
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -287,7 +288,10 @@ export default function DailyPlan() {
               <h4 style={s.adjustHistoryTitle}>
                 <Zap size={16} color="var(--primary)" /> Ajustes ({plan.adjustments.length})
               </h4>
-              {plan.adjustments.map((adj, i) => (
+              {(showAllAdjustments
+                ? plan.adjustments
+                : plan.adjustments.slice(-2)
+              ).map((adj, i) => (
                 <div key={i} style={s.adjustItem}>
                   <p style={s.adjustConstraint}>💬 &ldquo;{adj.constraint}&rdquo;</p>
                   {adj.changes?.map((ch, j) => (
@@ -295,6 +299,16 @@ export default function DailyPlan() {
                   ))}
                 </div>
               ))}
+              {plan.adjustments.length > 2 && (
+                <button
+                  style={s.adjustToggleAll}
+                  onClick={() => setShowAllAdjustments(v => !v)}
+                >
+                  {showAllAdjustments
+                    ? "Mostrar menos"
+                    : `Ver mais (${plan.adjustments.length - 2})`}
+                </button>
+              )}
             </div>
           )}
 
@@ -648,6 +662,19 @@ const s = {
     color: "var(--text-secondary)",
     margin: "2px 0",
     lineHeight: 1.4,
+  },
+  adjustToggleAll: {
+    width: "100%",
+    marginTop: 8,
+    padding: "8px 12px",
+    background: "transparent",
+    border: "1px dashed var(--border)",
+    borderRadius: 10,
+    color: "var(--text-secondary)",
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 
   /* Quick Adjust */
