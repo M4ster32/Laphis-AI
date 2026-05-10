@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import PasswordInput from "../components/PasswordInput";
-import { Mail } from "lucide-react";
+import { Mail, Leaf } from "lucide-react";
 
 const GOALS = [
   { value: "perder_gordura", label: "Perder Gordura" },
@@ -48,7 +48,7 @@ export default function Register() {
     <div style={s.page}>
       <div style={s.container}>
         <div style={s.brand}>
-          <div style={s.logo}>L</div>
+          <div style={s.logo}><Leaf size={26} strokeWidth={2.2} color="#fff" /></div>
           <h1 style={s.title}>Criar Conta</h1>
           <p style={s.subtitle}>Começa a tua jornada</p>
         </div>

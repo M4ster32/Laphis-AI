@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, Leaf } from "lucide-react";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ export default function ForgotPassword() {
     <div style={s.page}>
       <div style={s.container}>
         <div style={s.brand}>
-          <div style={s.logo}>L</div>
+          <div style={s.logo}><Leaf size={26} strokeWidth={2.2} color="#fff" /></div>
           <h1 style={s.title}>Recuperar Password</h1>
           <p style={s.subtitle}>
             Introduz o teu email e enviaremos um código para redefinires a password

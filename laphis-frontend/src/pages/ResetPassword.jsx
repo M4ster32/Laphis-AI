@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Leaf } from "lucide-react";
 import ApiService from "../services/api";
 import PasswordInput from "../components/PasswordInput";
 
@@ -83,7 +84,7 @@ export default function ResetPassword() {
     <div style={s.page}>
       <div style={s.container}>
         <div style={s.brand}>
-          <div style={s.logo}>L</div>
+          <div style={s.logo}><Leaf size={26} strokeWidth={2.2} color="#fff" /></div>
           <h1 style={s.title}>Nova Password</h1>
           <p style={s.subtitle}>
             Introduz o código que recebeste por email e a nova password

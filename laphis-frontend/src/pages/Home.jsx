@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Bot, TrendingUp, Zap, Wind, Dumbbell } from "lucide-react";
+import { Bot, TrendingUp, Zap, Wind, Dumbbell, Leaf } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ export default function Home() {
       {/* Hero */}
       <div style={s.hero}>
         <div style={s.brand}>
-          <div style={s.logoCircle}>L</div>
+          <div style={s.logoCircle}><Leaf size={28} strokeWidth={2.2} color="#fff" /></div>
           <h1 style={s.brandName}>LAPHIS</h1>
         </div>
         <p style={s.tagline}>O teu coach de fitness pessoal com inteligência artificial</p>
