@@ -6,7 +6,7 @@ import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
 import jsPDF from "jspdf";
-import { TrendingUp, TrendingDown, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Minus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, ChevronDown, ChevronUp, Droplets } from "lucide-react";
 import {
  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
  Tooltip, ResponsiveContainer,
@@ -400,7 +400,57 @@ export default function Dashboard() {
  ))}
  </div>
 
- {/* ── 3. CHARTS — Visual Data ── */}
+ {/* ── 3. WATER TRACKER ── */}
+ <div style={s.waterCard}>
+   <div style={s.waterHeader}>
+     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+       <Droplets size={16} color="var(--p3)" strokeWidth={1.75} />
+       <span style={s.waterLabel}>Água</span>
+     </div>
+     <span style={s.waterMl}>{(waterData.glasses || 0) * 200} ml</span>
+   </div>
+
+   <div style={s.waterDots}>
+     {Array.from({ length: waterData.goal_glasses || 8 }).map((_, i) => (
+       <div
+         key={i}
+         style={{
+           ...s.waterDot,
+           background: i < (waterData.glasses || 0) ? "var(--p3)" : "var(--hover-overlay)",
+           border: i < (waterData.glasses || 0) ? "none" : "1.5px solid var(--border-light)",
+           opacity: i < (waterData.glasses || 0) ? 1 : 0.5,
+         }}
+       />
+     ))}
+   </div>
+
+   <div style={s.waterFooter}>
+     <span style={s.waterProgress}>
+       {waterData.glasses || 0} / {waterData.goal_glasses || 8} copos · meta {(waterData.goal_glasses || 8) * 200} ml
+     </span>
+     <div style={s.waterActions}>
+       <button
+         style={{ ...s.waterBtn, opacity: (waterData.glasses || 0) <= 0 ? 0.4 : 1 }}
+         onClick={handleRemoveWater}
+         disabled={(waterData.glasses || 0) <= 0}
+         aria-label="Remover copo"
+       >
+         <Minus size={13} strokeWidth={2.5} />
+       </button>
+       <button
+         style={{ ...s.waterBtn, ...s.waterBtnAdd }}
+         onClick={handleAddWater}
+         disabled={waterAdding}
+         aria-label="Adicionar copo"
+       >
+         <Plus size={13} strokeWidth={2.5} />
+         <span>200 ml</span>
+       </button>
+     </div>
+   </div>
+ </div>
+
+ {/* ── 4. CHARTS — Visual Data ── */}
  {workoutLogs.length > 0 && (
  <div style={s.chartCard}>
  <h4 style={s.chartTitle}>Treinos — 7 dias</h4>
@@ -591,7 +641,51 @@ const s = {
  statVal: { fontSize: "var(--text-h2)", fontWeight: 800, color: "var(--text)", lineHeight: 1, letterSpacing: "-0.02em", fontFamily: "var(--font-heading)" },
  statLbl: { fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" },
 
- /* 3. Charts */
+ /* 3. Water Tracker */
+ waterCard: {
+   background: "var(--card-bg)", borderRadius: 14,
+   padding: "14px 16px", boxShadow: "var(--shadow)", border: "var(--card-border)",
+   display: "flex", flexDirection: "column", gap: 12,
+ },
+ waterHeader: {
+   display: "flex", alignItems: "center", justifyContent: "space-between",
+ },
+ waterLabel: {
+   fontSize: "var(--text-body)", fontWeight: 700, color: "var(--text)",
+ },
+ waterMl: {
+   fontSize: "var(--text-h3)", fontWeight: 800, color: "var(--p3)",
+   letterSpacing: "-0.02em", fontFamily: "var(--font-heading)",
+ },
+ waterDots: {
+   display: "flex", gap: 6, flexWrap: "wrap",
+ },
+ waterDot: {
+   flex: "1 1 auto", maxWidth: 28, height: 28,
+   borderRadius: 8, transition: "background 0.2s, opacity 0.2s",
+ },
+ waterFooter: {
+   display: "flex", alignItems: "center", justifyContent: "space-between",
+ },
+ waterProgress: {
+   fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500,
+ },
+ waterActions: {
+   display: "flex", gap: 6, alignItems: "center",
+ },
+ waterBtn: {
+   display: "flex", alignItems: "center", justifyContent: "center",
+   width: 32, height: 32, borderRadius: 10,
+   background: "var(--hover-overlay)", border: "1px solid var(--border-light)",
+   cursor: "pointer", color: "var(--text-secondary)", transition: "background 0.12s",
+ },
+ waterBtnAdd: {
+   width: "auto", padding: "0 12px", gap: 5,
+   background: "var(--p3)", border: "none",
+   color: "#fff", fontWeight: 700, fontSize: 12,
+ },
+
+ /* 4. Charts */
  chartCard: {
  background: "var(--card-bg)", borderRadius: 14, padding: "14px 14px 8px",
  boxShadow: "var(--shadow)", border: "var(--card-border)",
