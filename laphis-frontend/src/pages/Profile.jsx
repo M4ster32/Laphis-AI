@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
@@ -8,12 +8,12 @@ import AvatarPicker, { AvatarDisplay } from "../components/AvatarPicker";
 import { SkeletonProfile } from "../components/Skeleton";
 
 const ACHIEVEMENTS = [
-  { key: "first_workout", label: "First Workout", desc: "Completou o primeiro treino" },
-  { key: "streak_7", label: "7 Day Streak", desc: "Treinou 7 dias seguidos" },
-  { key: "streak_30", label: "30 Day Streak", desc: "Treinou 30 dias seguidos" },
-  { key: "first_meal", label: "First Meal Logged", desc: "Registou a primeira refeição" },
-  { key: "plan_created", label: "Plan Created", desc: "Criou o primeiro plano" },
-  { key: "profile_done", label: "Profile Complete", desc: "Perfil preenchido" },
+  { key: "profile_done",  label: "Perfil Completo",  desc: "Perfil preenchido",             icon: "⭐" },
+  { key: "first_workout", label: "Primeiro Treino",  desc: "Completou o primeiro treino",   icon: "🏋️" },
+  { key: "first_meal",    label: "Primeira Refeição",desc: "Registou a primeira refeição",  icon: "🍽️" },
+  { key: "plan_created",  label: "Plano Criado",     desc: "Criou o primeiro plano AI",     icon: "📋" },
+  { key: "streak_7",      label: "7 Dias Seguidos",  desc: "Treinou 7 dias consecutivos",   icon: "🔥" },
+  { key: "streak_30",     label: "30 Dias Seguidos", desc: "Treinou 30 dias consecutivos",  icon: "🏆" },
 ];
 
 const DIET_OPTIONS = [
@@ -41,6 +41,8 @@ export default function Profile() {
   const { profile, loadMyProfile, loading: profileLoading } = useApp();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [activityPlans, setActivityPlans] = useState([]);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [step, setStep] = useState(1);
@@ -77,6 +79,18 @@ export default function Profile() {
   useEffect(() => {
     if (!profile && !profileLoading) { setEditing(true); setStep(1); }
   }, [profile, profileLoading]);
+
+  useEffect(() => {
+    if (profile && !editing) {
+      Promise.all([
+        ApiService.getLogs(200, 0).catch(() => []),
+        ApiService.getPlans(profile.id, "active").catch(() => []),
+      ]).then(([logsData, plansData]) => {
+        setActivityLogs(Array.isArray(logsData) ? logsData : logsData?.logs || []);
+        setActivityPlans(Array.isArray(plansData) ? plansData : plansData?.plans || []);
+      });
+    }
+  }, [profile, editing]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -170,8 +184,30 @@ export default function Profile() {
     return d.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
   })();
 
-  const unlockedKeys = new Set();
-  if (profile) unlockedKeys.add("profile_done");
+  const unlockedKeys = useMemo(() => {
+    const keys = new Set();
+    if (!profile) return keys;
+    keys.add("profile_done");
+    const workoutLogs = activityLogs.filter(l => l.log_type === "treino");
+    const mealLogs = activityLogs.filter(l => l.log_type === "refeicao");
+    if (workoutLogs.length > 0) keys.add("first_workout");
+    if (mealLogs.length > 0) keys.add("first_meal");
+    if (activityPlans.length > 0) keys.add("plan_created");
+    // Streak calculation
+    if (workoutLogs.length > 0) {
+      const dates = [...new Set(workoutLogs.map(l => l.date || l.created_at?.split("T")[0]))]
+        .filter(Boolean).sort().reverse();
+      let streak = 1;
+      for (let i = 1; i < dates.length; i++) {
+        const diff = (new Date(dates[i - 1]) - new Date(dates[i])) / 86400000;
+        if (diff === 1) streak++;
+        else break;
+      }
+      if (streak >= 7) keys.add("streak_7");
+      if (streak >= 30) keys.add("streak_30");
+    }
+    return keys;
+  }, [profile, activityLogs, activityPlans]);
 
   const STEPS = [
     { num: 1, label: "Dados" },
@@ -456,9 +492,16 @@ export default function Profile() {
         {ACHIEVEMENTS.map((a) => {
           const unlocked = unlockedKeys.has(a.key);
           return (
-            <div key={a.key} style={{ ...s.badge, opacity: unlocked ? 1 : 0.35 }}>
-              <Award size={24} color={unlocked ? "var(--primary)" : "var(--text-muted)"} strokeWidth={1.5} style={{ marginBottom: 6 }} />
-              <span style={s.badgeLabel}>{a.label}</span>
+            <div key={a.key} style={{
+              ...s.badge,
+              opacity: unlocked ? 1 : 0.3,
+              border: unlocked ? "1.5px solid var(--primary)" : gl.border,
+              background: unlocked ? "var(--primary-bg)" : gl.bg,
+              boxShadow: unlocked ? "0 2px 12px var(--btn-primary-shadow)" : gl.shadow,
+            }}>
+              <span style={{ fontSize: 26, marginBottom: 6, filter: unlocked ? "none" : "grayscale(1)" }}>{a.icon}</span>
+              <span style={{ ...s.badgeLabel, color: unlocked ? "var(--primary)" : "var(--text-muted)", fontWeight: unlocked ? 700 : 600 }}>{a.label}</span>
+              <span style={{ fontSize: 10, color: unlocked ? "var(--primary)" : "var(--text-muted)", textAlign: "center", opacity: 0.8, lineHeight: 1.3 }}>{a.desc}</span>
             </div>
           );
         })}

@@ -307,7 +307,17 @@ export default function Dashboard() {
  }, [workoutLogs, mealLogs]);
 
  const quote = motivationalQuotes[Math.floor(Date.now() / 86400000) % motivationalQuotes.length];
- const waterPercentage = Math.min(waterData.percentage || 0, 100);
+ // Personalized water goal based on profile (weight, level, goal)
+ const effectiveGoalGlasses = useMemo(() => {
+   if (!profile?.weight_kg) return effectiveGoalGlasses;
+   let ml = profile.weight_kg * 35;
+   if (profile.level === "intermedio") ml += 300;
+   if (profile.level === "avancado") ml += 600;
+   if (profile.goal === "perder_gordura") ml += 300;
+   if (profile.goal === "ganhar_massa") ml += 200;
+   return Math.max(6, Math.min(14, Math.round(ml / 200)));
+ }, [profile, waterData.goal_glasses]);
+ const waterPercentage = Math.min(100, ((waterData.glasses || 0) / effectiveGoalGlasses) * 100);
  const waterCircumference = 2 * Math.PI * 40;
  const waterOffset = waterCircumference * (1 - waterPercentage / 100);
  const greetingTime = new Date().getHours() < 12 ? "Bom dia" : new Date().getHours() < 19 ? "Boa tarde" : "Boa noite";
@@ -414,7 +424,7 @@ export default function Dashboard() {
    <div style={s.waterCenter}>
      <span style={s.waterBigMl}>{(waterData.glasses || 0) * 200}</span>
      <span style={s.waterUnit}> ml</span>
-     <span style={s.waterGoalText}> / {(waterData.goal_glasses || 8) * 200} ml</span>
+     <span style={s.waterGoalText}> / {(effectiveGoalGlasses) * 200} ml</span>
    </div>
 
    {/* Progress bar */}
@@ -424,7 +434,7 @@ export default function Dashboard() {
 
    {/* Drop dots */}
    <div style={s.waterDots}>
-     {Array.from({ length: waterData.goal_glasses || 8 }).map((_, i) => (
+     {Array.from({ length: effectiveGoalGlasses }).map((_, i) => (
        <div key={i} style={{
          ...s.waterDrop,
          background: i < (waterData.glasses || 0) ? "var(--p3)" : "var(--hover-overlay)",

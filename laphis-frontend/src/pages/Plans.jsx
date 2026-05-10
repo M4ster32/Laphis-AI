@@ -5,7 +5,7 @@ import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
 import { SkeletonPlans } from "../components/Skeleton";
-import { Tag, Plus, Archive, ChevronRight, ChevronDown, RotateCcw, Dumbbell, UtensilsCrossed, Zap, X, MoreVertical, Trash2 } from "lucide-react";
+import { Tag, Plus, Archive, ChevronDown, Dumbbell, UtensilsCrossed, Zap, X, MoreVertical, Trash2 } from "lucide-react";
 
 const VISIBLE_COUNT_DEFAULT = 5;
 
@@ -28,8 +28,6 @@ export default function Plans() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useApp();
   const [plans, setPlans] = useState([]);
-  const [archivedPlans, setArchivedPlans] = useState([]);
-  const [showArchived, setShowArchived] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null); // null = all
   const [loading, setLoading] = useState(true);
@@ -51,10 +49,9 @@ export default function Plans() {
   const [genCategory, setGenCategory] = useState(null);
 
   // UI state — actions popup + show more
-  const [openMenuFor, setOpenMenuFor] = useState(null); // planId com menu aberto
-  const [confirmDelete, setConfirmDelete] = useState(null); // plano a apagar (objecto)
+  const [openMenuFor, setOpenMenuFor] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [showAllActive, setShowAllActive] = useState(false);
-  const [showAllArchived, setShowAllArchived] = useState(false);
 
   // Fechar menu ao clicar fora
   useEffect(() => {
@@ -67,7 +64,6 @@ export default function Plans() {
   useEffect(() => {
     if (profile) {
       loadPlans();
-      loadArchivedPlans();
       loadCategories();
     }
   }, [profile]);
@@ -92,19 +88,9 @@ export default function Plans() {
     }
   };
 
-  // Reload when category changes
   useEffect(() => {
-    if (profile) { loadPlans(); loadArchivedPlans(); }
+    if (profile) loadPlans();
   }, [selectedCategory]);
-
-  const loadArchivedPlans = async () => {
-    try {
-      const resp = await ApiService.getPlans(profile.id, "archived", selectedCategory);
-      setArchivedPlans(Array.isArray(resp) ? resp : resp.plans || []);
-    } catch (err) {
-      console.error("Erro ao carregar arquivados:", err);
-    }
-  };
 
   const loadCategories = async () => {
     try {
@@ -152,41 +138,15 @@ export default function Plans() {
     }
   };
 
-  /**
-   * Optimistic restore: mirror of handleArchive — move a plan out of the
-   * archive and back into the active list with instant feedback.
-   */
-  const handleRestore = async (planId) => {
-    const planSnapshot = plans;
-    const archivedSnapshot = archivedPlans;
-    const target = archivedPlans.find((p) => p.id === planId);
-    setArchivedPlans((prev) => prev.filter((p) => p.id !== planId));
-    if (target) setPlans((prev) => [{ ...target, status: "active" }, ...prev]);
-    try {
-      await ApiService.updatePlan(planId, { status: "active" });
-    } catch (err) {
-      console.error(err);
-      setPlans(planSnapshot);
-      setArchivedPlans(archivedSnapshot);
-    }
-  };
-
-  /**
-   * Optimistic delete — remove imediatamente da UI e chama API em background.
-   * Faz rollback se falhar.
-   */
   const handleDelete = async (planId) => {
     const planSnapshot = plans;
-    const archivedSnapshot = archivedPlans;
     setPlans((prev) => prev.filter((p) => p.id !== planId));
-    setArchivedPlans((prev) => prev.filter((p) => p.id !== planId));
     setConfirmDelete(null);
     try {
       await ApiService.deletePlan(planId);
     } catch (err) {
       console.error(err);
       setPlans(planSnapshot);
-      setArchivedPlans(archivedSnapshot);
     }
   };
 
@@ -498,101 +458,6 @@ export default function Plans() {
                 }}
               />
             </button>
-          )}
-        </div>
-      )}
-
-      {/* ====== ARCHIVED PLANS (COLLAPSIBLE) ====== */}
-      {archivedPlans.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            style={s.archivedToggle}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Archive size={15} strokeWidth={1.5} color="var(--text-muted)" />
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>
-                Arquivados
-              </span>
-              <span style={s.archivedBadge}>{archivedPlans.length}</span>
-            </div>
-            <ChevronDown
-              size={16}
-              color="var(--text-muted)"
-              style={{
-                transition: "transform 0.25s ease",
-                transform: showArchived ? "rotate(180deg)" : "rotate(0deg)",
-              }}
-            />
-          </button>
-
-          {showArchived && (
-            <div style={{ ...s.plansList, marginTop: 10, opacity: 0.85 }}>
-              {(showAllArchived ? archivedPlans : archivedPlans.slice(0, VISIBLE_COUNT_DEFAULT)).map((plan) => {
-                const isMenuOpen = openMenuFor === plan.id;
-                return (
-                  <div key={plan.id} style={{ ...s.planCard, borderLeft: `3px solid var(--border)` }} onClick={() => navigate(`/plans/${plan.id}`)}>
-                    <div style={s.planTop}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <h4 style={{ ...s.planTitle, color: "var(--text-muted)" }}>{plan.title || "Plano sem título"}</h4>
-                        <p style={s.planMeta}>
-                          {typeLabels[plan.type] || plan.type}
-                          {" · "}
-                          {new Date(plan.created_at).toLocaleDateString("pt-PT")}
-                        </p>
-                      </div>
-                      <div style={{ position: "relative", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-                        <button
-                          style={s.menuBtn}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuFor(isMenuOpen ? null : plan.id);
-                          }}
-                          aria-label="Mais opções"
-                        >
-                          <MoreVertical size={16} color="var(--text-muted)" />
-                        </button>
-                        {isMenuOpen && (
-                          <div style={s.menuPopup} onClick={(e) => e.stopPropagation()}>
-                            <button
-                              style={s.menuItem}
-                              onClick={() => { handleRestore(plan.id); setOpenMenuFor(null); }}
-                            >
-                              <RotateCcw size={14} strokeWidth={1.5} /> Restaurar
-                            </button>
-                            <button
-                              style={{ ...s.menuItem, color: "var(--danger)" }}
-                              onClick={() => { setConfirmDelete(plan); setOpenMenuFor(null); }}
-                            >
-                              <Trash2 size={14} strokeWidth={1.5} /> Apagar
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Botão "Ver Mais" (archived) */}
-              {archivedPlans.length > VISIBLE_COUNT_DEFAULT && (
-                <button
-                  style={s.showMoreBtn}
-                  onClick={() => setShowAllArchived(!showAllArchived)}
-                >
-                  {showAllArchived
-                    ? `Ver menos`
-                    : `Ver mais (${archivedPlans.length - VISIBLE_COUNT_DEFAULT})`}
-                  <ChevronDown
-                    size={14}
-                    style={{
-                      transition: "transform 0.2s",
-                      transform: showAllArchived ? "rotate(180deg)" : "rotate(0)",
-                    }}
-                  />
-                </button>
-              )}
-            </div>
           )}
         </div>
       )}

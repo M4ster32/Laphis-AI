@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
-import { Home, Dumbbell, ClipboardList, User, Settings, Bot } from "lucide-react";
+import { Home, Dumbbell, ClipboardList, User, Leaf, Bot } from "lucide-react";
 import "./layout.css";
 
 const NAV_LEFT = [
@@ -10,7 +10,7 @@ const NAV_LEFT = [
 
 const NAV_RIGHT = [
   { to: "/logs", label: "Registos", icon: ClipboardList },
-  { to: "/profile", label: "Perfil", icon: User },
+  { to: "/zen", label: "Zen", icon: Leaf },
 ];
 
 /**
@@ -51,11 +51,11 @@ export default function Layout() {
         <div className="header-right">
           <button
             className="header-icon-btn"
-            onClick={() => navigate("/settings")}
-            title="Definições"
+            onClick={() => navigate("/profile")}
+            title="Perfil"
             style={{ fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}
           >
-            <Settings size={20} strokeWidth={1.5} />
+            <User size={20} strokeWidth={1.5} />
           </button>
         </div>
       </header>

@@ -97,11 +97,10 @@ export default function PlanDetail() {
   const [fbCompleted, setFbCompleted] = useState(50);
   const [fbSaving, setFbSaving] = useState(false);
 
-  // Adaptation suggestions state
+  // Adaptation state
   const [suggestions, setSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
-  const [respondingId, setRespondingId] = useState(null);
-  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+  const [adaptSuccess, setAdaptSuccess] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
 
   // Exercises for this plan
@@ -347,13 +346,22 @@ export default function PlanDetail() {
     }
   };
 
-  const handleTriggerAnalysis = async () => {
+  const handleAdaptPlan = async () => {
     try {
       setSuggestionsLoading(true);
+      setAdaptSuccess(false);
       await ApiService.triggerAnalysis();
-      await loadSuggestions();
+      const data = await ApiService.getAdaptationSuggestions("pending");
+      const filtered = Array.isArray(data)
+        ? data.filter(s => !s.plan_id || s.plan_id === parseInt(planId))
+        : [];
+      await Promise.all(filtered.map(s => ApiService.respondToSuggestion(s.id, "accepted").catch(() => {})));
+      await loadPlan();
+      setSuggestions([]);
+      setAdaptSuccess(true);
+      setTimeout(() => setAdaptSuccess(false), 4000);
     } catch (err) {
-      setError("Erro ao analisar plano");
+      setError("Erro ao adaptar plano");
     } finally {
       setSuggestionsLoading(false);
     }
@@ -960,108 +968,29 @@ export default function PlanDetail() {
         )}
       </div>
 
-      {/* Adaptation Suggestions Section */}
+      {/* Adaptation — single button */}
       <div style={s.feedbackCard}>
-        <div style={s.feedbackHeader}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Lightbulb size={18} strokeWidth={1.5} color="var(--primary)" />
-            <h3 style={s.feedbackTitle}>Sugestões de Adaptação</h3>
-          </div>
-          <button
-            style={s.feedbackToggle}
-            onClick={handleTriggerAnalysis}
-            disabled={suggestionsLoading}
-          >
-            <RefreshCw size={14} strokeWidth={1.5} style={{
-              display: "inline", verticalAlign: -2, marginRight: 4,
-              animation: suggestionsLoading ? "spin 1s linear infinite" : "none"
-            }} />
-            {suggestionsLoading ? "A analisar..." : "Analisar"}
-          </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <Lightbulb size={18} strokeWidth={1.5} color="var(--primary)" />
+          <h3 style={s.feedbackTitle}>Adaptação AI</h3>
         </div>
-
-        {suggestions.length === 0 && !suggestionsLoading && (
-          <div style={s.emptyAdaptation}>
-            <Lightbulb size={28} strokeWidth={1.2} color="var(--text-muted)" />
-            <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--text-muted)" }}>
-              Sem sugestões pendentes. Clica em "Analisar" para verificar.
-            </p>
-          </div>
-        )}
-
-        {(showAllSuggestions ? suggestions : suggestions.slice(0, 2)).map(sug => {
-          const typeLabelsAdapt = {
-            increase_volume: "↑ Volume",
-            decrease_intensity: "↓ Intensidade",
-            change_split: "Mudar split",
-            adjust_calories: "Ajustar calorias",
-            suggest_deload: "Deload",
-            level_up: "Subir nível",
-          };
-          const typeColors = {
-            increase_volume: "#2E7D32",
-            decrease_intensity: "#E65100",
-            change_split: "#1565C0",
-            adjust_calories: "#6A1B9A",
-            suggest_deload: "#F9A825",
-            level_up: "#00838F",
-          };
-          return (
-            <div key={sug.id} style={s.suggestionCard}>
-              <div style={s.suggestionTop}>
-                <span style={{
-                  ...s.suggestionBadge,
-                  background: (typeColors[sug.adaptation_type] || "var(--primary)") + "18",
-                  color: typeColors[sug.adaptation_type] || "var(--primary)",
-                }}>
-                  {typeLabelsAdapt[sug.adaptation_type] || sug.adaptation_type}
-                </span>
-                <span style={s.suggestionDate}>
-                  {sug.created_at ? new Date(sug.created_at).toLocaleDateString("pt-PT") : ""}
-                </span>
-              </div>
-              <p style={s.suggestionReason}>{sug.reason}</p>
-              {sug.suggestion_json && (
-                <div style={s.suggestionDetail}>
-                  {Object.entries(sug.suggestion_json).map(([k, v]) => (
-                    <span key={k} style={s.suggestionDetailItem}>
-                      <strong>{k}:</strong> {typeof v === "object" ? JSON.stringify(v) : String(v)}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <div style={s.suggestionActions}>
-                <button
-                  style={s.suggestionAccept}
-                  onClick={() => handleRespondSuggestion(sug.id, "accepted")}
-                  disabled={respondingId === sug.id}
-                >
-                  <Check size={15} strokeWidth={2} style={{ marginRight: 4 }} />
-                  Aceitar
-                </button>
-                <button
-                  style={s.suggestionReject}
-                  onClick={() => handleRespondSuggestion(sug.id, "rejected")}
-                  disabled={respondingId === sug.id}
-                >
-                  <X size={15} strokeWidth={2} style={{ marginRight: 4 }} />
-                  Rejeitar
-                </button>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Toggle Ver mais / Ver menos quando ha mais de 2 sugestoes */}
-        {suggestions.length > 2 && (
-          <button
-            style={s.suggestionToggleAll}
-            onClick={() => setShowAllSuggestions(v => !v)}
-          >
-            {showAllSuggestions
-              ? "Mostrar menos"
-              : `Ver mais (${suggestions.length - 2})`}
-          </button>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 14px", lineHeight: 1.5 }}>
+          A IA analisa o teu progresso, feedback e perfil — e atualiza este plano automaticamente.
+        </p>
+        <button
+          className="btn btn-primary btn-full"
+          onClick={handleAdaptPlan}
+          disabled={suggestionsLoading}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+        >
+          {suggestionsLoading
+            ? <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> A adaptar...</>
+            : <><RefreshCw size={15} strokeWidth={2} /> Adaptar Plano</>}
+        </button>
+        {adaptSuccess && (
+          <p style={{ fontSize: 12, color: "var(--p1, #4caf50)", marginTop: 10, textAlign: "center", fontWeight: 600 }}>
+            ✓ Plano atualizado com sucesso
+          </p>
         )}
       </div>
 

@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
-import { Dumbbell, UtensilsCrossed, Trash2, Plus, Zap, Calendar, Clock, Flame, Search, Pencil } from "lucide-react";
+import { Dumbbell, UtensilsCrossed, Trash2, Plus, Calendar, Clock, Flame, Search, Pencil } from "lucide-react";
+
+const MEAL_EMOJIS = {
+  "pequeno-almoco": "☀️", "pequeno_almoco": "☀️",
+  almoco: "🍽️", lanche: "🍎", jantar: "🌙", snack: "🥤",
+};
 import Modal from "../components/Modal";
 import { SkeletonLogs } from "../components/Skeleton";
 
@@ -168,23 +173,14 @@ export default function Logs() {
           <h2 style={s.title}>Registos</h2>
           <p style={s.subtitle}>{logs.length} registos no total</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            style={s.aiBtn}
-            onClick={() => navigate("/plans?generate=true")}
-            title="Gerar treino com AI"
-          >
-            <Zap size={16} strokeWidth={2} />
-          </button>
-          <button
-            className="btn btn-primary"
-            style={s.addBtn}
-            onClick={() => { setShowForm(!showForm); resetForm(); }}
-            title={showForm ? "Cancelar" : "Novo registo"}
-          >
-            {showForm ? "✕" : <Plus size={20} strokeWidth={1.5} />}
-          </button>
-        </div>
+        <button
+          className="btn btn-primary"
+          style={s.addBtn}
+          onClick={() => { setShowForm(!showForm); resetForm(); }}
+          title={showForm ? "Cancelar" : "Novo registo"}
+        >
+          {showForm ? "✕" : <Plus size={20} strokeWidth={1.5} />}
+        </button>
       </div>
 
       {/* Quick Stats */}
@@ -406,60 +402,59 @@ export default function Logs() {
         </div>
       ) : (
         <div style={s.logsList}>
-          {searched.map((log) => (
+          {searched.map((log) => {
+            const isWorkout = tab === "treino";
+            const accentColor = isWorkout ? "var(--primary)" : "var(--p2)";
+            const bgColor = isWorkout ? "var(--primary-bg)" : "var(--cta-bg)";
+            const title = isWorkout
+              ? (log.description || "Treino")
+              : (mealLabels[log.meal_type] || "Refeição");
+            const logDate = log.date || (log.created_at ? new Date(log.created_at).toLocaleDateString("pt-PT") : "—");
+            return (
             <div key={`${log.log_type}-${log.id}`} className="card-lift" style={s.logCard}>
-              <div style={s.logTop}>
-                <div style={s.logIconWrap}>
-                  {tab === "treino"
-                    ? <Dumbbell size={16} color="var(--primary)" strokeWidth={1.5} />
-                    : <UtensilsCrossed size={16} color="var(--p2)" strokeWidth={1.5} />
+              <div style={{ ...s.logAccentBar, background: accentColor }} />
+              <div style={s.logInner}>
+                <div style={{ ...s.logIconWrap, background: bgColor }}>
+                  {isWorkout
+                    ? <Dumbbell size={20} color={accentColor} strokeWidth={1.5} />
+                    : <span style={{ fontSize: 20, lineHeight: 1 }}>{MEAL_EMOJIS[log.meal_type] || "🍽️"}</span>
                   }
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h4 style={s.logTitle}>
-                    {tab === "treino"
-                      ? (log.description || "Treino")
-                      : (mealLabels[log.meal_type] || log.meal_type || "Refeição")}
-                  </h4>
-                  <p style={s.logDate}>
-                    <Calendar size={11} strokeWidth={1.5} style={{ marginRight: 4, verticalAlign: -1 }} />
-                    {log.date || (log.created_at ? new Date(log.created_at).toLocaleDateString("pt-PT") : "—")}
-                  </p>
+                <div style={s.logBody}>
+                  <div style={s.logBodyTop}>
+                    <span style={s.logTitle}>{title}</span>
+                    <span style={s.logDate}>{logDate}</span>
+                  </div>
+                  {!isWorkout && log.foods && (
+                    <span style={s.logSub}>{log.foods}</span>
+                  )}
+                  {(log.calories > 0 || log.duration_min > 0) && (
+                    <div style={s.logMeta}>
+                      {log.calories > 0 && (
+                        <span style={{ ...s.logTag, color: accentColor, background: bgColor }}>
+                          🔥 {log.calories} kcal
+                        </span>
+                      )}
+                      {log.duration_min > 0 && (
+                        <span style={{ ...s.logTag, color: accentColor, background: bgColor }}>
+                          ⏱️ {log.duration_min} min
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: "flex", gap: 4 }}>
-                  <button style={s.editBtn} onClick={() => handleEdit(log)} title="Editar">
-                    <Pencil size={14} strokeWidth={1.5} />
+                <div style={s.logActions}>
+                  <button style={s.editBtn} onClick={() => handleEdit(log)}>
+                    <Pencil size={13} strokeWidth={1.5} />
                   </button>
-                  <button style={s.deleteBtn} onClick={() => setDeleteTarget(log)} title="Apagar">
-                    <Trash2 size={14} strokeWidth={1.5} />
+                  <button style={s.deleteBtn} onClick={() => setDeleteTarget(log)}>
+                    <Trash2 size={13} strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
-
-              <div style={s.logMeta}>
-                {log.calories != null && log.calories > 0 && (
-                  <span style={s.logTag}>
-                    <Flame size={12} strokeWidth={1.5} style={{ marginRight: 3, verticalAlign: -1 }} />
-                    {log.calories} kcal
-                  </span>
-                )}
-                {log.duration_min != null && log.duration_min > 0 && (
-                  <span style={s.logTag}>
-                    <Clock size={12} strokeWidth={1.5} style={{ marginRight: 3, verticalAlign: -1 }} />
-                    {log.duration_min} min
-                  </span>
-                )}
-              </div>
-
-              {log.foods && (
-                <p style={s.logFoods}>{log.foods}</p>
-              )}
-
-              {log.notes && (
-                <p style={s.logNotes}>{log.notes}</p>
-              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -496,14 +491,6 @@ const s = {
   title: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: 0, letterSpacing: "-0.03em" },
   subtitle: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: "3px 0 0", fontWeight: 500 },
   addBtn: { padding: "8px 18px", fontSize: 14 },
-  aiBtn: {
-    width: 38, height: 38, borderRadius: "var(--radius-sm)",
-    background: "var(--primary-bg)", border: "1px solid var(--border)",
-    color: "var(--primary)", cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    transition: "background 0.15s, transform 0.15s",
-    boxShadow: "var(--shadow)",
-  },
 
   /* Stats */
   statsRow: {
@@ -565,53 +552,54 @@ const s = {
   },
 
   /* Logs */
-  logsList: { display: "flex", flexDirection: "column", gap: 12 },
+  logsList: { display: "flex", flexDirection: "column", gap: 10 },
   logCard: {
-    background: g.bg, borderRadius: "var(--radius)",
-    padding: "16px 18px", boxShadow: g.shadow, border: g.border,
-    transition: "transform 0.2s, box-shadow 0.2s",
+    background: g.bg, borderRadius: 14,
+    boxShadow: g.shadow, border: g.border,
+    overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s",
+    display: "flex", flexDirection: "row",
   },
-  logTop: {
-    display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10,
+  logAccentBar: {
+    width: 4, flexShrink: 0,
+  },
+  logInner: {
+    flex: 1, display: "flex", alignItems: "center", gap: 12,
+    padding: "14px 14px 14px 12px",
   },
   logIconWrap: {
-    width: 34, height: 34, borderRadius: 10,
-    background: "var(--bg-subtle, rgba(139, 109, 78, 0.04))",
+    width: 44, height: 44, borderRadius: 12,
     display: "flex", alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   },
+  logBody: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 },
+  logBodyTop: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 },
   logTitle: {
-    fontSize: "var(--text-h3)", fontWeight: 700, color: "var(--text)", margin: "0 0 4px",
+    fontSize: 15, fontWeight: 700, color: "var(--text)",
     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em",
+    flex: 1,
   },
-  logDate: { fontSize: "var(--text-caption)", color: "var(--text-muted)", margin: 0 },
+  logDate: { fontSize: 11, color: "var(--text-muted)", fontWeight: 500, flexShrink: 0 },
+  logSub: {
+    fontSize: 12, color: "var(--text-secondary)", fontWeight: 400,
+    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+  },
+  logMeta: { display: "flex", flexWrap: "wrap", gap: 6 },
+  logTag: {
+    padding: "3px 8px", borderRadius: 8,
+    fontSize: 11, fontWeight: 600,
+  },
+  logActions: { display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 },
   deleteBtn: {
-    background: "var(--card-bg)", border: g.border,
-    borderRadius: 10, padding: "4px 8px", fontSize: 14,
-    cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
-    boxShadow: "var(--shadow)", color: "var(--text-muted)",
+    background: "none", border: "none",
+    padding: "5px", cursor: "pointer",
+    color: "var(--text-muted)", borderRadius: 8,
+    display: "flex", alignItems: "center", justifyContent: "center",
   },
   editBtn: {
-    background: "var(--card-bg)", border: g.border,
-    borderRadius: 10, padding: "4px 8px", fontSize: 14,
-    cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
-    boxShadow: "var(--shadow)", color: "var(--primary)",
-  },
-  logMeta: {
-    display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10,
-  },
-  logTag: {
-    padding: "4px 10px", borderRadius: 12,
-    background: "var(--bg-subtle)", fontSize: "var(--text-caption)", fontWeight: 600,
-    color: "var(--text-secondary)",
-  },
-  logFoods: {
-    fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: "10px 0 0",
-    lineHeight: 1.5, width: "100%",
-  },
-  logNotes: {
-    fontSize: "var(--text-body)", color: "var(--text-muted)", margin: "8px 0 0",
-    fontStyle: "italic", lineHeight: 1.5,
+    background: "none", border: "none",
+    padding: "5px", cursor: "pointer",
+    color: "var(--primary)", borderRadius: 8,
+    display: "flex", alignItems: "center", justifyContent: "center",
   },
 
   /* Empty */
