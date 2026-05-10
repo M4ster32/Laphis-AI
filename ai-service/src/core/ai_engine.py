@@ -90,6 +90,49 @@ ANIMATED_EXERCISES = {
 }
 
 
+HOME_EXERCISES = {
+    "Peito / Tríceps": [
+        "Flexões",
+        "Dips / Fundos em paralelas",
+    ],
+    "Costas / Bíceps": [
+        "Pull-up / Barra fixa",
+    ],
+    "Pernas / Glúteos": [
+        "Agachamento com barra",
+        "Afundo / Lunge",
+        "Elevação de panturrilha",
+        "Ponte de glúteo / Glute bridge",
+    ],
+    "Abdómen / Core": [
+        "Prancha / Plank",
+        "Crunch / Abdominal",
+        "Elevação de pernas / Leg raise",
+        "Russian twist",
+    ],
+    "Cardio / Full Body": [
+        "Burpee",
+        "Mountain climber / Escalador",
+        "Polichinelos / Jumping jacks",
+        "Corrida no lugar / High knees",
+    ],
+}
+
+HOME_KEYWORDS = [
+    "casa", "home", "sem ginásio", "sem ginasio", "sem equipamento",
+    "bodyweight", "calistenia", "calisthenics", "sem material",
+    "apartamento", "quarto", "sala",
+]
+
+
+def _detect_home_workout(text: str) -> bool:
+    """Devolve True se o texto indica treino em casa / sem equipamento."""
+    if not text:
+        return False
+    lower = text.lower()
+    return any(kw in lower for kw in HOME_KEYWORDS)
+
+
 def _format_exercise_constraint() -> str:
     """Constroi o bloco de constraint para injetar nos system prompts."""
     lines = [
@@ -112,7 +155,30 @@ def _format_exercise_constraint() -> str:
     return "\n".join(lines)
 
 
+def _format_home_constraint() -> str:
+    """Bloco de constraint restrito a exercícios sem equipamento de ginásio."""
+    lines = [
+        "⚠️ TREINO EM CASA — RESTRIÇÃO OBRIGATÓRIA DE EQUIPAMENTO:",
+        "O utilizador treina EM CASA, sem acesso a ginásio, máquinas ou pesos livres.",
+        "USA APENAS os exercícios desta lista reduzida (todos realizáveis sem equipamento ou com barra de porta):",
+        "",
+    ]
+    for category, items in HOME_EXERCISES.items():
+        lines.append(f"• {category}:")
+        for item in items:
+            lines.append(f"   - {item}")
+    lines.extend([
+        "",
+        "PROIBIDO incluir qualquer destes equipamentos: barra olímpica, halteres, kettlebell,",
+        "leg press, cadeira extensora, mesa flexora, polia, cabo, banco com barra, máquinas de ginásio.",
+        "Se precisares de mais volume, aumenta séries/reps dos exercícios disponíveis.",
+        "Podes sugerir Pull-up/Barra fixa se o utilizador tiver barra de porta (menciona isso).",
+    ])
+    return "\n".join(lines)
+
+
 EXERCISE_CONSTRAINT = _format_exercise_constraint()
+HOME_EXERCISE_CONSTRAINT = _format_home_constraint()
 
 
 def is_ai_available() -> bool:
@@ -440,7 +506,8 @@ Regras obrigatórias:
 - Sê específico (ex: "Supino plano com barra 4×8-10" em vez de "exercício de peito")
 - Para treino, organiza por dias (Dia 1, Dia 2, etc.)
 - Para nutrição, organiza por refeição com horários sugeridos
-- Inclui always um summary com os dados relevantes do perfil"""
+- Inclui always um summary com os dados relevantes do perfil
+- Se as notas indicarem treino em casa / sem equipamento, usa EXCLUSIVAMENTE exercícios sem máquinas nem pesos de ginásio"""
 
 
 def _plan_json_schema(plan_type: str) -> str:
@@ -508,12 +575,16 @@ DADOS NUTRICIONAIS CALCULADOS:
 - Calorias alvo: {nutrition['target_cal']} cal/dia
 - Proteína alvo: {nutrition['protein_g']}g/dia"""
 
+    is_home = _detect_home_workout(notes)
+
     if notes:
         user_msg += f"\n\nNOTAS DO UTILIZADOR: {notes}"
 
+    exercise_block = HOME_EXERCISE_CONSTRAINT if is_home else EXERCISE_CONSTRAINT
+
     messages = [
         {"role": "system", "content": f"{PLAN_SYSTEM}\n\nFORMATO DE RESPOSTA — JSON válido:\n{schema}"},
-        {"role": "system", "content": EXERCISE_CONSTRAINT},
+        {"role": "system", "content": exercise_block},
         {"role": "user", "content": user_msg},
     ]
 
