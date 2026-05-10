@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../hooks/useApp";
 import { Home, Dumbbell, ClipboardList, User, Leaf, Bot } from "lucide-react";
+import MonsterLogo from "../components/MonsterLogo";
 import "./layout.css";
 
 const NAV_LEFT = [
@@ -45,7 +46,9 @@ export default function Layout() {
       {/* Header */}
       <header className="layout-header">
         <div className="header-left">
-          <div className="header-logo">L</div>
+          <div className="header-logo" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <MonsterLogo size={20} color="#fff" strokeWidth={2.2} />
+          </div>
           <span className="header-brand">LAPHIS</span>
         </div>
         <div className="header-right">

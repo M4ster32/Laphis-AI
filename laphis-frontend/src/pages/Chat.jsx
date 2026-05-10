@@ -6,6 +6,7 @@ import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
 import ExerciseCard, { ExerciseList } from "../components/ExerciseCard";
 import PlanWorkoutBox, { hasParseableWorkout } from "../components/PlanWorkoutBox";
+import MonsterLogo from "../components/MonsterLogo";
 import { Send, Trash2, Save, FileText, Plus, MessageSquare, Pencil, Clock, ChevronLeft, Menu, Check, Zap, Dumbbell } from "lucide-react";
 
 /* Detect if message content looks like a training/nutrition plan */
@@ -598,7 +599,7 @@ export default function Chat() {
             <Menu size={18} />
           </button>
           <div style={s.coachRow}>
-            <div style={s.coachAvatar}>AI</div>
+            <div style={s.coachAvatar}><MonsterLogo size={22} color="#fff" strokeWidth={2} /></div>
             <div>
               <h2 style={s.coachName}>
                 {activeSession ? activeSession.title : "AI Coach"}
@@ -618,7 +619,7 @@ export default function Chat() {
       <div style={s.messagesArea}>
         {messages.length === 0 && (
           <div style={s.welcomeBox}>
-            <div style={s.welcomeAvatar}>AI</div>
+            <div style={s.welcomeAvatar}><MonsterLogo size={34} color="#fff" strokeWidth={1.8} /></div>
             <h3 style={s.welcomeTitle}>Olá {profile?.name?.split(" ")[0]}</h3>
             <p style={s.welcomeText}>Sou o teu Coach AI. Pergunta-me sobre treino, nutrição ou planos.</p>
             {pendingSuggestions.length > 0 && (
