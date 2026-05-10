@@ -522,7 +522,7 @@ function BicepCurl({ accent }) {
         pivotX={SHOULDER_X}
         pivotY={SHOULDER_Y}
         upperAngle={0}
-        forearmAngles="0; -175; 0"
+        forearmAngles="0; 175; 0"
         duration="2.4s"
         keySplines={EASE}
         color={accent}
@@ -845,8 +845,8 @@ function Row({ accent }) {
       <ArticulatedArm
         pivotX={61}
         pivotY={107}
-        upperAngles="0; -50; 0"
-        forearmAngles="0; 0; 0"
+        upperAngles="0; 90; 0"
+        forearmAngles="0; 35; 0"
         duration="2.4s"
         keySplines={EASE}
         color={accent}
@@ -856,8 +856,8 @@ function Row({ accent }) {
       <ArticulatedArm
         pivotX={83}
         pivotY={107}
-        upperAngles="0; -50; 0"
-        forearmAngles="0; 0; 0"
+        upperAngles="0; 90; 0"
+        forearmAngles="0; 35; 0"
         duration="2.4s"
         keySplines={EASE}
         color={accent}
@@ -1696,7 +1696,7 @@ function RunInPlace({ accent }) {
           pivotX={100 - P.SHOULDER_W}
           pivotY={ShoulderY}
           upperAngles="-50; 50; -50"
-          forearmAngles="-80; -80; -80"
+          forearmAngles="80; 80; 80"
           duration="0.7s"
           keySplines={EASE}
           color={accent}
@@ -1710,26 +1710,26 @@ function RunInPlace({ accent }) {
           keySplines={EASE}
           color={accent}
         />
-        {/* Pernas alternam: uma sobe (joelho ao peito), outra atras */}
+        {/* Pernas alternam: uma a frente, outra atras com calcanhar levantado */}
         <ArticulatedLeg
           pivotX={100 - P.HIP_W}
           pivotY={PELV_Y}
-          thighAngles="0; 60; 0"
-          shinAngles="0; -90; 0"
+          thighAngles="-25; 25; -25"
+          shinAngles="70; -5; 70"
           duration="0.7s"
           keySplines={EASE}
           color={accent}
-          footAngle={-30}
+          footAngle={-20}
         />
         <ArticulatedLeg
           pivotX={100 + P.HIP_W}
           pivotY={PELV_Y}
-          thighAngles="0; -60; 0"
-          shinAngles="0; 90; 0"
+          thighAngles="25; -25; 25"
+          shinAngles="-5; 70; -5"
           duration="0.7s"
           keySplines={EASE}
           color={accent}
-          footAngle={30}
+          footAngle={-20}
         />
       </g>
     </g>
