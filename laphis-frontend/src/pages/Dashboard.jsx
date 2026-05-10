@@ -90,7 +90,6 @@ export default function Dashboard() {
  try {
  const result = await ApiService.addWater(1);
  setWaterData(result);
- toast.success("Water added!");
  } catch (err) {
  console.error("Error adding water:", err);
  setWaterData(snapshot);
@@ -459,7 +458,7 @@ export default function Dashboard() {
  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
  <YAxis hide allowDecimals={false} />
- <Tooltip content={<CustomTooltip />} />
+ <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
  <Bar dataKey="treinos" name="Treinos" fill={CHART_COLORS.training} radius={[4, 4, 0, 0]} />
  </BarChart>
  </ResponsiveContainer>
@@ -480,7 +479,7 @@ export default function Dashboard() {
  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
  <YAxis hide />
- <Tooltip content={<CustomTooltip />} />
+ <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border-light)", strokeWidth: 1 }} />
  <Area type="monotone" dataKey="calorias" name="Calorias"
  stroke={CHART_COLORS.nutrition} fill="url(#calGrad)"
  strokeWidth={2} dot={{ r: 2.5, fill: CHART_COLORS.nutrition }} />
