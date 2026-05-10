@@ -401,51 +401,55 @@ export default function Dashboard() {
 
  {/* ── 3. WATER TRACKER ── */}
  <div style={s.waterCard}>
+   {/* Header */}
    <div style={s.waterHeader}>
-     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-       <Droplets size={16} color="var(--p3)" strokeWidth={1.75} />
+     <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+       <Droplets size={15} color="var(--p3)" strokeWidth={2} />
        <span style={s.waterLabel}>Água</span>
      </div>
-     <span style={s.waterMl}>{(waterData.glasses || 0) * 200} ml</span>
+     <span style={s.waterPct}>{Math.round(waterPercentage)}%</span>
    </div>
 
+   {/* Big number */}
+   <div style={s.waterCenter}>
+     <span style={s.waterBigMl}>{(waterData.glasses || 0) * 200}</span>
+     <span style={s.waterUnit}> ml</span>
+     <span style={s.waterGoalText}> / {(waterData.goal_glasses || 8) * 200} ml</span>
+   </div>
+
+   {/* Progress bar */}
+   <div style={s.waterBarTrack}>
+     <div style={{ ...s.waterBarFill, width: `${Math.min(waterPercentage, 100)}%` }} />
+   </div>
+
+   {/* Drop dots */}
    <div style={s.waterDots}>
      {Array.from({ length: waterData.goal_glasses || 8 }).map((_, i) => (
-       <div
-         key={i}
-         style={{
-           ...s.waterDot,
-           background: i < (waterData.glasses || 0) ? "var(--p3)" : "var(--hover-overlay)",
-           border: i < (waterData.glasses || 0) ? "none" : "1.5px solid var(--border-light)",
-           opacity: i < (waterData.glasses || 0) ? 1 : 0.5,
-         }}
-       />
+       <div key={i} style={{
+         ...s.waterDrop,
+         background: i < (waterData.glasses || 0) ? "var(--p3)" : "var(--hover-overlay)",
+         border: i < (waterData.glasses || 0) ? "none" : "1.5px solid var(--border-light)",
+       }} />
      ))}
    </div>
 
-   <div style={s.waterFooter}>
-     <span style={s.waterProgress}>
-       {waterData.glasses || 0} / {waterData.goal_glasses || 8} copos · meta {(waterData.goal_glasses || 8) * 200} ml
-     </span>
-     <div style={s.waterActions}>
-       <button
-         style={{ ...s.waterBtn, opacity: (waterData.glasses || 0) <= 0 ? 0.4 : 1 }}
-         onClick={handleRemoveWater}
-         disabled={(waterData.glasses || 0) <= 0}
-         aria-label="Remover copo"
-       >
-         <Minus size={13} strokeWidth={2.5} />
-       </button>
-       <button
-         style={{ ...s.waterBtn, ...s.waterBtnAdd }}
-         onClick={handleAddWater}
-         disabled={waterAdding}
-         aria-label="Adicionar copo"
-       >
-         <Plus size={13} strokeWidth={2.5} />
-         <span>200 ml</span>
-       </button>
-     </div>
+   {/* Actions */}
+   <div style={s.waterActions}>
+     <button
+       style={{ ...s.waterBtnMinus, opacity: (waterData.glasses || 0) <= 0 ? 0.35 : 1 }}
+       onClick={handleRemoveWater}
+       disabled={(waterData.glasses || 0) <= 0}
+     >
+       <Minus size={13} strokeWidth={2.5} />
+     </button>
+     <button
+       style={s.waterBtnAdd}
+       onClick={handleAddWater}
+       disabled={waterAdding}
+     >
+       <Plus size={14} strokeWidth={2.5} />
+       <span>200 ml</span>
+     </button>
    </div>
  </div>
 
@@ -458,7 +462,7 @@ export default function Dashboard() {
  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
  <YAxis hide allowDecimals={false} />
- <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
+ <Tooltip content={<CustomTooltip />} cursor={false} />
  <Bar dataKey="treinos" name="Treinos" fill={CHART_COLORS.training} radius={[4, 4, 0, 0]} />
  </BarChart>
  </ResponsiveContainer>
@@ -479,7 +483,7 @@ export default function Dashboard() {
  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--text-muted)" }} axisLine={false} tickLine={false} />
  <YAxis hide />
- <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border-light)", strokeWidth: 1 }} />
+ <Tooltip content={<CustomTooltip />} cursor={false} />
  <Area type="monotone" dataKey="calorias" name="Calorias"
  stroke={CHART_COLORS.nutrition} fill="url(#calGrad)"
  strokeWidth={2} dot={{ r: 2.5, fill: CHART_COLORS.nutrition }} />
@@ -643,8 +647,8 @@ const s = {
  /* 3. Water Tracker */
  waterCard: {
    background: "var(--card-bg)", borderRadius: 14,
-   padding: "14px 16px", boxShadow: "var(--shadow)", border: "var(--card-border)",
-   display: "flex", flexDirection: "column", gap: 12,
+   padding: "16px 16px 14px", boxShadow: "var(--shadow)", border: "var(--card-border)",
+   display: "flex", flexDirection: "column", gap: 14,
  },
  waterHeader: {
    display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -652,36 +656,58 @@ const s = {
  waterLabel: {
    fontSize: "var(--text-body)", fontWeight: 700, color: "var(--text)",
  },
- waterMl: {
-   fontSize: "var(--text-h3)", fontWeight: 800, color: "var(--p3)",
-   letterSpacing: "-0.02em", fontFamily: "var(--font-heading)",
+ waterPct: {
+   fontSize: 11, fontWeight: 700, color: "var(--p3)",
+   background: "rgba(100,160,255,0.12)", borderRadius: 20,
+   padding: "2px 9px", letterSpacing: "0.02em",
+ },
+ waterCenter: {
+   display: "flex", alignItems: "baseline", gap: 0,
+ },
+ waterBigMl: {
+   fontSize: 36, fontWeight: 800, color: "var(--p3)",
+   letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "var(--font-heading)",
+   transition: "all 0.2s",
+ },
+ waterUnit: {
+   fontSize: 16, fontWeight: 700, color: "var(--p3)", marginLeft: 3,
+ },
+ waterGoalText: {
+   fontSize: 13, fontWeight: 500, color: "var(--text-muted)", marginLeft: 4,
+ },
+ waterBarTrack: {
+   height: 6, borderRadius: 99,
+   background: "var(--hover-overlay)",
+   overflow: "hidden",
+ },
+ waterBarFill: {
+   height: "100%", borderRadius: 99,
+   background: "var(--p3)",
+   transition: "width 0.35s cubic-bezier(.4,0,.2,1)",
+   minWidth: 6,
  },
  waterDots: {
-   display: "flex", gap: 6, flexWrap: "wrap",
+   display: "flex", gap: 5,
  },
- waterDot: {
-   flex: "1 1 auto", maxWidth: 28, height: 28,
-   borderRadius: 8, transition: "background 0.2s, opacity 0.2s",
- },
- waterFooter: {
-   display: "flex", alignItems: "center", justifyContent: "space-between",
- },
- waterProgress: {
-   fontSize: "var(--text-overline)", color: "var(--text-muted)", fontWeight: 500,
+ waterDrop: {
+   flex: 1, height: 8, borderRadius: 99,
+   transition: "background 0.25s",
  },
  waterActions: {
-   display: "flex", gap: 6, alignItems: "center",
+   display: "flex", gap: 8, alignItems: "center",
  },
- waterBtn: {
+ waterBtnMinus: {
    display: "flex", alignItems: "center", justifyContent: "center",
-   width: 32, height: 32, borderRadius: 10,
+   width: 36, height: 36, borderRadius: 11,
    background: "var(--hover-overlay)", border: "1px solid var(--border-light)",
-   cursor: "pointer", color: "var(--text-secondary)", transition: "background 0.12s",
+   cursor: "pointer", color: "var(--text-secondary)", flexShrink: 0,
  },
  waterBtnAdd: {
-   width: "auto", padding: "0 12px", gap: 5,
+   flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+   gap: 6, height: 36, borderRadius: 11,
    background: "var(--p3)", border: "none",
-   color: "#fff", fontWeight: 700, fontSize: 12,
+   color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
+   transition: "opacity 0.12s",
  },
 
  /* 4. Charts */
@@ -757,7 +783,7 @@ const s = {
  },
 
  /* Tooltip */
- tooltip: { background: "var(--card-bg)", borderRadius: 10, padding: "10px 14px", boxShadow: "var(--shadow-md)", border: "var(--card-border)" },
+ tooltip: { background: "var(--card-bg)", borderRadius: 10, padding: "10px 14px", boxShadow: "var(--shadow-md)", border: "1px solid var(--border-light)" },
  tooltipLabel: { fontSize: "var(--text-overline)", fontWeight: 700, color: "var(--text)", margin: "0 0 4px" },
  tooltipValue: { fontSize: "var(--text-overline)", fontWeight: 400, margin: 0 },
 };
