@@ -86,11 +86,16 @@ function parseExerciseLine(raw) {
     line.match(/\b(\d+)\s*(?:seg|segundos?)\b/i);
   const rest = restMatch ? parseInt(restMatch[1], 10) : 60;
 
+  // peso sugerido: "@30kg", "@ 30 kg", "30kg"
+  const weightMatch = line.match(/@\s*(\d+(?:\.\d+)?)\s*kg/i);
+  const weight = weightMatch ? parseFloat(weightMatch[1]) : null;
+
   return {
     name,
     sets,
     reps,
     rest,
+    weight,
     category: guessCategory(name),
   };
 }
@@ -168,6 +173,7 @@ function flatExercises(days) {
         default_sets: ex.sets,
         default_reps: ex.reps,
         default_rest_sec: ex.rest,
+        suggested_weight: ex.weight,
         calories_per_min: 6,
         _day: d.header,
       });

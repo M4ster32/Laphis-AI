@@ -229,9 +229,14 @@ export default function WorkoutSession() {
         </div>
 
         <h1 style={s.exerciseName}>{current.name}</h1>
-        {current.muscle_primary && (
-          <div style={s.exerciseMuscle}>{current.muscle_primary}</div>
-        )}
+        <div style={s.exerciseMeta}>
+          {current.muscle_primary && (
+            <div style={s.exerciseMuscle}>{current.muscle_primary}</div>
+          )}
+          {current.suggested_weight && (
+            <div style={s.weightBadge}>🏋️ {current.suggested_weight} kg</div>
+          )}
+        </div>
 
         {/* Sets indicator */}
         <div style={s.setsRow}>
@@ -341,24 +346,32 @@ const s = {
     transition: "width 0.4s ease",
   },
   exerciseArea: {
-    flex: 1, padding: "20px 14px", display: "flex", flexDirection: "column",
+    flex: 1, padding: "12px 14px", display: "flex", flexDirection: "column",
     alignItems: "center", overflowY: "auto",
   },
   exerciseImage: {
-    width: "100%", maxWidth: 400, height: 240, borderRadius: 16,
+    width: "100%", maxWidth: 360, height: 170, borderRadius: 16,
     overflow: "hidden", background: "var(--bg-tertiary)",
     boxShadow: "var(--shadow)",
   },
   exerciseName: {
-    fontSize: 24, fontWeight: 800, color: "var(--text)",
-    margin: "20px 0 4px", textAlign: "center", letterSpacing: "-0.03em",
+    fontSize: 20, fontWeight: 800, color: "var(--text)",
+    margin: "12px 0 6px", textAlign: "center", letterSpacing: "-0.03em",
+  },
+  exerciseMeta: {
+    display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "center",
   },
   exerciseMuscle: {
-    fontSize: 13, color: "var(--text-muted)", textTransform: "uppercase",
+    fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase",
     letterSpacing: 1, fontWeight: 600,
   },
+  weightBadge: {
+    fontSize: 12, fontWeight: 700, color: "var(--primary)",
+    background: "var(--bg-tertiary)", border: "1px solid var(--primary)",
+    borderRadius: 8, padding: "2px 8px",
+  },
   setsRow: {
-    display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", justifyContent: "center",
+    display: "flex", gap: 10, marginTop: 16, flexWrap: "wrap", justifyContent: "center",
   },
   setBubble: {
     width: 44, height: 44, borderRadius: "50%",
@@ -374,10 +387,10 @@ const s = {
   },
   setLabel: {
     fontSize: 13, color: "var(--text-secondary)",
-    marginTop: 12, fontWeight: 500,
+    marginTop: 8, fontWeight: 500,
   },
   restBox: {
-    marginTop: 24, padding: 16,
+    marginTop: 12, padding: 12,
     background: "var(--card-bg)", border: "2px solid var(--primary)",
     borderRadius: 14, width: "100%", maxWidth: 320, textAlign: "center",
   },
