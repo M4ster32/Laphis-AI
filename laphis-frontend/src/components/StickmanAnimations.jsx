@@ -365,7 +365,7 @@ function BenchPress({ accent }) {
       <ArticulatedArm
         pivotX={78}
         pivotY={128}
-        upperAngles="180; 95; 180"
+        upperAngles="180; 250; 180"
         forearmAngles="0; 150; 0"
         duration="2.6s"
         keySplines={EASE}
@@ -963,35 +963,28 @@ function Squat({ accent }) {
         />
         {/* Pernas vista de lado, AMBAS para o mesmo lado (frente). Pivots
             ligeiramente offset para sugerir profundidade (3D em 2D). */}
+        {/* Vista frontal: pernas abrem para os lados */}
         <ArticulatedLeg
           pivotX={98}
           pivotY={124}
-          thighAngles="0; -46; 0"
-          shinAngles="0; 97; 0"
+          thighAngles="0; 25; 0"
+          shinAngles="0; 41; 0"
           duration="2.8s"
           keySplines={EASE}
           color={accent}
-          footAngle={-30}
+          footAngle={-5}
         />
         <ArticulatedLeg
           pivotX={102}
           pivotY={124}
-          thighAngles="0; -46; 0"
-          shinAngles="0; 97; 0"
+          thighAngles="0; -25; 0"
+          shinAngles="0; -41; 0"
           duration="2.8s"
           keySplines={EASE}
           color={accent}
-          footAngle={-30}
+          footAngle={5}
         />
-        {/* Tronco inclina forward (-22°) para manter o centro de massa */}
-        <Torso
-          pelvisX={100}
-          pelvisY={124}
-          bendAngles="0; -22; 0"
-          duration="2.8s"
-          keySplines={EASE}
-          color={accent}
-        />
+        <Torso pelvisX={100} pelvisY={124} color={accent} />
         {/* Sem barra — animacao usada tanto para squat com barra como peso corporal */}
       </g>
     </g>
@@ -1314,13 +1307,13 @@ function Plank({ accent }) {
         />
         <Head cx={48} cy={132} color={accent} />
         <Bone x1={55} y1={134} x2={150} y2={146} color={accent} w={P.STROKE_BODY} />
-        {/* Antebracos apoiados no chao */}
-        <Bone x1={65} y1={135} x2={62} y2={170} color={accent} />
-        <Bone x1={62} y1={170} x2={82} y2={178} color={accent} />
-        <Joint cx={62} cy={170} color={accent} />
-        <Bone x1={75} y1={137} x2={72} y2={170} color={accent} />
-        <Bone x1={72} y1={170} x2={90} y2={178} color={accent} />
-        <Joint cx={72} cy={170} color={accent} />
+        {/* Antebracos apoiados no chao: cotovelos ligeiramente a frente dos ombros */}
+        <Bone x1={65} y1={135} x2={70} y2={170} color={accent} />
+        <Bone x1={70} y1={170} x2={84} y2={178} color={accent} />
+        <Joint cx={70} cy={170} color={accent} />
+        <Bone x1={75} y1={137} x2={80} y2={170} color={accent} />
+        <Bone x1={80} y1={170} x2={92} y2={178} color={accent} />
+        <Joint cx={80} cy={170} color={accent} />
         {/* Pernas estendidas com foot no chao */}
         <Joint cx={150} cy={146} color={accent} r={P.JOINT_R + 0.4} />
         <ArticulatedLeg
@@ -1740,10 +1733,10 @@ function Dips({ accent }) {
   return (
     <g>
       <Floor color={accent} />
-      <line x1="48" y1="80" x2="48" y2="178" stroke={accent} strokeWidth={3} opacity={0.5} />
-      <line x1="152" y1="80" x2="152" y2="178" stroke={accent} strokeWidth={3} opacity={0.5} />
-      <line x1="40" y1="80" x2="80" y2="80" stroke={accent} strokeWidth={4} />
-      <line x1="120" y1="80" x2="160" y2="80" stroke={accent} strokeWidth={4} />
+      <line x1="65" y1="115" x2="65" y2="178" stroke={accent} strokeWidth={3} opacity={0.5} />
+      <line x1="135" y1="115" x2="135" y2="178" stroke={accent} strokeWidth={3} opacity={0.5} />
+      <line x1="55" y1="115" x2="75" y2="115" stroke={accent} strokeWidth={4} />
+      <line x1="125" y1="115" x2="145" y2="115" stroke={accent} strokeWidth={4} />
 
       <g>
         <animateTransform
@@ -1756,12 +1749,12 @@ function Dips({ accent }) {
           keySplines={EASE}
         />
         <Torso pelvisX={100} pelvisY={130} bendAngle={10} color={accent} />
-        {/* Bracos suportam o corpo: upper roda e cotovelo flecte */}
+        {/* Bracos: ombro desce ate a barra (y=115). Upper vai para fora-baixo, cotovelo dobra */}
         <ArticulatedArm
           pivotX={100 - P.SHOULDER_W}
           pivotY={130 - P.TORSO}
-          upperAngles="150; 95; 150"
-          forearmAngles="-30; -85; -30"
+          upperAngles="92; 149; 92"
+          forearmAngles="-87; -114; -87"
           duration="2.4s"
           keySplines={EASE}
           color={accent}
@@ -1769,8 +1762,8 @@ function Dips({ accent }) {
         <ArticulatedArm
           pivotX={100 + P.SHOULDER_W}
           pivotY={130 - P.TORSO}
-          upperAngles="-150; -95; -150"
-          forearmAngles="30; 85; 30"
+          upperAngles="-92; -149; -92"
+          forearmAngles="87; 114; 87"
           duration="2.4s"
           keySplines={EASE}
           color={accent}
