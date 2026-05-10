@@ -992,8 +992,7 @@ function Squat({ accent }) {
           keySplines={EASE}
           color={accent}
         />
-        {/* Barra alta atras dos ombros (high-bar squat) */}
-        <Barbell x={100} y={124 - P.TORSO + 4} scale={1.05} color={accent} />
+        {/* Sem barra — animacao usada tanto para squat com barra como peso corporal */}
       </g>
     </g>
   );
@@ -1909,12 +1908,12 @@ function HipThrust({ accent }) {
         />
         <Bone x1={55} y1={104} x2={130} y2={120} color={accent} w={P.STROKE_BODY} />
         <Joint cx={130} cy={120} color={accent} r={P.JOINT_R + 0.5} />
-        {/* Pernas dobradas, pes no chao: thigh -45° (down-RIGHT-forward), shin -45° (continues toward floor) */}
+        {/* Pernas dobradas, pes no chao: thigh -45°, shin local +67 → global 22° ≈ foot no chao */}
         <ArticulatedLeg
           pivotX={130}
           pivotY={120}
           thighAngle={-45}
-          shinAngle={-50}
+          shinAngle={67}
           color={accent}
           footAngle={-90}
         />
@@ -1922,7 +1921,7 @@ function HipThrust({ accent }) {
           pivotX={130}
           pivotY={126}
           thighAngle={-45}
-          shinAngle={-50}
+          shinAngle={67}
           color={accent}
           footAngle={-90}
         />
@@ -1958,7 +1957,7 @@ function GluteBridge({ accent }) {
           pivotX={130}
           pivotY={148}
           thighAngle={-45}
-          shinAngle={-50}
+          shinAngle={112}
           color={accent}
           footAngle={-90}
         />
@@ -1966,7 +1965,7 @@ function GluteBridge({ accent }) {
           pivotX={130}
           pivotY={154}
           thighAngle={-45}
-          shinAngle={-50}
+          shinAngle={112}
           color={accent}
           footAngle={-90}
         />
