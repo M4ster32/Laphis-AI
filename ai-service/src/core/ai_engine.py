@@ -518,7 +518,16 @@ Regras obrigatórias:
 - Para treino, organiza por dias (Dia 1, Dia 2, etc.)
 - Para nutrição, organiza por refeição com horários sugeridos
 - Inclui always um summary com os dados relevantes do perfil
-- Se as notas indicarem treino em casa / sem equipamento, usa EXCLUSIVAMENTE exercícios sem máquinas nem pesos de ginásio"""
+- Se as notas indicarem treino em casa / sem equipamento, usa EXCLUSIVAMENTE exercícios sem máquinas nem pesos de ginásio
+
+CARGAS (obrigatório para exercícios com pesos):
+- Sugere sempre a carga em kg baseada no peso corporal e nível do utilizador
+- Formato obrigatório: "Nome do exercício — séries×reps @Xkg (descanso Ys)"
+- Exemplo: "Supino reto com barra — 4×8-10 @60kg (descanso 90s)"
+- Iniciante: 20-40% do peso corporal nos grandes grupos, cargas leves nos isolados
+- Intermédio: 50-70% do peso corporal nos compostos, moderado nos isolados
+- Avançado: 75-100%+ nos compostos conforme o objetivo
+- Para exercícios de peso corporal (flexões, prancha, etc.) NÃO colocar @kg"""
 
 
 def _plan_json_schema(plan_type: str) -> str:
