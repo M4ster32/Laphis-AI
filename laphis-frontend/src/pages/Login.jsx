@@ -4,7 +4,7 @@ import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
 import { useApp } from "../contexts/AppContext";
 import PasswordInput from "../components/PasswordInput";
-import { Mail } from "lucide-react";
+import { Mail, Leaf } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ export default function Login() {
     <div style={s.page}>
       <div style={s.container}>
         <div style={s.brand}>
-          <div style={s.logo}>L</div>
+          <div style={s.logo}><Leaf size={26} strokeWidth={2.2} color="#fff" /></div>
           <h1 style={s.title}>Entrar</h1>
           <p style={s.subtitle}>Bem-vindo de volta</p>
         </div>
