@@ -366,7 +366,7 @@ function BenchPress({ accent }) {
         pivotX={78}
         pivotY={128}
         upperAngles="180; 265; 180"
-        forearmAngles="0; 150; 0"
+        forearmAngles="0; -150; 0"
         duration="2.6s"
         keySplines={EASE}
         color={accent}
