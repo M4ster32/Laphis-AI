@@ -91,26 +91,26 @@ ANIMATED_EXERCISES = {
 
 
 HOME_EXERCISES = {
-    "Peito / Tríceps": [
+    "Peito / Tríceps (sem equipamento)": [
         "Flexões",
-        "Dips / Fundos em paralelas",
+        "Dips / Fundos em paralelas (usar cadeira ou bancada)",
     ],
-    "Costas / Bíceps": [
-        "Pull-up / Barra fixa",
+    "Costas / Bíceps (opcional: barra de porta)": [
+        "Pull-up / Barra fixa (se tiver barra de porta — menciona que é opcional)",
     ],
-    "Pernas / Glúteos": [
-        "Agachamento com barra",
+    "Pernas / Glúteos (sem equipamento)": [
+        "Agachamento (peso corporal)",
         "Afundo / Lunge",
         "Elevação de panturrilha",
         "Ponte de glúteo / Glute bridge",
     ],
-    "Abdómen / Core": [
+    "Abdómen / Core (sem equipamento)": [
         "Prancha / Plank",
         "Crunch / Abdominal",
         "Elevação de pernas / Leg raise",
         "Russian twist",
     ],
-    "Cardio / Full Body": [
+    "Cardio / Full Body (sem equipamento)": [
         "Burpee",
         "Mountain climber / Escalador",
         "Polichinelos / Jumping jacks",
@@ -169,10 +169,21 @@ def _format_home_constraint() -> str:
             lines.append(f"   - {item}")
     lines.extend([
         "",
-        "PROIBIDO incluir qualquer destes equipamentos: barra olímpica, halteres, kettlebell,",
-        "leg press, cadeira extensora, mesa flexora, polia, cabo, banco com barra, máquinas de ginásio.",
-        "Se precisares de mais volume, aumenta séries/reps dos exercícios disponíveis.",
-        "Podes sugerir Pull-up/Barra fixa se o utilizador tiver barra de porta (menciona isso).",
+        "NOME CORRETO PARA AGACHAMENTO EM CASA: escreve sempre 'Agachamento (peso corporal)' — NUNCA 'Agachamento com barra'.",
+        "",
+        "EQUIPAMENTO TOTALMENTE PROIBIDO (utilizador NÃO tem nada disso em casa):",
+        "❌ Barra olímpica / barbell",
+        "❌ Halteres / dumbbells",
+        "❌ Kettlebell",
+        "❌ Leg press (máquina)",
+        "❌ Cadeira extensora / leg extension (máquina)",
+        "❌ Mesa flexora / leg curl (máquina)",
+        "❌ Polia / cabo / pulldown (máquina)",
+        "❌ Banco de musculação com suportes",
+        "❌ Qualquer máquina de ginásio",
+        "",
+        "Se precisares de mais volume, aumenta séries e repetições dos exercícios disponíveis.",
+        "Menciona quando um exercício precisa de barra de porta (Pull-up) ou cadeira (Dips).",
     ])
     return "\n".join(lines)
 
