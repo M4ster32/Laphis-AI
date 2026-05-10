@@ -47,7 +47,7 @@ export default function Layout() {
       <header className="layout-header">
         <div className="header-left">
           <div className="header-logo" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <MonsterLogo size={20} color="#fff" strokeWidth={2.2} />
+            <Leaf size={17} strokeWidth={2.2} color="#fff" />
           </div>
           <span className="header-brand">LAPHIS</span>
         </div>
@@ -89,7 +89,7 @@ export default function Layout() {
           to="/chat"
           className={`nav-chat-fab ${isChatActive ? "active" : ""}`}
         >
-          <Bot size={24} strokeWidth={2} color="#fff" />
+          <MonsterLogo size={26} color="#fff" strokeWidth={2} />
         </NavLink>
 
         {NAV_RIGHT.map((item) => (
