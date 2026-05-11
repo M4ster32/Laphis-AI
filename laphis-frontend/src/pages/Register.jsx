@@ -5,19 +5,12 @@ import { useToast } from "../components/Toast";
 import PasswordInput from "../components/PasswordInput";
 import { Mail, Leaf } from "lucide-react";
 
-const GOALS = [
-  { value: "perder_gordura", label: "Perder Gordura" },
-  { value: "ganhar_massa", label: "Ganhar Massa" },
-  { value: "manter", label: "Manter Forma" },
-];
-
 export default function Register() {
   const navigate = useNavigate();
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -96,29 +89,6 @@ export default function Register() {
             <span style={{ fontSize: 11, color: "var(--danger, #e74c3c)", marginTop: -8, marginBottom: 8, display: "block" }}>As passwords não coincidem</span>
           )}
 
-          <div className="form-group">
-            <label className="form-label">Objetivo (opcional)</label>
-            <div style={s.goalGrid}>
-              {GOALS.map((g) => (
-                <button
-                  key={g.value} type="button"
-                  onClick={() => setGoal(goal === g.value ? "" : g.value)}
-                  style={{
-                    ...s.goalCard,
-                    borderColor: goal === g.value ? "var(--accent-sport)" : "var(--border)",
-                    background: goal === g.value ? "var(--primary-bg)" : "var(--bg-subtle)",
-                  }}
-                  disabled={loading}
-                >
-                  <span style={{
-                    fontSize: 13, fontWeight: goal === g.value ? 700 : 500,
-                    color: goal === g.value ? "var(--accent-sport)" : "var(--text-secondary)",
-                  }}>{g.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <button type="submit" disabled={loading} className="btn btn-primary btn-full" style={{ marginTop: 8 }}>
             {loading ? (
               <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> A criar...</>
@@ -160,14 +130,6 @@ const s = {
   },
   title: { fontSize: "var(--text-h1)", fontWeight: 800, color: "var(--text)", margin: "0 0 6px", letterSpacing: "-0.03em" },
   subtitle: { fontSize: "var(--text-body)", color: "var(--text-secondary)", margin: 0, fontWeight: 500 },
-
-  goalGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 },
-  goalCard: {
-    display: "flex", flexDirection: "column", alignItems: "center",
-    justifyContent: "center", gap: 6, padding: "14px 8px",
-    borderRadius: 14, border: "1.5px solid var(--border)",
-    cursor: "pointer", transition: "all 0.25s",
-  },
 
   link: {
     textAlign: "center", fontSize: 14, color: "var(--text-secondary)",
