@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import ApiService from "../services/api";
-import { Mail, CheckCircle } from "lucide-react";
+import { Mail, CheckCircle, Leaf } from "lucide-react";
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -71,7 +71,7 @@ export default function VerifyEmail() {
       setError(null);
       await ApiService.verifyEmail(email, finalCode);
       setSuccess("Email verificado com sucesso!");
-      setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+      setTimeout(() => navigate("/profile", { replace: true }), 1500);
     } catch (err) {
       setError(err.message || "Código inválido");
       setCode(["", "", "", "", "", ""]);
@@ -106,7 +106,7 @@ export default function VerifyEmail() {
       <div style={s.container}>
         {/* Brand */}
         <div style={s.brand}>
-          <div style={s.logo}>L</div>
+          <div style={s.logo}><Leaf size={26} strokeWidth={2.2} color="#fff" /></div>
           <h1 style={s.title}>Verifica o teu Email</h1>
           <p style={{ ...s.subtitle, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <Mail size={18} strokeWidth={1.5} />

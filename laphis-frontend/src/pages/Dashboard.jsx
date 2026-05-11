@@ -309,7 +309,7 @@ export default function Dashboard() {
  const quote = motivationalQuotes[Math.floor(Date.now() / 86400000) % motivationalQuotes.length];
  // Personalized water goal based on profile (weight, level, goal)
  const effectiveGoalGlasses = useMemo(() => {
-   if (!profile?.weight_kg) return effectiveGoalGlasses;
+   if (!profile?.weight_kg) return waterData.goal_glasses ?? 8;
    let ml = profile.weight_kg * 35;
    if (profile.level === "intermedio") ml += 300;
    if (profile.level === "avancado") ml += 600;
