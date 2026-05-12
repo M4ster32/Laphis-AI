@@ -114,7 +114,7 @@ export default function ResetPassword() {
           {/* Code */}
           <div className="form-group">
             <label className="form-label">Código de recuperação</label>
-            <div style={s.codeRow} onPaste={handlePaste}>
+            <div style={s.codeRow}>
               {code.map((digit, i) => (
                 <input
                   key={i}
@@ -123,6 +123,7 @@ export default function ResetPassword() {
                   value={digit}
                   onChange={(e) => handleCodeChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
+                  onPaste={handlePaste}
                   disabled={loading}
                   style={{
                     ...s.codeInput,

@@ -129,7 +129,7 @@ export default function VerifyEmail() {
 
         {/* Code inputs */}
         <form onSubmit={handleSubmit}>
-          <div style={s.codeRow} onPaste={handlePaste}>
+          <div style={s.codeRow}>
             {code.map((digit, i) => (
               <input
                 key={i}
@@ -140,6 +140,7 @@ export default function VerifyEmail() {
                 value={digit}
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
                 disabled={loading || !!success}
                 style={{
                   ...s.codeInput,

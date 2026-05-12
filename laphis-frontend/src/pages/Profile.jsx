@@ -219,7 +219,7 @@ export default function Profile() {
      not opened the wizard, show a skeleton that mirrors the final layout.
      This prevents the full-screen empty flash that happens when the
      context is still loading. */
-  if (profileLoading && !editing) {
+  if (profileLoading || (!profile && !editing)) {
     return <SkeletonProfile />;
   }
 
