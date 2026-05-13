@@ -7,6 +7,7 @@ __pycache__/
 # Virtual environments
 venv/
 .venv/
+.venv~/
 .env
 .env/
 .env.local
@@ -22,7 +23,20 @@ venv/
 # Presentations and documentation (local only)
 *.pptx
 *.odp
+*.pdf
 gerar_pptx.py
+gerar_*.py
+scripts/report_gen/
+GUIAO_APRESENTACAO.md
+DEPLOYMENT_STATUS.md
+RENDER_DEPLOYMENT.md
+railway.json
+
+# Vite cache
+.vite/
+
+# Old/unused folders
+app/
 
 # OS
 .DS_Store
