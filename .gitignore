@@ -49,6 +49,12 @@ uploads/
 .vercel
 .env*.local
 
-# Docs (não enviar para GitHub)
+# Docs e scripts locais (não enviar para GitHub)
 docs/
+.docs/
 .env.production
+create_tables_supabase.py
+migrate_to_supabase.py
+run_backend.py
+start_laphis.sh
+test_backend.sh
