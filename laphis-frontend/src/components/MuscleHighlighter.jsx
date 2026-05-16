@@ -13,80 +13,114 @@ const MUSCLE_MAP = {
   "peitoral": ["chest"],
   "peitoral maior": ["chest"],
   "peitoral menor": ["chest"],
+  "peitoral superior (clavicular)": ["chest"],
+  "peitoral superior": ["chest"],
 
   // Costas
   "costas": ["upper-back", "lower-back"],
   "dorsal": ["upper-back"],
   "grande dorsal": ["upper-back"],
-  "latíssimo do dorso": ["upper-back"],
+  "grande dorsal, romboides": ["upper-back"],
+  "latissimo do dorso": ["upper-back"],
   "lombar": ["lower-back"],
-  "trapézio": ["trapezius"],
+  "eretores da espinha": ["lower-back"],
+  "eretores da espinha, gluteos, isquiotibiais": ["lower-back", "gluteal", "hamstring"],
   "trapezio": ["trapezius"],
-  "rombóide": ["upper-back"],
+  "trapezio medio": ["trapezius"],
   "romboide": ["upper-back"],
+  "romboides": ["upper-back"],
 
   // Ombros
   "ombros": ["front-deltoids", "back-deltoids"],
-  "deltóide": ["front-deltoids", "back-deltoids"],
   "deltoide": ["front-deltoids", "back-deltoids"],
-  "deltóide anterior": ["front-deltoids"],
-  "deltóide posterior": ["back-deltoids"],
-  "deltóide lateral": ["front-deltoids"],
+  "deltoide anterior": ["front-deltoids"],
+  "deltoide lateral": ["front-deltoids"],
+  "deltoide posterior": ["back-deltoids"],
+  "deltoide anterior e lateral": ["front-deltoids"],
+  "deltoide anterior, lateral e posterior": ["front-deltoids", "back-deltoids"],
+  "deltoide posterior, trapezio medio": ["back-deltoids", "trapezius"],
+  "ombros, pernas, core": ["front-deltoids", "quadriceps", "abs"],
   "rotadores": ["rotator-cuffs"],
 
   // Bíceps
-  "bíceps": ["biceps"],
   "biceps": ["biceps"],
+  "biceps braquial": ["biceps"],
+  "biceps (cabeca longa)": ["biceps"],
   "braquial": ["biceps"],
+  "braquiorradial": ["forearm"],
+  "braquiorradial, braquial": ["forearm", "biceps"],
 
   // Tríceps
-  "tríceps": ["triceps"],
   "triceps": ["triceps"],
+  "triceps (cabeca longa)": ["triceps"],
 
   // Antebraço
-  "antebraço": ["forearm"],
   "antebraco": ["forearm"],
 
   // Abdómen
-  "abdómen": ["abs"],
   "abdomen": ["abs"],
   "abdominal": ["abs"],
-  "oblíquos": ["obliques"],
   "obliquos": ["obliques"],
   "core": ["abs", "obliques"],
+  "core, flexores da anca": ["abs", "obliques"],
+  "core, ombros": ["abs", "front-deltoids"],
+  "reto abdominal superior": ["abs"],
+  "reto abdominal inferior, flexores da anca": ["abs"],
+  "transverso abdominal, core profundo": ["abs"],
+  "transverso abdominal, reto abdominal": ["abs"],
 
   // Pernas
   "pernas": ["quadriceps", "hamstring", "calves"],
-  "quadríceps": ["quadriceps"],
-  "quadriceps": ["quadriceps"],
+  "quadricipites": ["quadriceps"],
+  "quadricipites, gluteos": ["quadriceps", "gluteal"],
+  "quadricipites, ombros": ["quadriceps", "front-deltoids"],
   "isquiotibiais": ["hamstring"],
-  "femoral": ["hamstring"],
-  "glúteos": ["gluteal"],
+  "isquiotibiais, gluteos": ["hamstring", "gluteal"],
   "gluteos": ["gluteal"],
-  "glúteo": ["gluteal"],
-  "gluteo": ["gluteal"],
+  "gluteos, isquiotibiais, core": ["gluteal", "hamstring", "abs"],
+  "femoral": ["hamstring"],
   "panturrilha": ["calves"],
-  "gémeos": ["calves"],
   "gemeos": ["calves"],
+  "gastrocnemios (gemeos)": ["calves"],
   "tibial": ["calves"],
   "adutores": ["adductor"],
-  "adutor": ["adductor"],
   "abdutores": ["abductors"],
-  "abutor": ["abductors"],
 
   // Cardio / full body
-  "cardio": ["chest", "quadriceps"],
+  "cardiovascular": ["quadriceps", "hamstring"],
+  "cardiovascular, flexores da anca": ["quadriceps", "hamstring"],
+  "cardio": ["quadriceps", "hamstring"],
   "full body": ["chest", "upper-back", "quadriceps", "abs"],
+  "full body, cardiovascular": ["chest", "upper-back", "quadriceps", "abs"],
   "corpo inteiro": ["chest", "upper-back", "quadriceps", "abs"],
 };
 
+const normalize = (s) =>
+  s.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s,()]/g, "")
+    .trim();
+
 function parseMuscles(raw) {
   if (!raw) return [];
-  const parts = raw.toLowerCase().split(/[,/\n]+/).map((s) => s.trim());
+  const norm = normalize(raw);
+
+  // Tenta match exacto primeiro (com nome completo)
+  if (MUSCLE_MAP[norm]) return MUSCLE_MAP[norm];
+
+  // Divide por vírgula e tenta cada parte
   const result = [];
+  const parts = norm.split(/[,]+/).map((s) => s.trim());
   for (const part of parts) {
-    const mapped = MUSCLE_MAP[part];
-    if (mapped) result.push(...mapped);
+    const direct = MUSCLE_MAP[part];
+    if (direct) { result.push(...direct); continue; }
+    // Fallback: procura chave que contenha esta parte
+    for (const key of Object.keys(MUSCLE_MAP)) {
+      if (key.includes(part) || part.includes(key)) {
+        result.push(...MUSCLE_MAP[key]);
+        break;
+      }
+    }
   }
   return [...new Set(result)];
 }
