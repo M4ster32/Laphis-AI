@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchExerciseGif } from "../services/exerciseDb";
 import {
   Play,
   Clock,
@@ -31,6 +32,13 @@ export default function ExerciseCard({
   showActions = true 
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [gifUrl, setGifUrl] = useState(null);
+
+  useEffect(() => {
+    const key = exercise?.name_en || exercise?.name;
+    if (!key) return;
+    fetchExerciseGif(key).then(setGifUrl);
+  }, [exercise?.name_en, exercise?.name]);
 
   if (!exercise) return null;
 
@@ -195,12 +203,13 @@ export default function ExerciseCard({
         display: "flex",
         alignItems: "center",
       }}>
-        {/* Esquerda: animação do movimento */}
+        {/* Esquerda: GIF boneco 3D ou animação 2 frames */}
         <div style={{ flex: 1, height: "100%" }}>
           <ExerciseGif
             name={name}
             category={category}
             compact={false}
+            gifUrl={gifUrl}
           />
         </div>
         {/* Direita: músculos destacados */}
