@@ -1,8 +1,8 @@
 /**
- * ExerciseImage — agora apenas um wrapper para MuscleHighlighter.
+ * ExerciseImage — wrapper para ExerciseGif (animação 2 frames).
  * Mantemos a assinatura por compatibilidade com chamadas existentes.
  */
-import MuscleHighlighter from "./MuscleHighlighter";
+import ExerciseGif from "./ExerciseGif";
 
 export default function ExerciseImage({
   category,
@@ -10,23 +10,14 @@ export default function ExerciseImage({
   musclePrimary,
   muscleSecondary,
   style = {},
-  compact = false,
 }) {
   return (
-    <div style={{
-      width: "100%",
-      height: "100%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
-      ...style,
-    }}>
-      <MuscleHighlighter
+    <div style={{ width: "100%", height: "100%", ...style }}>
+      <ExerciseGif
+        name={name}
+        category={category}
         musclePrimary={musclePrimary}
         muscleSecondary={muscleSecondary}
-        category={category}
-        size={compact ? 56 : 200}
       />
     </div>
   );

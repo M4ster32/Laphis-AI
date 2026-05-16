@@ -220,11 +220,10 @@ export default function WorkoutSession() {
       <div style={s.exerciseArea}>
         <div style={s.exerciseImage}>
           <ExerciseImage
-            src={current.image_url}
-            alt={current.name}
             category={current.category}
             name={current.name}
-            compact={false}
+            musclePrimary={current.muscle_primary}
+            muscleSecondary={current.muscle_secondary}
           />
         </div>
 

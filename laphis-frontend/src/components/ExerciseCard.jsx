@@ -14,6 +14,7 @@ import {
   Youtube
 } from "lucide-react";
 import MuscleHighlighter from "./MuscleHighlighter";
+import ExerciseGif from "./ExerciseGif";
 
 /**
  * ExerciseCard — Card visual para exercício com imagem, vídeo e instruções
@@ -115,23 +116,20 @@ export default function ExerciseCard({
           e.currentTarget.style.background = "var(--bg-secondary)";
         }}
       >
-        {/* Thumbnail — diagrama de músculos (sem pessoas) */}
+        {/* Thumbnail animado */}
         <div style={{
           width: 60,
           height: 60,
           borderRadius: 8,
           flexShrink: 0,
           overflow: "hidden",
-          background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          background: "#1a1a2e",
         }}>
-          <MuscleHighlighter
+          <ExerciseGif
+            name={name}
+            category={category}
             musclePrimary={muscle_primary}
             muscleSecondary={muscle_secondary}
-            category={category}
-            size={56}
           />
         </div>
 
@@ -192,23 +190,41 @@ export default function ExerciseCard({
       overflow: "hidden",
       transition: "all 0.3s ease",
     }}>
-      {/* Músculos trabalhados */}
+      {/* Animação + Músculos */}
       <div style={{
         position: "relative",
         width: "100%",
-        height: 240,
+        height: 220,
         overflow: "hidden",
         background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
       }}>
-        <MuscleHighlighter
-          musclePrimary={muscle_primary}
-          muscleSecondary={muscle_secondary}
-          category={category}
-          size={220}
-        />
+        {/* Esquerda: animação 2 frames */}
+        <div style={{ flex: 1, height: "100%" }}>
+          <ExerciseGif
+            name={name}
+            category={category}
+            musclePrimary={muscle_primary}
+            muscleSecondary={muscle_secondary}
+          />
+        </div>
+        {/* Direita: diagrama de músculos */}
+        <div style={{
+          width: 120,
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderLeft: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <MuscleHighlighter
+            musclePrimary={muscle_primary}
+            muscleSecondary={muscle_secondary}
+            category={category}
+            size={180}
+          />
+        </div>
         
         {/* Badges no topo */}
         <div style={{
