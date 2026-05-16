@@ -124,16 +124,24 @@ export default function ExerciseCard({
           e.currentTarget.style.background = "var(--bg-secondary)";
         }}
       >
-        {/* Thumbnail animado */}
+        {/* Thumbnail — diagrama de músculos (sem pessoas) */}
         <div style={{
           width: 60,
           height: 60,
           borderRadius: 8,
           flexShrink: 0,
           overflow: "hidden",
-          background: "#1a1a2e",
+          background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}>
-          <ExerciseGif name={name} category={category} compact={true} />
+          <MuscleHighlighter
+            musclePrimary={muscle_primary}
+            muscleSecondary={muscle_secondary}
+            size={56}
+            compact={true}
+          />
         </div>
 
         {/* Info */}
