@@ -13,7 +13,7 @@ import {
   Lightbulb,
   Youtube
 } from "lucide-react";
-import ExerciseImage from "./ExerciseImage";
+import AnimatedExerciseSVG from "./AnimatedExerciseSVG";
 import MuscleHighlighter from "./MuscleHighlighter";
 
 /**
@@ -193,7 +193,7 @@ export default function ExerciseCard({
       overflow: "hidden",
       transition: "all 0.3s ease",
     }}>
-      {/* Músculos + overlay */}
+      {/* Animação + Músculos */}
       <div style={{
         position: "relative",
         width: "100%",
@@ -202,13 +202,32 @@ export default function ExerciseCard({
         background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
       }}>
-        <MuscleHighlighter
-          musclePrimary={muscle_primary}
-          muscleSecondary={muscle_secondary}
-          size={180}
-        />
+        {/* Esquerda: animação do movimento */}
+        <div style={{ flex: 1, height: "100%" }}>
+          <AnimatedExerciseSVG
+            category={category}
+            name={name}
+            compact={false}
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
+        {/* Direita: músculos destacados */}
+        <div style={{
+          width: 110,
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderLeft: "1px solid rgba(255,255,255,0.06)",
+        }}>
+          <MuscleHighlighter
+            musclePrimary={muscle_primary}
+            muscleSecondary={muscle_secondary}
+            size={160}
+            compact={true}
+          />
+        </div>
         
         {/* Badges no topo */}
         <div style={{
