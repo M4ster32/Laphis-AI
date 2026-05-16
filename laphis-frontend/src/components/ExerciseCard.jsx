@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { fetchExerciseGif } from "../services/exerciseDb";
+import { useState } from "react";
 import {
   Play,
   Clock,
@@ -14,7 +13,6 @@ import {
   Lightbulb,
   Youtube
 } from "lucide-react";
-import ExerciseGif from "./ExerciseGif";
 import MuscleHighlighter from "./MuscleHighlighter";
 
 /**
@@ -32,13 +30,6 @@ export default function ExerciseCard({
   showActions = true 
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [gifUrl, setGifUrl] = useState(null);
-
-  useEffect(() => {
-    const key = exercise?.name_en || exercise?.name;
-    if (!key) return;
-    fetchExerciseGif(key).then(setGifUrl);
-  }, [exercise?.name_en, exercise?.name]);
 
   if (!exercise) return null;
 
@@ -139,8 +130,8 @@ export default function ExerciseCard({
           <MuscleHighlighter
             musclePrimary={muscle_primary}
             muscleSecondary={muscle_secondary}
+            category={category}
             size={56}
-            compact={true}
           />
         </div>
 
@@ -201,41 +192,23 @@ export default function ExerciseCard({
       overflow: "hidden",
       transition: "all 0.3s ease",
     }}>
-      {/* Animação + Músculos */}
+      {/* Músculos trabalhados */}
       <div style={{
         position: "relative",
         width: "100%",
-        height: 200,
+        height: 240,
         overflow: "hidden",
         background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
         display: "flex",
         alignItems: "center",
+        justifyContent: "center",
       }}>
-        {/* Esquerda: GIF boneco 3D ou animação 2 frames */}
-        <div style={{ flex: 1, height: "100%" }}>
-          <ExerciseGif
-            name={name}
-            category={category}
-            compact={false}
-            gifUrl={gifUrl}
-          />
-        </div>
-        {/* Direita: músculos destacados */}
-        <div style={{
-          width: 110,
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderLeft: "1px solid rgba(255,255,255,0.06)",
-        }}>
-          <MuscleHighlighter
-            musclePrimary={muscle_primary}
-            muscleSecondary={muscle_secondary}
-            size={160}
-            compact={true}
-          />
-        </div>
+        <MuscleHighlighter
+          musclePrimary={muscle_primary}
+          muscleSecondary={muscle_secondary}
+          category={category}
+          size={220}
+        />
         
         {/* Badges no topo */}
         <div style={{

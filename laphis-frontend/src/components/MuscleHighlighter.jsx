@@ -95,6 +95,25 @@ const MUSCLE_MAP = {
   "corpo inteiro": ["chest", "upper-back", "quadriceps", "abs"],
 };
 
+// Fallback por categoria quando muscle_primary não existe
+const CATEGORY_FALLBACK = {
+  peito: ["chest"],
+  costas: ["upper-back"],
+  pernas: ["quadriceps"],
+  ombros: ["front-deltoids", "back-deltoids"],
+  biceps: ["biceps"],
+  triceps: ["triceps"],
+  abdomen: ["abs"],
+  cardio: ["quadriceps", "hamstring"],
+  full_body: ["chest", "upper-back", "quadriceps", "abs"],
+};
+
+// Músculos que estão na vista traseira
+const POSTERIOR_MUSCLES = new Set([
+  "upper-back", "lower-back", "trapezius", "back-deltoids",
+  "triceps", "hamstring", "gluteal", "calves",
+]);
+
 const normalize = (s) =>
   s.toLowerCase()
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -105,16 +124,13 @@ function parseMuscles(raw) {
   if (!raw) return [];
   const norm = normalize(raw);
 
-  // Tenta match exacto primeiro (com nome completo)
   if (MUSCLE_MAP[norm]) return MUSCLE_MAP[norm];
 
-  // Divide por vírgula e tenta cada parte
   const result = [];
   const parts = norm.split(/[,]+/).map((s) => s.trim());
   for (const part of parts) {
     const direct = MUSCLE_MAP[part];
     if (direct) { result.push(...direct); continue; }
-    // Fallback: procura chave que contenha esta parte
     for (const key of Object.keys(MUSCLE_MAP)) {
       if (key.includes(part) || part.includes(key)) {
         result.push(...MUSCLE_MAP[key]);
@@ -125,15 +141,26 @@ function parseMuscles(raw) {
   return [...new Set(result)];
 }
 
+function pickView(muscles) {
+  if (!muscles.length) return "anterior";
+  const posterior = muscles.filter((m) => POSTERIOR_MUSCLES.has(m)).length;
+  return posterior > muscles.length / 2 ? "posterior" : "anterior";
+}
+
 export default function MuscleHighlighter({
   musclePrimary,
   muscleSecondary,
+  category,
   size = 200,
-  compact = false,
   style = {},
 }) {
-  const primary = parseMuscles(musclePrimary);
-  const secondary = parseMuscles(muscleSecondary);
+  let primary = parseMuscles(musclePrimary);
+  let secondary = parseMuscles(muscleSecondary);
+
+  // Fallback por categoria se não detectou nada
+  if (!primary.length && category && CATEGORY_FALLBACK[category]) {
+    primary = CATEGORY_FALLBACK[category];
+  }
 
   const secondaryOnly = secondary.filter((m) => !primary.includes(m));
 
@@ -144,43 +171,18 @@ export default function MuscleHighlighter({
 
   if (!data.length) return null;
 
+  const view = pickView(primary);
   const highlightedColor = "#ef4444";
   const secondaryColor = "#f97316";
 
-  if (compact) {
-    return (
-      <ErrorBoundary>
-        <Model
-          data={data}
-          style={{ width: size * 0.55, height: size }}
-          highlightedColors={[highlightedColor, secondaryColor]}
-        />
-      </ErrorBoundary>
-    );
-  }
-
   return (
     <ErrorBoundary>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: 8,
-          ...style,
-        }}
-      >
-        <Model
-          data={data}
-          style={{ width: size / 2, height: size }}
-          highlightedColors={[highlightedColor, secondaryColor]}
-        />
-        <Model
-          type="posterior"
-          data={data}
-          style={{ width: size / 2, height: size }}
-          highlightedColors={[highlightedColor, secondaryColor]}
-        />
-      </div>
+      <Model
+        type={view}
+        data={data}
+        style={{ width: size * 0.55, height: size, ...style }}
+        highlightedColors={[highlightedColor, secondaryColor]}
+      />
     </ErrorBoundary>
   );
 }

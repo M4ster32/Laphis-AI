@@ -554,8 +554,8 @@ export default function PlanWorkoutBox({
                   <MuscleHighlighter
                     musclePrimary={exObj.muscle_primary}
                     muscleSecondary={exObj.muscle_secondary}
+                    category={exObj.category}
                     size={40}
-                    compact={true}
                   />
                 </div>
                 <div style={s.exInfo}>

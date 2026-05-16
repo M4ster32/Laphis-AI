@@ -1,27 +1,33 @@
 /**
- * ExerciseImage — visual de um exercicio.
- *
- * O LAPHIS deixou de usar GIFs externos com pessoas (RapidAPI ExerciseDB).
- * Hoje renderiza sempre uma animacao SVG stickman dedicada ao exercicio,
- * com fallback inteligente por categoria quando o nome nao bate certo.
- *
- * Mantemos a assinatura ({ src, alt, category, name, style, compact })
- * por compatibilidade com chamadas existentes (`src` e `alt` sao ignorados).
+ * ExerciseImage — agora apenas um wrapper para MuscleHighlighter.
+ * Mantemos a assinatura por compatibilidade com chamadas existentes.
  */
-import AnimatedExerciseSVG from "./AnimatedExerciseSVG";
+import MuscleHighlighter from "./MuscleHighlighter";
 
 export default function ExerciseImage({
   category,
   name,
+  musclePrimary,
+  muscleSecondary,
   style = {},
   compact = false,
 }) {
   return (
-    <AnimatedExerciseSVG
-      category={category}
-      name={name}
-      compact={compact}
-      style={style}
-    />
+    <div style={{
+      width: "100%",
+      height: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
+      ...style,
+    }}>
+      <MuscleHighlighter
+        musclePrimary={musclePrimary}
+        muscleSecondary={muscleSecondary}
+        category={category}
+        size={compact ? 56 : 200}
+      />
+    </div>
   );
 }
