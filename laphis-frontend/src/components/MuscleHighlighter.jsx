@@ -101,11 +101,11 @@ export default function MuscleHighlighter({
   const primary = parseMuscles(musclePrimary);
   const secondary = parseMuscles(muscleSecondary);
 
+  const secondaryOnly = secondary.filter((m) => !primary.includes(m));
+
   const data = [
-    ...primary.map((m) => ({ muscle: m, exercises: ["primary"] })),
-    ...secondary
-      .filter((m) => !primary.includes(m))
-      .map((m) => ({ muscle: m, exercises: ["secondary"] })),
+    ...(primary.length ? [{ name: "primary", muscles: primary, frequency: 2 }] : []),
+    ...(secondaryOnly.length ? [{ name: "secondary", muscles: secondaryOnly, frequency: 1 }] : []),
   ];
 
   if (!data.length) return null;
