@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Play, Dumbbell, Save, Calendar, Clock, Eye, Flame } from "lucide-react";
 import ApiService from "../services/api";
-import ExerciseImage from "./ExerciseImage";
+import MuscleHighlighter from "./MuscleHighlighter";
 import Modal from "./Modal";
 import ExerciseCard from "./ExerciseCard";
 
@@ -550,11 +550,11 @@ export default function PlanWorkoutBox({
                 onClick={() => setSelectedExercise(exObj)}
               >
                 <div style={s.exNumber}>{i + 1}</div>
-                <div style={s.exThumb}>
-                  <ExerciseImage
-                    src={exObj.image_url}
-                    category={exObj.category}
-                    name={exObj.name}
+                <div style={{ ...s.exThumb, background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <MuscleHighlighter
+                    musclePrimary={exObj.muscle_primary}
+                    muscleSecondary={exObj.muscle_secondary}
+                    size={40}
                     compact={true}
                   />
                 </div>

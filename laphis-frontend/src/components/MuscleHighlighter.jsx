@@ -120,8 +120,6 @@ export default function MuscleHighlighter({
           data={data}
           style={{ width: size * 0.55, height: size }}
           highlightedColors={[highlightedColor, secondaryColor]}
-          bodyColor="#2a2a3a"
-          strokeColor="#3a3a4a"
         />
       </ErrorBoundary>
     );
@@ -141,16 +139,12 @@ export default function MuscleHighlighter({
           data={data}
           style={{ width: size / 2, height: size }}
           highlightedColors={[highlightedColor, secondaryColor]}
-          bodyColor="#2a2a3a"
-          strokeColor="#3a3a4a"
         />
         <Model
           type="posterior"
           data={data}
           style={{ width: size / 2, height: size }}
           highlightedColors={[highlightedColor, secondaryColor]}
-          bodyColor="#2a2a3a"
-          strokeColor="#3a3a4a"
         />
       </div>
     </ErrorBoundary>
