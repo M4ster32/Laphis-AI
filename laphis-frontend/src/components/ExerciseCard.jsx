@@ -13,7 +13,7 @@ import {
   Lightbulb,
   Youtube
 } from "lucide-react";
-import AnimatedExerciseSVG from "./AnimatedExerciseSVG";
+import ExerciseGif from "./ExerciseGif";
 import MuscleHighlighter from "./MuscleHighlighter";
 
 /**
@@ -116,24 +116,16 @@ export default function ExerciseCard({
           e.currentTarget.style.background = "var(--bg-secondary)";
         }}
       >
-        {/* Thumbnail muscular */}
+        {/* Thumbnail animado */}
         <div style={{
           width: 60,
           height: 60,
           borderRadius: 8,
           flexShrink: 0,
-          background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           overflow: "hidden",
+          background: "#1a1a2e",
         }}>
-          <MuscleHighlighter
-            musclePrimary={muscle_primary}
-            muscleSecondary={muscle_secondary}
-            size={56}
-            compact={true}
-          />
+          <ExerciseGif name={name} category={category} compact={true} />
         </div>
 
         {/* Info */}
@@ -205,11 +197,10 @@ export default function ExerciseCard({
       }}>
         {/* Esquerda: animação do movimento */}
         <div style={{ flex: 1, height: "100%" }}>
-          <AnimatedExerciseSVG
-            category={category}
+          <ExerciseGif
             name={name}
+            category={category}
             compact={false}
-            style={{ width: "100%", height: "100%" }}
           />
         </div>
         {/* Direita: músculos destacados */}
