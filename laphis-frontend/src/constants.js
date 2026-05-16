@@ -7,9 +7,8 @@
 // Em dev local (localhost ou IP privado) usa o mesmo host na porta 8000.
 const _host = window.location.hostname;
 const _isProd = _host === 'laphis-backend.onrender.com' || (!_host.match(/^(localhost|127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/));
-export const API_BASE_URL = _isProd
-  ? 'https://laphis-backend.onrender.com'
-  : `http://${_host}:8000`;
+export const API_BASE_URL = import.meta.env.VITE_API_URL
+  || (_isProd ? 'https://laphis-backend.onrender.com' : `http://${_host}:8000`);
 
 export const ROUTES = {
   HOME: "/",

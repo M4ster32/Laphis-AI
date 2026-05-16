@@ -14,6 +14,7 @@ import {
   Youtube
 } from "lucide-react";
 import ExerciseImage from "./ExerciseImage";
+import MuscleHighlighter from "./MuscleHighlighter";
 
 /**
  * ExerciseCard — Card visual para exercício com imagem, vídeo e instruções
@@ -115,20 +116,22 @@ export default function ExerciseCard({
           e.currentTarget.style.background = "var(--bg-secondary)";
         }}
       >
-        {/* Imagem mini */}
+        {/* Thumbnail muscular */}
         <div style={{
           width: 60,
           height: 60,
           borderRadius: 8,
-          overflow: "hidden",
           flexShrink: 0,
-          background: "var(--bg-tertiary)"
+          background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
         }}>
-          <ExerciseImage
-            src={image_url}
-            alt={name}
-            category={category}
-            name={name}
+          <MuscleHighlighter
+            musclePrimary={muscle_primary}
+            muscleSecondary={muscle_secondary}
+            size={56}
             compact={true}
           />
         </div>
@@ -190,20 +193,21 @@ export default function ExerciseCard({
       overflow: "hidden",
       transition: "all 0.3s ease",
     }}>
-      {/* Imagem com overlay */}
+      {/* Músculos + overlay */}
       <div style={{
         position: "relative",
         width: "100%",
         height: 200,
         overflow: "hidden",
-        background: "var(--bg-tertiary)"
+        background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}>
-        <ExerciseImage
-          src={image_url}
-          alt={name}
-          category={category}
-          name={name}
-          compact={false}
+        <MuscleHighlighter
+          musclePrimary={muscle_primary}
+          muscleSecondary={muscle_secondary}
+          size={180}
         />
         
         {/* Badges no topo */}
