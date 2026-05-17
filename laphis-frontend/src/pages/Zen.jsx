@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
-import { Wind, Zap, Heart, Plus, Trash2 } from "lucide-react";
+import { Wind, Zap, Heart, Plus, Trash2, BookOpen, Star } from "lucide-react";
 
 // ===== WEB AUDIO — AMBIENT SOUND ENGINE (v2) =====
 class AmbientAudio {
@@ -109,7 +109,7 @@ class AmbientAudio {
     this.masterGain.connect(this.ctx.destination);
     const mg = this.masterGain;
 
-    const builders = { rain: this._rain, ocean: this._ocean, forest: this._forest, fire: this._fire, wind: this._wind };
+    const builders = { rain: this._rain, ocean: this._ocean, forest: this._forest, fire: this._fire, wind: this._wind, whitenoise: this._whitenoise, thunder: this._thunder, cafe: this._cafe };
     (builders[key] || (() => {})).call(this, mg);
   }
 
@@ -318,6 +318,75 @@ class AmbientAudio {
     high.start();
   }
 
+  /* ---- WHITE NOISE: pure band-limited white ---- */
+  _whitenoise(mg) {
+    const src = this._src(this._noiseBuf("white", 8));
+    const hp = this._filter("highpass", 200);
+    const lp = this._filter("lowpass", 8000);
+    const g = this._gain(0.4);
+    src.connect(hp).connect(lp).connect(g).connect(mg);
+    src.start();
+  }
+
+  /* ---- THUNDER: rain + distant thunder rumbles ---- */
+  _thunder(mg) {
+    // Base rain layer
+    const rain = this._src(this._noiseBuf("pink", 10));
+    const hp = this._filter("highpass", 800);
+    const lp = this._filter("lowpass", 5000);
+    const g1 = this._gain(0.35);
+    rain.connect(hp).connect(lp).connect(g1).connect(mg);
+    rain.start();
+    // Rumble layer
+    const rumble = this._src(this._noiseBuf("brown", 10));
+    const lp2 = this._filter("lowpass", 120);
+    const g2 = this._gain(0.2);
+    this._lfo(0.03, 0.1, g2.gain);
+    rumble.connect(lp2).connect(g2).connect(mg);
+    rumble.start();
+    // Periodic thunder boom
+    const boom = () => {
+      if (!this.active) return;
+      const t = this.ctx.currentTime;
+      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.4));
+      const s = this.ctx.createBufferSource(); s.buffer = buf;
+      const f = this._filter("lowpass", 200);
+      const g = this._gain(0.5 + Math.random() * 0.3);
+      s.connect(f).connect(g).connect(mg); s.start(t);
+      this.nodes.push(s);
+      const id = setTimeout(boom, 6000 + Math.random() * 12000);
+      this.timers.push(id);
+    };
+    const id = setTimeout(boom, 3000 + Math.random() * 5000);
+    this.timers.push(id);
+  }
+
+  /* ---- CAFÉ: ambient chatter + cups ---- */
+  _cafe(mg) {
+    // Ambient murmur (pink, mid-band)
+    const murmur = this._src(this._noiseBuf("pink", 10));
+    const bp = this._filter("bandpass", 800, 0.4);
+    const g1 = this._gain(0.15);
+    this._lfo(0.07, 0.04, g1.gain);
+    murmur.connect(bp).connect(g1).connect(mg);
+    murmur.start();
+    // High freq presence (cups, cutlery)
+    const hf = this._src(this._noiseBuf("white", 6));
+    const bp2 = this._filter("bandpass", 3500, 1.2);
+    const g2 = this._gain(0.02);
+    this._lfo(0.2, 0.01, g2.gain);
+    hf.connect(bp2).connect(g2).connect(mg);
+    hf.start();
+    // Low hum (HVAC / espresso machine)
+    const hum = this._src(this._noiseBuf("brown", 8));
+    const lp = this._filter("lowpass", 180);
+    const g3 = this._gain(0.12);
+    hum.connect(lp).connect(g3).connect(mg);
+    hum.start();
+  }
+
   /* ---------- fade out ---------- */
   fadeOut() {
     if (!this.ctx || !this.masterGain || !this.active) { this.stop(); return; }
@@ -334,19 +403,26 @@ class AmbientAudio {
 const ambientAudio = new AmbientAudio();
 
 const BREATHING_PATTERNS = [
-  { name: "Relaxar", label: "4-7-8", inhale: 4, hold: 7, exhale: 8 },
-  { name: "Energizar", label: "4-4-4", inhale: 4, hold: 4, exhale: 4 },
-  { name: "Calma Profunda", label: "5-5-5", inhale: 5, hold: 5, exhale: 5 },
-  { name: "Foco", label: "4-2-6", inhale: 4, hold: 2, exhale: 6 },
+  { name: "Relaxar", label: "4-7-8", inhale: 4, hold: 7, exhale: 8, desc: "Reduz ansiedade" },
+  { name: "Box Breathing", label: "4-4-4", inhale: 4, hold: 4, exhale: 4, desc: "Equilíbrio total" },
+  { name: "Calma Profunda", label: "5-5-5", inhale: 5, hold: 5, exhale: 5, desc: "Meditação ativa" },
+  { name: "Foco", label: "4-2-6", inhale: 4, hold: 2, exhale: 6, desc: "Clareza mental" },
+  { name: "Coerência", label: "5-0-5", inhale: 5, hold: 0, exhale: 5, desc: "Ritmo cardíaco" },
+  { name: "Energizar", label: "6-2-4", inhale: 6, hold: 2, exhale: 4, desc: "Mais energia" },
+  { name: "Anti-Stress", label: "4-4-8", inhale: 4, hold: 4, exhale: 8, desc: "Expira o stress" },
+  { name: "Sono", label: "4-8-8", inhale: 4, hold: 8, exhale: 8, desc: "Prepara o descanso" },
 ];
 
 const AMBIENT_SOUNDS = [
-  { key: "silence", label: "Silêncio" },
-  { key: "rain", label: "Chuva" },
-  { key: "ocean", label: "Oceano" },
-  { key: "forest", label: "Floresta" },
-  { key: "fire", label: "Fogueira" },
-  { key: "wind", label: "Vento" },
+  { key: "silence", label: "Silêncio", icon: "🔇" },
+  { key: "rain", label: "Chuva", icon: "🌧️" },
+  { key: "ocean", label: "Oceano", icon: "🌊" },
+  { key: "forest", label: "Floresta", icon: "🌲" },
+  { key: "fire", label: "Fogueira", icon: "🔥" },
+  { key: "wind", label: "Vento", icon: "💨" },
+  { key: "whitenoise", label: "Ruído Branco", icon: "〰️" },
+  { key: "thunder", label: "Trovoada", icon: "⛈️" },
+  { key: "cafe", label: "Café", icon: "☕" },
 ];
 
 const MOODS = [
@@ -378,7 +454,7 @@ const AFFIRMATIONS = [
 
 export default function Zen() {
   const { profile } = useApp();
-  const [activeView, setActiveView] = useState("home"); // home, breathing, meditation, mood
+  const [activeView, setActiveView] = useState("home"); // home, breathing, meditation, gratitude, affirmations
   const [selectedPattern, setSelectedPattern] = useState(BREATHING_PATTERNS[0]);
   const [selectedSound, setSelectedSound] = useState("silence");
   const [timerMinutes, setTimerMinutes] = useState(5);
@@ -392,6 +468,11 @@ export default function Zen() {
   const [sessionType, setSessionType] = useState(null); // "breathing" | "meditation"
   const [showComplete, setShowComplete] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [gratitudeText, setGratitudeText] = useState("");
+  const [gratitudeSaved, setGratitudeSaved] = useState(false);
+  const [affirmationIdx, setAffirmationIdx] = useState(
+    Math.floor(Date.now() / 86400000) % AFFIRMATIONS.length
+  );
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [todayAffirmation] = useState(
@@ -657,31 +738,32 @@ export default function Zen() {
                   >
                     <span style={s.patternName}>{p.name}</span>
                     <span style={s.patternLabel}>{p.label}</span>
+                    <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 500 }}>{p.desc}</span>
                   </button>
                 ))}
               </div>
             )}
 
             {/* Breathing Circle */}
-            <div style={s.breathContainer}>
-              <div style={{
-                ...s.breathCircleOuter,
-                transform: `scale(${circleScale[breathPhase]})`,
-                borderColor: phaseColors[breathPhase],
-                boxShadow: isSessionActive ? `0 0 40px ${phaseColors[breathPhase]}30` : "none",
-              }}>
-                <div style={{ ...s.breathCircleInner, background: phaseColors[breathPhase] + "15" }}>
-                  <span style={{ ...s.breathPhaseText, color: phaseColors[breathPhase] }}>
-                    {phaseLabel[breathPhase]}
-                  </span>
-                  {isSessionActive && (
-                    <span style={s.breathTimer}>{phaseTime}s</span>
-                  )}
+            <div style={s.breathWrapper}>
+              <p style={s.breathCycles}>Ciclos: {breathCount}</p>
+              <div style={s.breathContainer}>
+                <div style={{
+                  ...s.breathCircleOuter,
+                  transform: `scale(${circleScale[breathPhase]})`,
+                  borderColor: phaseColors[breathPhase],
+                  boxShadow: isSessionActive ? `0 0 40px ${phaseColors[breathPhase]}30` : "none",
+                }}>
+                  <div style={{ ...s.breathCircleInner, background: phaseColors[breathPhase] + "15" }}>
+                    <span style={{ ...s.breathPhaseText, color: phaseColors[breathPhase] }}>
+                      {phaseLabel[breathPhase]}
+                    </span>
+                    {isSessionActive && (
+                      <span style={s.breathTimer}>{phaseTime}s</span>
+                    )}
+                  </div>
                 </div>
               </div>
-              {isSessionActive && (
-                <p style={s.breathCycles}>Ciclos: {breathCount}</p>
-              )}
             </div>
 
             {/* Controls */}
@@ -770,7 +852,8 @@ export default function Zen() {
                         background: selectedSound === snd.key ? "var(--primary-bg)" : "var(--card-bg)",
                       }}
                     >
-                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>{snd.label}</span>
+                      <span style={{ fontSize: 18 }}>{snd.icon}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{snd.label}</span>
                     </button>
                   ))}
                 </div>
@@ -820,6 +903,131 @@ export default function Zen() {
     );
   }
 
+  // ===== GRATITUDE VIEW =====
+  if (activeView === "gratitude") {
+    return (
+      <div style={s.page}>
+        <button style={s.backBtn} onClick={() => { setActiveView("home"); setGratitudeSaved(false); }}>
+          ← Voltar
+        </button>
+        <div style={s.zenHeroBg}>
+          <h2 style={{ ...s.zenTitle, fontSize: 20 }}>Diário de Gratidão</h2>
+          <p style={s.zenSubtitle}>Escreve 3 coisas pelas quais és grato hoje</p>
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <textarea
+            placeholder={"1. Sou grato por...\n2. Aprecio...\n3. Hoje foi especial porque..."}
+            value={gratitudeText}
+            onChange={(e) => setGratitudeText(e.target.value)}
+            rows={7}
+            style={{
+              width: "100%", padding: "14px 16px", borderRadius: 14,
+              border: "1px solid var(--border)", background: "var(--card-bg)",
+              color: "var(--text)", fontSize: 15, lineHeight: 1.7,
+              resize: "vertical", fontFamily: "inherit", boxSizing: "border-box",
+              outline: "none",
+            }}
+          />
+          {gratitudeSaved ? (
+            <div style={{ textAlign: "center", padding: "20px 0", color: "var(--primary)", fontWeight: 700, fontSize: 16 }}>
+              ✓ Guardado! Que o teu dia seja incrível.
+            </div>
+          ) : (
+            <button
+              className="btn btn-primary btn-full"
+              style={{ marginTop: 14 }}
+              disabled={!gratitudeText.trim() || saving}
+              onClick={async () => {
+                if (!gratitudeText.trim()) return;
+                setSaving(true);
+                try {
+                  await ApiService.saveZenSession({
+                    type: "gratitude",
+                    duration_min: 2,
+                    mood_before: null,
+                    mood_after: "happy",
+                    notes: gratitudeText.trim(),
+                  });
+                  setGratitudeSaved(true);
+                  setGratitudeText("");
+                  loadHistory();
+                } catch {}
+                setSaving(false);
+              }}
+            >
+              {saving ? "A guardar..." : "Guardar Gratidão"}
+            </button>
+          )}
+        </div>
+
+        {/* Past gratitude entries */}
+        {history.filter(h => h.type === "gratitude").length > 0 && (
+          <div style={{ marginTop: 28 }}>
+            <h4 style={s.sectionTitle}>Entradas Anteriores</h4>
+            {history.filter(h => h.type === "gratitude").slice(0, 3).map((h, i) => (
+              <div key={i} style={{ ...s.historyItem, flexDirection: "column", alignItems: "flex-start", marginBottom: 10 }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>{h.created_at?.split("T")[0]}</span>
+                <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-line" }}>{h.notes}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ===== AFFIRMATIONS VIEW =====
+  if (activeView === "affirmations") {
+    const current = AFFIRMATIONS[affirmationIdx];
+    return (
+      <div style={s.page}>
+        <button style={s.backBtn} onClick={() => setActiveView("home")}>
+          ← Voltar
+        </button>
+        <div style={s.zenHeroBg}>
+          <h2 style={{ ...s.zenTitle, fontSize: 20 }}>Afirmações Positivas</h2>
+          <p style={s.zenSubtitle}>Repete em voz alta com convicção</p>
+        </div>
+        <div style={{
+          marginTop: 32, padding: "40px 24px",
+          background: "var(--card-bg)", borderRadius: 20,
+          border: "1px solid var(--border)",
+          textAlign: "center", boxShadow: "var(--shadow-md)",
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 20 }}>✨</div>
+          <p style={{
+            fontSize: 20, fontWeight: 700, color: "var(--text)",
+            lineHeight: 1.5, margin: "0 0 32px", fontStyle: "italic",
+          }}>
+            "{current}"
+          </p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button
+              className="btn btn-ghost"
+              onClick={() => setAffirmationIdx((affirmationIdx - 1 + AFFIRMATIONS.length) % AFFIRMATIONS.length)}
+            >
+              ← Anterior
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => setAffirmationIdx((affirmationIdx + 1) % AFFIRMATIONS.length)}
+            >
+              Próxima →
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 20 }}>
+            {affirmationIdx + 1} / {AFFIRMATIONS.length}
+          </p>
+        </div>
+        <div style={{ marginTop: 16, padding: "16px", background: "var(--bg-tertiary)", borderRadius: 14, border: "1px solid var(--border)" }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
+            💡 <strong>Como usar:</strong> lê a afirmação em voz alta 3× com confiança. Visualiza-te a viver essa realidade. Repete diariamente para resultados.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // ===== HOME VIEW =====
   return (
     <div style={s.page}>
@@ -860,7 +1068,7 @@ export default function Zen() {
             <Wind size={24} color="var(--primary)" strokeWidth={1.5} />
           </div>
           <h4 style={s.activityTitle}>Respiração</h4>
-          <p style={s.activityDesc}>Exercícios guiados de respiração</p>
+          <p style={s.activityDesc}>8 padrões guiados</p>
         </button>
 
         <button style={s.activityCard} onClick={() => { setMoodBefore(null); setActiveView("meditation"); }}>
@@ -868,7 +1076,23 @@ export default function Zen() {
             <Zap size={24} color="var(--accent)" strokeWidth={1.5} />
           </div>
           <h4 style={s.activityTitle}>Meditação</h4>
-          <p style={s.activityDesc}>Timer com sons ambiente</p>
+          <p style={s.activityDesc}>Timer com 9 sons</p>
+        </button>
+
+        <button style={s.activityCard} onClick={() => { setGratitudeSaved(false); setGratitudeText(""); setActiveView("gratitude"); }}>
+          <div style={{ ...s.activityIconCircle, background: "rgba(34, 197, 94, 0.08)" }}>
+            <BookOpen size={24} color="#22c55e" strokeWidth={1.5} />
+          </div>
+          <h4 style={s.activityTitle}>Gratidão</h4>
+          <p style={s.activityDesc}>Diário de gratidão diário</p>
+        </button>
+
+        <button style={s.activityCard} onClick={() => setActiveView("affirmations")}>
+          <div style={{ ...s.activityIconCircle, background: "rgba(234, 179, 8, 0.08)" }}>
+            <Star size={24} color="#eab308" strokeWidth={1.5} />
+          </div>
+          <h4 style={s.activityTitle}>Afirmações</h4>
+          <p style={s.activityDesc}>Mentalidade positiva</p>
         </button>
       </div>
 
@@ -1005,7 +1229,7 @@ const s = {
   },
 
   /* Breathing Patterns */
-  patternGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 24 },
+  patternGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 24 },
   patternCard: {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
     padding: "16px 10px", borderRadius: "var(--radius-sm)", border: gl.border,
@@ -1017,7 +1241,11 @@ const s = {
   patternLabel: { fontSize: 11, fontWeight: 600, color: "var(--text-muted)" },
 
   /* Breathing Circle */
-  breathContainer: { display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 0", gap: 16 },
+  breathWrapper: { display: "flex", flexDirection: "column", alignItems: "center", gap: 0 },
+  breathContainer: {
+    display: "flex", flexDirection: "column", alignItems: "center",
+    padding: "40px 0 40px", /* vertical padding absorbs the scale overhang */
+  },
   breathCircleOuter: {
     width: 180, height: 180, borderRadius: "50%",
     border: "2px solid var(--glass-border)", display: "flex", alignItems: "center",
@@ -1031,7 +1259,7 @@ const s = {
   },
   breathPhaseText: { fontSize: 20, fontWeight: 700, transition: "color 0.5s" },
   breathTimer: { fontSize: 32, fontWeight: 700, color: "var(--text)" },
-  breathCycles: { fontSize: 14, fontWeight: 600, color: "var(--text-muted)" },
+  breathCycles: { fontSize: 14, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 },
 
   /* Timer Presets */
   timerPresets: { display: "flex", gap: 8, marginBottom: 16, justifyContent: "center" },
@@ -1041,7 +1269,7 @@ const s = {
   },
 
   /* Sound */
-  soundGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 24 },
+  soundGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 24 }, // 9 sons = 3×3
   soundBtn: {
     display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
     padding: "12px 8px", borderRadius: "var(--radius-sm)", border: gl.border,
