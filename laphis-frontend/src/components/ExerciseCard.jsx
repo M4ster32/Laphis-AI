@@ -116,7 +116,7 @@ export default function ExerciseCard({
           e.currentTarget.style.background = "var(--bg-secondary)";
         }}
       >
-        {/* Thumbnail anatómico — sempre o boneco */}
+        {/* Thumbnail — animação 2 frames (fallback boneco anatómico) */}
         <div style={{
           width: 60,
           height: 60,
@@ -124,15 +124,12 @@ export default function ExerciseCard({
           flexShrink: 0,
           overflow: "hidden",
           background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
         }}>
-          <MuscleHighlighter
+          <ExerciseGif
+            name={name}
+            category={category}
             musclePrimary={muscle_primary}
             muscleSecondary={muscle_secondary}
-            category={category}
-            size={58}
           />
         </div>
 

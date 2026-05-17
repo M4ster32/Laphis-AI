@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import ApiService from "../services/api";
 import ExerciseImage from "../components/ExerciseImage";
+import MuscleHighlighter from "../components/MuscleHighlighter";
 import Modal from "../components/Modal";
 
 /**
@@ -219,12 +220,33 @@ export default function WorkoutSession() {
       {/* Exercício atual */}
       <div style={s.exerciseArea}>
         <div style={s.exerciseImage}>
-          <ExerciseImage
-            category={current.category}
-            name={current.name}
-            musclePrimary={current.muscle_primary}
-            muscleSecondary={current.muscle_secondary}
-          />
+          {/* Esquerda: animação 2 frames */}
+          <div style={{ flex: 1, height: "100%" }}>
+            <ExerciseImage
+              category={current.category}
+              name={current.name}
+              musclePrimary={current.muscle_primary}
+              muscleSecondary={current.muscle_secondary}
+            />
+          </div>
+          {/* Direita: boneco anatómico */}
+          <div style={{
+            width: 90,
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderLeft: "1px solid rgba(255,255,255,0.06)",
+            background: "linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)",
+            flexShrink: 0,
+          }}>
+            <MuscleHighlighter
+              musclePrimary={current.muscle_primary}
+              muscleSecondary={current.muscle_secondary}
+              category={current.category}
+              size={130}
+            />
+          </div>
         </div>
 
         <h1 style={s.exerciseName}>{current.name}</h1>
@@ -352,6 +374,7 @@ const s = {
     width: "100%", maxWidth: 360, height: 170, borderRadius: 16,
     overflow: "hidden", background: "var(--bg-tertiary)",
     boxShadow: "var(--shadow)",
+    display: "flex", flexDirection: "row",
   },
   exerciseName: {
     fontSize: 20, fontWeight: 800, color: "var(--text)",
