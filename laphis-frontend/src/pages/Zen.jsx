@@ -3,400 +3,66 @@ import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
 import { Wind, Zap, Heart, Plus, Trash2, BookOpen, Star } from "lucide-react";
 
-// ===== WEB AUDIO — AMBIENT SOUND ENGINE (v2) =====
+// ===== AMBIENT AUDIO — usa ficheiros reais de /public/sounds/ =====
+//
+// SONS NECESSÁRIOS — coloca estes ficheiros em laphis-frontend/public/sounds/
+// Descarrega grátis (sem atribuição) em https://pixabay.com/sound-effects/
+//   rain.mp3      → pesquisa "rain ambience loop"
+//   ocean.mp3     → pesquisa "ocean waves loop"
+//   forest.mp3    → pesquisa "forest birds ambience"
+//   fire.mp3      → pesquisa "campfire crackling loop"
+//   wind.mp3      → pesquisa "wind howling loop"
+//   whitenoise.mp3→ pesquisa "white noise loop"
+//   thunder.mp3   → pesquisa "thunderstorm rain loop"
+//   cafe.mp3      → pesquisa "coffee shop ambience"
+//
 class AmbientAudio {
   constructor() {
-    this.ctx = null;
-    this.nodes = [];       // all AudioNodes to disconnect on stop
-    this.timers = [];      // setInterval / setTimeout ids
-    this.masterGain = null;
-    this.active = false;
+    this._audio = null;
+    this._fadeTimer = null;
   }
 
-  _ensure() {
-    if (!this.ctx) {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (this.ctx.state === "suspended") this.ctx.resume();
-  }
-
-  stop() {
-    this.active = false;
-    this.timers.forEach((id) => { clearTimeout(id); clearInterval(id); });
-    this.timers = [];
-    this.nodes.forEach((n) => {
-      try { n.stop?.(); } catch {}
-      try { n.disconnect?.(); } catch {}
-    });
-    this.nodes = [];
-    if (this.masterGain) {
-      try { this.masterGain.disconnect(); } catch {}
-      this.masterGain = null;
-    }
-  }
-
-  /* ---------- noise buffer generators ---------- */
-  _noiseBuf(type, seconds = 8) {
-    const sr = this.ctx.sampleRate;
-    const len = sr * seconds;
-    const buf = this.ctx.createBuffer(2, len, sr);
-    for (let ch = 0; ch < 2; ch++) {
-      const d = buf.getChannelData(ch);
-      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
-      for (let i = 0; i < len; i++) {
-        const w = Math.random() * 2 - 1;
-        if (type === "brown") {
-          b0 = (b0 + 0.02 * w) / 1.02;
-          d[i] = b0 * 3.5;
-        } else if (type === "pink") {
-          b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
-          b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
-          b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
-          d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
-          b6=w*0.115926;
-        } else { d[i] = w; }
-      }
-      /* crossfade loop seam (last 0.05 s blends into start) */
-      const fade = Math.min(Math.floor(sr * 0.05), len);
-      for (let i = 0; i < fade; i++) {
-        const t = i / fade;
-        d[len - fade + i] = d[len - fade + i] * (1 - t) + d[i] * t;
-      }
-    }
-    return buf;
-  }
-
-  _src(buf) {
-    const s = this.ctx.createBufferSource();
-    s.buffer = buf; s.loop = true;
-    this.nodes.push(s);
-    return s;
-  }
-
-  _filter(type, freq, q) {
-    const f = this.ctx.createBiquadFilter();
-    f.type = type; f.frequency.value = freq;
-    if (q !== undefined) f.Q.value = q;
-    this.nodes.push(f);
-    return f;
-  }
-
-  _gain(v) {
-    const g = this.ctx.createGain(); g.gain.value = v;
-    this.nodes.push(g);
-    return g;
-  }
-
-  _lfo(freq, amount, target) {
-    const osc = this.ctx.createOscillator();
-    osc.type = "sine"; osc.frequency.value = freq;
-    const g = this.ctx.createGain(); g.gain.value = amount;
-    osc.connect(g).connect(target);
-    osc.start();
-    this.nodes.push(osc, g);
-  }
-
-  /* ---------- play ---------- */
   play(key) {
     this.stop();
     if (key === "silence") return;
-    try { this._ensure(); } catch { return; }
-    this.active = true;
 
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
-    this.masterGain.gain.linearRampToValueAtTime(0.30, this.ctx.currentTime + 3);
-    this.masterGain.connect(this.ctx.destination);
-    const mg = this.masterGain;
+    const audio = new Audio(`/sounds/${key}.mp3`);
+    audio.loop = true;
+    audio.volume = 0;
 
-    const builders = { rain: this._rain, ocean: this._ocean, forest: this._forest, fire: this._fire, wind: this._wind, whitenoise: this._whitenoise, thunder: this._thunder, cafe: this._cafe };
-    (builders[key] || (() => {})).call(this, mg);
+    // fade-in over 2s
+    let vol = 0;
+    const step = 0.65 / 20; // target 0.65 volume in 20 steps
+    const fadeIn = setInterval(() => {
+      vol = Math.min(0.65, vol + step);
+      audio.volume = vol;
+      if (vol >= 0.65) clearInterval(fadeIn);
+    }, 100);
+
+    audio.play().catch(() => clearInterval(fadeIn));
+    this._audio = audio;
+    this._fadeTimer = fadeIn;
   }
 
-  /* ---- RAIN: layered rainfall ---- */
-  _rain(mg) {
-    // Layer 1 — steady drizzle (pink noise, bandpassed 1-6 kHz)
-    const drizzle = this._src(this._noiseBuf("pink", 10));
-    const hp1 = this._filter("highpass", 1000);
-    const lp1 = this._filter("lowpass", 6000);
-    const g1 = this._gain(0.45);
-    drizzle.connect(hp1).connect(lp1).connect(g1).connect(mg);
-    drizzle.start();
-
-    // Layer 2 — deep rumble (brown noise, very low)
-    const rumble = this._src(this._noiseBuf("brown", 10));
-    const lp2 = this._filter("lowpass", 250);
-    const g2 = this._gain(0.25);
-    rumble.connect(lp2).connect(g2).connect(mg);
-    rumble.start();
-
-    // Layer 3 — droplet texture (white noise, narrow band, subtle)
-    const drops = this._src(this._noiseBuf("white", 6));
-    const bp = this._filter("bandpass", 4000, 2.0);
-    const g3 = this._gain(0.04);
-    this._lfo(0.3, 0.03, g3.gain); // subtle pulsing
-    drops.connect(bp).connect(g3).connect(mg);
-    drops.start();
-
-    // Slow intensity swell
-    this._lfo(0.05, 0.08, g1.gain);
+  stop() {
+    if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
+    if (this._audio) {
+      try { this._audio.pause(); this._audio.currentTime = 0; } catch {}
+      this._audio = null;
+    }
   }
 
-  /* ---- OCEAN: rolling waves ---- */
-  _ocean(mg) {
-    // Layer 1 — deep wave body
-    const wave = this._src(this._noiseBuf("brown", 12));
-    const lp = this._filter("lowpass", 400);
-    const g1 = this._gain(0.5);
-    this._lfo(0.06, 200, lp.frequency); // slow sweep
-    this._lfo(0.06, 0.25, g1.gain);     // volume swell
-    wave.connect(lp).connect(g1).connect(mg);
-    wave.start();
-
-    // Layer 2 — wave crest wash (pink noise, highpassed)
-    const wash = this._src(this._noiseBuf("pink", 10));
-    const hp = this._filter("highpass", 600);
-    const lp2 = this._filter("lowpass", 4000);
-    const g2 = this._gain(0.12);
-    this._lfo(0.06, 0.10, g2.gain); // sync with wave
-    wash.connect(hp).connect(lp2).connect(g2).connect(mg);
-    wash.start();
-
-    // Layer 3 — distant foam hiss
-    const foam = this._src(this._noiseBuf("pink", 8));
-    const bp = this._filter("bandpass", 3000, 0.5);
-    const g3 = this._gain(0.05);
-    foam.connect(bp).connect(g3).connect(mg);
-    foam.start();
-  }
-
-  /* ---- FOREST: rustling + birds ---- */
-  _forest(mg) {
-    // Layer 1 — gentle wind through leaves (pink, bandpassed)
-    const leaves = this._src(this._noiseBuf("pink", 10));
-    const bp1 = this._filter("bandpass", 2000, 0.3);
-    const g1 = this._gain(0.18);
-    this._lfo(0.08, 0.06, g1.gain);
-    leaves.connect(bp1).connect(g1).connect(mg);
-    leaves.start();
-
-    // Layer 2 — low forest ambiance
-    const amb = this._src(this._noiseBuf("brown", 10));
-    const lp = this._filter("lowpass", 350);
-    const g2 = this._gain(0.15);
-    amb.connect(lp).connect(g2).connect(mg);
-    amb.start();
-
-    // Layer 3 — subtle high rustle
-    const rustle = this._src(this._noiseBuf("white", 6));
-    const bp2 = this._filter("bandpass", 5000, 1.5);
-    const g3 = this._gain(0.02);
-    this._lfo(0.15, 0.015, g3.gain);
-    rustle.connect(bp2).connect(g3).connect(mg);
-    rustle.start();
-
-    // Birdsong — periodic gentle sine chirps
-    this._scheduleBirds(mg);
-  }
-
-  _scheduleBirds(mg) {
-    const chirp = () => {
-      if (!this.active) return;
-      const t = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      const baseFreq = 1800 + Math.random() * 1400;
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(baseFreq, t);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * (1.1 + Math.random() * 0.4), t + 0.08);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.9, t + 0.16);
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.03 + Math.random() * 0.02, t + 0.02);
-      g.gain.linearRampToValueAtTime(0, t + 0.15 + Math.random() * 0.1);
-      osc.connect(g).connect(mg);
-      osc.start(t);
-      osc.stop(t + 0.3);
-      this.nodes.push(osc, g);
-      // Sometimes do a double chirp
-      if (Math.random() > 0.5) {
-        const id = setTimeout(chirp, 120 + Math.random() * 80);
-        this.timers.push(id);
-      }
-    };
-    // Random bird every 2-6 seconds
-    const loop = () => {
-      if (!this.active) return;
-      chirp();
-      const id = setTimeout(loop, 2000 + Math.random() * 4000);
-      this.timers.push(id);
-    };
-    const id = setTimeout(loop, 1500);
-    this.timers.push(id);
-  }
-
-  /* ---- FIRE: warm crackle ---- */
-  _fire(mg) {
-    // Layer 1 — deep warm body
-    const body = this._src(this._noiseBuf("brown", 10));
-    const lp = this._filter("lowpass", 350);
-    const g1 = this._gain(0.45);
-    this._lfo(0.1, 0.08, g1.gain);
-    body.connect(lp).connect(g1).connect(mg);
-    body.start();
-
-    // Layer 2 — mid crackle
-    const mid = this._src(this._noiseBuf("pink", 8));
-    const bp = this._filter("bandpass", 1200, 0.8);
-    const g2 = this._gain(0.08);
-    this._lfo(0.25, 0.04, g2.gain);
-    mid.connect(bp).connect(g2).connect(mg);
-    mid.start();
-
-    // Layer 3 — random pops/crackles via scheduled clicks
-    this._scheduleCrackles(mg);
-  }
-
-  _scheduleCrackles(mg) {
-    const pop = () => {
-      if (!this.active) return;
-      const t = this.ctx.currentTime;
-      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.03, this.ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) {
-        d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.15));
-      }
-      const s = this.ctx.createBufferSource(); s.buffer = buf;
-      const bp = this._filter("bandpass", 2000 + Math.random() * 3000, 1.0);
-      const g = this._gain(0.06 + Math.random() * 0.06);
-      s.connect(bp).connect(g).connect(mg);
-      s.start(t);
-      this.nodes.push(s);
-    };
-    const loop = () => {
-      if (!this.active) return;
-      pop();
-      // Burst of 1-3 crackles
-      const burst = Math.floor(Math.random() * 3);
-      for (let i = 0; i < burst; i++) {
-        const id = setTimeout(pop, 30 + Math.random() * 80);
-        this.timers.push(id);
-      }
-      const id = setTimeout(loop, 200 + Math.random() * 600);
-      this.timers.push(id);
-    };
-    const id = setTimeout(loop, 500);
-    this.timers.push(id);
-  }
-
-  /* ---- WIND: gentle gusts ---- */
-  _wind(mg) {
-    // Layer 1 — low howl
-    const low = this._src(this._noiseBuf("brown", 12));
-    const bp1 = this._filter("bandpass", 300, 0.4);
-    const g1 = this._gain(0.35);
-    this._lfo(0.04, 180, bp1.frequency);
-    this._lfo(0.04, 0.15, g1.gain);
-    low.connect(bp1).connect(g1).connect(mg);
-    low.start();
-
-    // Layer 2 — mid whistle
-    const mid = this._src(this._noiseBuf("pink", 10));
-    const bp2 = this._filter("bandpass", 1200, 0.6);
-    const g2 = this._gain(0.12);
-    this._lfo(0.07, 500, bp2.frequency);
-    this._lfo(0.07, 0.06, g2.gain);
-    mid.connect(bp2).connect(g2).connect(mg);
-    mid.start();
-
-    // Layer 3 — high breeze texture
-    const high = this._src(this._noiseBuf("white", 8));
-    const hp = this._filter("highpass", 3000);
-    const lp = this._filter("lowpass", 7000);
-    const g3 = this._gain(0.03);
-    this._lfo(0.1, 0.02, g3.gain);
-    high.connect(hp).connect(lp).connect(g3).connect(mg);
-    high.start();
-  }
-
-  /* ---- WHITE NOISE: pure band-limited white ---- */
-  _whitenoise(mg) {
-    const src = this._src(this._noiseBuf("white", 8));
-    const hp = this._filter("highpass", 200);
-    const lp = this._filter("lowpass", 8000);
-    const g = this._gain(0.4);
-    src.connect(hp).connect(lp).connect(g).connect(mg);
-    src.start();
-  }
-
-  /* ---- THUNDER: rain + distant thunder rumbles ---- */
-  _thunder(mg) {
-    // Base rain layer
-    const rain = this._src(this._noiseBuf("pink", 10));
-    const hp = this._filter("highpass", 800);
-    const lp = this._filter("lowpass", 5000);
-    const g1 = this._gain(0.35);
-    rain.connect(hp).connect(lp).connect(g1).connect(mg);
-    rain.start();
-    // Rumble layer
-    const rumble = this._src(this._noiseBuf("brown", 10));
-    const lp2 = this._filter("lowpass", 120);
-    const g2 = this._gain(0.2);
-    this._lfo(0.03, 0.1, g2.gain);
-    rumble.connect(lp2).connect(g2).connect(mg);
-    rumble.start();
-    // Periodic thunder boom
-    const boom = () => {
-      if (!this.active) return;
-      const t = this.ctx.currentTime;
-      const buf = this.ctx.createBuffer(1, this.ctx.sampleRate * 2, this.ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.4));
-      const s = this.ctx.createBufferSource(); s.buffer = buf;
-      const f = this._filter("lowpass", 200);
-      const g = this._gain(0.5 + Math.random() * 0.3);
-      s.connect(f).connect(g).connect(mg); s.start(t);
-      this.nodes.push(s);
-      const id = setTimeout(boom, 6000 + Math.random() * 12000);
-      this.timers.push(id);
-    };
-    const id = setTimeout(boom, 3000 + Math.random() * 5000);
-    this.timers.push(id);
-  }
-
-  /* ---- CAFÉ: ambient chatter + cups ---- */
-  _cafe(mg) {
-    // Ambient murmur (pink, mid-band)
-    const murmur = this._src(this._noiseBuf("pink", 10));
-    const bp = this._filter("bandpass", 800, 0.4);
-    const g1 = this._gain(0.15);
-    this._lfo(0.07, 0.04, g1.gain);
-    murmur.connect(bp).connect(g1).connect(mg);
-    murmur.start();
-    // High freq presence (cups, cutlery)
-    const hf = this._src(this._noiseBuf("white", 6));
-    const bp2 = this._filter("bandpass", 3500, 1.2);
-    const g2 = this._gain(0.02);
-    this._lfo(0.2, 0.01, g2.gain);
-    hf.connect(bp2).connect(g2).connect(mg);
-    hf.start();
-    // Low hum (HVAC / espresso machine)
-    const hum = this._src(this._noiseBuf("brown", 8));
-    const lp = this._filter("lowpass", 180);
-    const g3 = this._gain(0.12);
-    hum.connect(lp).connect(g3).connect(mg);
-    hum.start();
-  }
-
-  /* ---------- fade out ---------- */
   fadeOut() {
-    if (!this.ctx || !this.masterGain || !this.active) { this.stop(); return; }
-    try {
-      const now = this.ctx.currentTime;
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-      this.masterGain.gain.linearRampToValueAtTime(0, now + 2);
-      const id = setTimeout(() => this.stop(), 2200);
-      this.timers.push(id);
-    } catch { this.stop(); }
+    if (!this._audio) return;
+    const audio = this._audio;
+    this._audio = null;
+    if (this._fadeTimer) { clearInterval(this._fadeTimer); this._fadeTimer = null; }
+    let vol = audio.volume;
+    const fade = setInterval(() => {
+      vol = Math.max(0, vol - 0.05);
+      try { audio.volume = vol; } catch {}
+      if (vol <= 0) { try { audio.pause(); } catch {} clearInterval(fade); }
+    }, 80);
   }
 }
 
@@ -438,18 +104,54 @@ const MOODS = [
 const TIMER_PRESETS = [3, 5, 10, 15, 20];
 
 const AFFIRMATIONS = [
-  "Eu sou capaz de alcançar os meus objetivos.",
-  "O meu corpo é forte e resiliente.",
-  "Cada passo que dou me aproxima da melhor versão de mim.",
-  "Eu mereço saúde, felicidade e equilíbrio.",
-  "A minha mente está calma e focada.",
-  "Eu escolho pensamentos que me fortalecem.",
-  "Cada respiração traz paz ao meu corpo e mente.",
-  "Eu confio no processo e sou paciente comigo.",
-  "A minha energia é positiva e contagiante.",
-  "Eu sou grato(a) pelo progresso que faço todos os dias.",
-  "O descanso faz parte do meu treino.",
-  "Eu honro o meu corpo com cada decisão que tomo.",
+  // Força e corpo
+  "O meu corpo é forte, capaz e resiliente.",
+  "Cada treino torna-me mais forte do que ontem.",
+  "Cuido do meu corpo porque ele é o meu lar.",
+  "A minha força cresce a cada desafio que enfrento.",
+  "O meu corpo merece movimento, descanso e nutrição.",
+  "Estou a construir a melhor versão de mim, um dia de cada vez.",
+  "A consistência é o meu superpoder.",
+  "Cada repetição conta. Cada esforço importa.",
+  "O meu corpo adapta-se, melhora e surpreende-me.",
+  "Tenho energia para dar e receber.",
+  // Mente e foco
+  "A minha mente está calma, clara e focada.",
+  "Escolho pensamentos que me elevam e fortalecem.",
+  "Tenho controlo sobre as minhas reações e emoções.",
+  "A paz começa em mim e irradia para tudo à minha volta.",
+  "Cada respiração acalma o meu sistema nervoso.",
+  "Sou capaz de superar qualquer obstáculo com serenidade.",
+  "A minha mente é um aliado, não um inimigo.",
+  "Foco-me no que posso controlar e solto o resto.",
+  "Cada dia é uma nova oportunidade de recomeçar.",
+  "Sou presente. Estou aqui. Isto é suficiente.",
+  // Gratidão e abundância
+  "Sou grato(a) pelo progresso que faço todos os dias.",
+  "Reconheço e celebro as minhas conquistas, grandes e pequenas.",
+  "Há sempre algo pelo qual ser grato neste momento.",
+  "Atraio saúde, energia e bem-estar para a minha vida.",
+  "A minha vida está cheia de oportunidades para crescer.",
+  "Sou suficiente exatamente como sou, e continuo a evoluir.",
+  "Mereço saúde, felicidade e equilíbrio em todas as áreas da vida.",
+  "A abundância flui naturalmente para mim.",
+  // Hábitos e disciplina
+  "O descanso faz parte do meu treino e honro-o.",
+  "Honro o meu corpo com cada decisão que tomo.",
+  "A disciplina de hoje é a liberdade de amanhã.",
+  "Faço escolhas que o meu eu futuro vai agradecer.",
+  "Cada pequena ação positiva cria um grande impacto.",
+  "Não preciso de ser perfeito(a), só preciso de ser consistente.",
+  "O progresso, por mais pequeno que seja, é sempre progresso.",
+  "Começo hoje. Não amanhã. Hoje.",
+  // Autoconfiança
+  "Confio em mim e no processo da minha jornada.",
+  "Sou capaz de mais do que imagino.",
+  "Acredito no meu potencial ilimitado.",
+  "A minha confiança cresce a cada vez que me desafio.",
+  "Sou corajoso(a) o suficiente para começar e persistente o suficiente para continuar.",
+  "A minha opinião sobre mim próprio(a) é a única que realmente importa.",
+  "Sou o(a) arquiteto(a) da minha própria saúde e felicidade.",
 ];
 
 export default function Zen() {
@@ -471,7 +173,7 @@ export default function Zen() {
   const [gratitudeText, setGratitudeText] = useState("");
   const [gratitudeSaved, setGratitudeSaved] = useState(false);
   const [affirmationIdx, setAffirmationIdx] = useState(
-    Math.floor(Date.now() / 86400000) % AFFIRMATIONS.length
+    () => Math.floor(Math.random() * AFFIRMATIONS.length)
   );
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -1006,18 +708,25 @@ export default function Zen() {
               className="btn btn-ghost"
               onClick={() => setAffirmationIdx((affirmationIdx - 1 + AFFIRMATIONS.length) % AFFIRMATIONS.length)}
             >
-              ← Anterior
+              ←
             </button>
             <button
               className="btn btn-primary"
+              onClick={() => {
+                let next;
+                do { next = Math.floor(Math.random() * AFFIRMATIONS.length); } while (next === affirmationIdx);
+                setAffirmationIdx(next);
+              }}
+            >
+              Aleatória ✨
+            </button>
+            <button
+              className="btn btn-ghost"
               onClick={() => setAffirmationIdx((affirmationIdx + 1) % AFFIRMATIONS.length)}
             >
-              Próxima →
+              →
             </button>
           </div>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 20 }}>
-            {affirmationIdx + 1} / {AFFIRMATIONS.length}
-          </p>
         </div>
         <div style={{ marginTop: 16, padding: "16px", background: "var(--bg-tertiary)", borderRadius: 14, border: "1px solid var(--border)" }}>
           <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
