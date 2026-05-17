@@ -223,7 +223,7 @@ class WeeklySummaryOut(BaseModel):
 
 # ==================== ZEN SESSION SCHEMAS ====================
 
-ZenType = Literal["breathing", "meditation"]
+ZenType = Literal["breathing", "meditation", "gratitude", "affirmation"]
 MoodType = Literal["calm", "happy", "stressed", "anxious", "tired", "energetic", "neutral"]
 
 class ZenSessionIn(BaseModel):
