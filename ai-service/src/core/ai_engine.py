@@ -84,8 +84,6 @@ ANIMATED_EXERCISES = {
         "Burpee",
         "Mountain climber / Escalador",
         "Polichinelos / Jumping jacks",
-        "Kettlebell swing",
-        "Corrida no lugar / High knees",
     ],
 }
 
@@ -114,7 +112,6 @@ HOME_EXERCISES = {
         "Burpee",
         "Mountain climber / Escalador",
         "Polichinelos / Jumping jacks",
-        "Corrida no lugar / High knees",
     ],
 }
 
@@ -146,11 +143,14 @@ def _format_exercise_constraint() -> str:
             lines.append(f"   - {item}")
     lines.extend([
         "",
-        "REGRAS:",
+        "REGRAS OBRIGATÓRIAS:",
         "- Quando recomendares um exercício, copia o nome EXATAMENTE como está acima",
         "- Se o nome tem barra (e.g. 'Pull-up / Barra fixa'), usa qualquer dos lados",
         "- Para variações (ex: agachamento sumo, agachamento hack), usa o nome base ('Agachamento com barra')",
         "- NÃO inventes exercícios fora desta lista — se uma necessidade não couber, escolhe o mais próximo",
+        "- NUNCA uses nomes genéricos ou abreviados como: 'Triceps', 'Lat', 'Press', 'Elevação', 'Rosca', 'Pull', 'Curl'",
+        "- CADA exercício DEVE ter o nome completo da lista acima — nomes curtos = PROIBIDO",
+        "- Nomes incompletos resultam em exercício SEM imagem na app — sempre usa o nome completo",
     ])
     return "\n".join(lines)
 
