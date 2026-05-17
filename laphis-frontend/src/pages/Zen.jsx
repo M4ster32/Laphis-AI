@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
+import { useToast } from "../components/Toast";
 import { Wind, Zap, Heart, Plus, Trash2, BookOpen, Star } from "lucide-react";
 
 // ===== AMBIENT AUDIO — usa ficheiros reais de /public/sounds/ =====
@@ -156,6 +157,7 @@ const AFFIRMATIONS = [
 
 export default function Zen() {
   const { profile } = useApp();
+  const toast = useToast();
   const [activeView, setActiveView] = useState("home"); // home, breathing, meditation, gratitude, affirmations
   const [selectedPattern, setSelectedPattern] = useState(BREATHING_PATTERNS[0]);
   const [selectedSound, setSelectedSound] = useState("silence");
@@ -653,8 +655,13 @@ export default function Zen() {
                   setGratitudeSaved(true);
                   setGratitudeText("");
                   loadHistory();
-                } catch {}
-                setSaving(false);
+                  toast.success("Gratidão guardada!");
+                } catch (err) {
+                  console.error("Erro ao guardar gratidão:", err);
+                  toast.error("Erro ao guardar. Tenta novamente.");
+                } finally {
+                  setSaving(false);
+                }
               }}
             >
               {saving ? "A guardar..." : "Guardar Gratidão"}
