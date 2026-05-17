@@ -67,6 +67,13 @@ export default function Reports() {
   const handleExportPDF = () => {
     if (!report) return;
     try {
+      // jsPDF nao suporta emojis — remove-os de qualquer string dinamica
+      const clean = (str) =>
+        String(str || "")
+          .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20D0}-\u{20FF}]/gu, "")
+          .replace(/\s{2,}/g, " ")
+          .trim();
+
       const doc = new jsPDF({ unit: "mm", format: "a4" });
       const W = doc.internal.pageSize.getWidth();
       const H = doc.internal.pageSize.getHeight();
@@ -88,7 +95,7 @@ export default function Reports() {
       doc.setFontSize(9);
       doc.text(new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }), W - m, 28, { align: "right" });
       if (profile?.name) {
-        doc.text(profile.name, W - m, 18, { align: "right" });
+        doc.text(clean(profile.name), W - m, 18, { align: "right" });
       }
       y = 48;
       doc.setTextColor(60, 60, 60);
@@ -117,7 +124,7 @@ export default function Reports() {
         doc.setFontSize(9); doc.setFont("helvetica", "normal");
         report.workouts_by_week.forEach((w) => {
           checkPage(6);
-          doc.text(`${w.week}: ${w.count} treinos${w.total ? " (" + w.total + " min)" : ""}`, m + 2, y); y += 5;
+          doc.text(clean(`${w.week}: ${w.count} treinos${w.total ? " (" + w.total + " min)" : ""}`), m + 2, y); y += 5;
         });
         y += 6;
       }
@@ -130,7 +137,7 @@ export default function Reports() {
         doc.setFontSize(9); doc.setFont("helvetica", "normal");
         report.calories_by_week.forEach((w) => {
           checkPage(6);
-          doc.text(`${w.week}: ${w.total.toLocaleString()} cal`, m + 2, y); y += 5;
+          doc.text(clean(`${w.week}: ${w.total.toLocaleString()} cal`), m + 2, y); y += 5;
         });
         y += 6;
       }
@@ -143,7 +150,7 @@ export default function Reports() {
         doc.setFontSize(9); doc.setFont("helvetica", "normal");
         report.zen_by_week.forEach((w) => {
           checkPage(6);
-          doc.text(`${w.week}: ${w.count} sess\u00f5es`, m + 2, y); y += 5;
+          doc.text(clean(`${w.week}: ${w.count} sess\u00f5es`), m + 2, y); y += 5;
         });
         y += 6;
       }
@@ -157,7 +164,7 @@ export default function Reports() {
         report.mood_distribution.forEach((d) => {
           checkPage(6);
           const label = MOOD_MAP[d.mood]?.label || d.mood;
-          doc.text(`${label}: ${d.count}`, m + 2, y); y += 5;
+          doc.text(clean(`${label}: ${d.count}`), m + 2, y); y += 5;
         });
       }
 
