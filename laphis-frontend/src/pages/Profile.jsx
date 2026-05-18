@@ -508,7 +508,7 @@ export default function Profile() {
       </div>
 
       <button onClick={handleLogout} style={s.logoutBtn}>
-        <LogOut size={16} strokeWidth={1.5} style={{ marginRight: 8, verticalAlign: -2 }} />Terminar Sessão
+        <LogOut size={16} strokeWidth={1.5} />Terminar Sessão
       </button>
     </div>
   );
@@ -533,7 +533,7 @@ const s = {
   badgesGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 32 },
   badge: { display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "18px 8px", background: gl.bg, borderRadius: "var(--radius-sm)", boxShadow: gl.shadow, transition: "opacity 0.3s", border: gl.border },
   badgeLabel: { fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textAlign: "center" },
-  logoutBtn: { width: "100%", padding: "14px", borderRadius: "var(--radius-sm)", background: "var(--card-bg)", border: gl.border, color: "var(--text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.25s", marginBottom: 16, boxShadow: "var(--shadow)" },
+  logoutBtn: { width: "100%", padding: "14px", borderRadius: "var(--radius-sm)", background: "var(--card-bg)", border: gl.border, color: "var(--text-muted)", fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.25s", marginBottom: 16, boxShadow: "var(--shadow)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
 
   formCard: { background: gl.bg, borderRadius: "var(--radius)", padding: "24px 20px", boxShadow: gl.shadowMd, border: gl.border },
   formHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid var(--glass-border)" },

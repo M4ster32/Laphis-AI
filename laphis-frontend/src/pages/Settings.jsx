@@ -3,38 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../contexts/ThemeContext";
 import { useApp } from "../hooks/useApp";
 import ApiService from "../services/api";
-import { Trash2, Plus, Bell, Play, Archive, Dumbbell, UtensilsCrossed, Zap } from "lucide-react";
+import { Trash2, Play, Archive, Dumbbell, UtensilsCrossed, Zap } from "lucide-react";
 import {
   requestNotificationPermission,
   getNotificationPermission,
-  sendNotification,
-  getReminders,
-  addReminder,
-  removeReminder,
-  toggleReminder,
-  startReminderChecker,
-  REMINDER_PRESETS,
 } from "../utils/notifications";
-
-const DAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export default function Settings() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { profile } = useApp();
   const [notifPerm, setNotifPerm] = useState(getNotificationPermission());
-  const [reminders, setReminders] = useState(getReminders());
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [newType, setNewType] = useState("treino");
-  const [newTime, setNewTime] = useState("07:30");
-  const [newMessage, setNewMessage] = useState("");
-  const [newDays, setNewDays] = useState([1, 2, 3, 4, 5]);
-  const [testSent, setTestSent] = useState(false);
   const [archivedPlans, setArchivedPlans] = useState([]);
   const [archivedLoading, setArchivedLoading] = useState(false);
 
   useEffect(() => {
-    startReminderChecker();
     if (profile) loadArchivedPlans();
   }, [profile]);
 
@@ -80,67 +63,6 @@ export default function Settings() {
   const handleRequestPermission = async () => {
     const result = await requestNotificationPermission();
     setNotifPerm(result);
-    if (result === "granted") {
-      startReminderChecker();
-    }
-  };
-
-  const handleTestNotification = () => {
-    sendNotification("Teste LAPHIS", "As notificações estão a funcionar corretamente!");
-    setTestSent(true);
-    setTimeout(() => setTestSent(false), 3000);
-  };
-
-  const handleAddReminder = () => {
-    const preset = REMINDER_PRESETS.find((p) => p.type === newType);
-    const updated = addReminder({
-      type: newType,
-      label: preset?.label || "Lembrete",
-      time: newTime,
-      message: newMessage || preset?.defaultMessage || "Lembrete LAPHIS",
-      days: newDays,
-    });
-    setReminders(updated);
-    setShowAddForm(false);
-    resetForm();
-  };
-
-  const handleRemove = (id) => {
-    const updated = removeReminder(id);
-    setReminders(updated);
-  };
-
-  const handleToggle = (id) => {
-    const updated = toggleReminder(id);
-    setReminders(updated);
-  };
-
-  const resetForm = () => {
-    setNewType("treino");
-    setNewTime("07:30");
-    setNewMessage("");
-    setNewDays([1, 2, 3, 4, 5]);
-  };
-
-  const toggleDay = (day) => {
-    setNewDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
-
-  const selectPreset = (type) => {
-    const preset = REMINDER_PRESETS.find((p) => p.type === type);
-    if (preset) {
-      setNewType(type);
-      setNewTime(preset.defaultTime);
-      setNewMessage(preset.defaultMessage);
-      setNewDays(preset.defaultDays);
-    }
-  };
-
-  const getReminderTypeIcon = (type) => {
-    const labels = { treino: "T", agua: "A", refeicao: "R", zen: "Z", peso: "P" };
-    return labels[type] || "•";
   };
 
   return (
@@ -177,169 +99,32 @@ export default function Settings() {
       {/* ===== NOTIFICATIONS ===== */}
       <div style={s.section}>
         <h3 style={s.sectionTitle}>Notificações</h3>
-
-        {/* Permission status */}
-        <div style={s.permCard}>
-          <div style={s.permInfo}>
-            <Bell size={24} color="var(--primary)" strokeWidth={1.5} style={{flexShrink: 0}} />
-            <div>
-              <span style={s.permLabel}>
-                {notifPerm === "granted"
-                  ? "Notificações ativadas"
-                  : notifPerm === "denied"
-                  ? "Notificações bloqueadas"
-                  : "Notificações pendentes"}
-              </span>
-              <span style={s.permDesc}>
-                {notifPerm === "denied"
-                  ? "Vai às definições do browser para desbloquear"
-                  : notifPerm === "granted"
-                  ? "Vais receber lembretes no horário definido"
-                  : "Clica para ativar as notificações"}
-              </span>
-            </div>
+        <div style={s.settingRow}>
+          <div>
+            <span style={s.settingLabel}>Notificações</span>
+            <span style={s.settingDesc}>
+              {notifPerm === "denied"
+                ? "Bloqueadas — permite nas definições do browser"
+                : notifPerm === "granted"
+                ? "Ativas"
+                : "Desativadas"}
+            </span>
           </div>
-          {notifPerm !== "granted" && notifPerm !== "denied" && (
-            <button className="btn btn-primary btn-sm" onClick={handleRequestPermission}>
-              Ativar
-            </button>
-          )}
-          {notifPerm === "granted" && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={handleTestNotification}
-              disabled={testSent}
-            >
-              {testSent ? "✓ Enviado" : "Testar"}
-            </button>
-          )}
-        </div>
-
-        {/* Reminders List */}
-        <div style={s.remindersHeader}>
-          <h4 style={s.remindersTitle}>Lembretes ({reminders.length})</h4>
           <button
-            className="btn btn-primary btn-sm"
-            onClick={() => { setShowAddForm(!showAddForm); resetForm(); }}
-            title={showAddForm ? "Cancelar" : "Novo lembrete"}
+            onClick={notifPerm === "default" ? handleRequestPermission : undefined}
+            style={{
+              ...s.toggleBtn,
+              background: notifPerm === "granted" ? "var(--primary)" : "var(--border)",
+              opacity: notifPerm === "denied" ? 0.4 : 1,
+              cursor: notifPerm === "denied" ? "not-allowed" : notifPerm === "granted" ? "default" : "pointer",
+            }}
           >
-            {showAddForm ? "✕" : <Plus size={18} strokeWidth={1.5} />}
+            <div style={{
+              ...s.toggleDot,
+              transform: notifPerm === "granted" ? "translateX(22px)" : "translateX(2px)",
+            }} />
           </button>
         </div>
-
-        {/* Add Form */}
-        {showAddForm && (
-          <div style={s.addForm}>
-            {/* Type presets */}
-            <div style={s.presetGrid}>
-              {REMINDER_PRESETS.map((p) => (
-                <button
-                  key={p.type}
-                  onClick={() => selectPreset(p.type)}
-                  style={{
-                    ...s.presetBtn,
-                    borderColor: newType === p.type ? "var(--primary)" : "var(--border)",
-                    background: newType === p.type ? "var(--primary-bg)" : "var(--bg)",
-                  }}
-                >
-                  <span style={{
-                    fontSize: 13, fontWeight: newType === p.type ? 700 : 500,
-                    color: newType === p.type ? "var(--primary)" : "var(--text-secondary)",
-                  }}>{p.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Time */}
-            <div className="form-group">
-              <label className="form-label">Horário</label>
-              <input
-                type="time" className="form-input"
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-              />
-            </div>
-
-            {/* Days */}
-            <div className="form-group">
-              <label className="form-label">Dias da semana</label>
-              <div style={s.daysRow}>
-                {DAY_LABELS.map((label, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => toggleDay(idx)}
-                    style={{
-                      ...s.dayBtn,
-                      background: newDays.includes(idx) ? "var(--primary)" : "var(--bg)",
-                      color: newDays.includes(idx) ? "white" : "var(--text-secondary)",
-                      borderColor: newDays.includes(idx) ? "var(--primary)" : "var(--border)",
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Message */}
-            <div className="form-group">
-              <label className="form-label">Mensagem (opcional)</label>
-              <input
-                type="text" className="form-input"
-                placeholder="Ex: Não te esqueças do treino!"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-              />
-            </div>
-
-            <button className="btn btn-primary btn-full" onClick={handleAddReminder}>
-              Criar Lembrete
-            </button>
-          </div>
-        )}
-
-        {/* Reminder Items */}
-        {reminders.length === 0 ? (
-          <div style={s.emptyState}>
-            <p style={s.emptyText}>Sem lembretes configurados.</p>
-            <p style={s.emptySubtext}>Cria um lembrete para nunca esqueceres os treinos!</p>
-          </div>
-        ) : (
-          <div style={s.remindersList}>
-            {reminders.map((r) => (
-              <div key={r.id} style={{ ...s.reminderCard, opacity: r.active ? 1 : 0.5 }}>
-                <div style={s.reminderLeft}>
-                  <span style={s.reminderIcon}>{getReminderTypeIcon(r.type)}</span>
-                  <div>
-                    <span style={s.reminderLabel}>{r.label}</span>
-                    <span style={s.reminderTime}>
-                      {r.time} · {r.days?.map((d) => DAY_LABELS[d]).join(", ") || "Todos os dias"}
-                    </span>
-                    {r.message && <span style={s.reminderMsg}>{r.message}</span>}
-                  </div>
-                </div>
-                <div style={s.reminderActions}>
-                  <button
-                    onClick={() => handleToggle(r.id)}
-                    style={{
-                      ...s.miniToggle,
-                      background: r.active ? "var(--primary)" : "var(--border)",
-                    }}
-                  >
-                    <div style={{
-                      ...s.miniToggleDot,
-                      transform: r.active ? "translateX(14px)" : "translateX(2px)",
-                    }} />
-                  </button>
-                  <button style={s.deleteBtn} onClick={() => handleRemove(r.id)}>
-                    <Trash2 size={14} strokeWidth={1.5} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ===== ARCHIVED PLANS ===== */}
@@ -437,72 +222,6 @@ const s = {
     boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
   },
 
-  permCard: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    padding: "10px 12px", background: "var(--hover-overlay)", borderRadius: 10,
-    marginBottom: 14, border: "none",
-  },
-  permInfo: { display: "flex", gap: 10, alignItems: "center" },
-  permLabel: { display: "block", fontSize: 12, fontWeight: 600, color: "var(--text)" },
-  permDesc: { display: "block", fontSize: 10, color: "var(--text-muted)", marginTop: 1 },
-
-  remindersHeader: {
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    marginBottom: 8,
-  },
-  remindersTitle: { fontSize: 13, fontWeight: 600, color: "var(--text)", margin: 0 },
-
-  addForm: {
-    background: "var(--hover-overlay)", borderRadius: 10,
-    padding: "12px", marginBottom: 12, animation: "slideUp 0.2s ease",
-    border: "none",
-  },
-  presetGrid: {
-    display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6, marginBottom: 12,
-  },
-  presetBtn: {
-    display: "flex", alignItems: "center", justifyContent: "center",
-    padding: "8px 6px", borderRadius: 8,
-    border: "1.5px solid var(--border)", cursor: "pointer", transition: "all 0.2s",
-    background: "var(--card-bg)",
-  },
-  daysRow: { display: "flex", gap: 4, justifyContent: "space-between" },
-  dayBtn: {
-    width: 32, height: 32, borderRadius: "50%", border: "1.5px solid var(--border)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    fontSize: 10, fontWeight: 700, cursor: "pointer", transition: "all 0.2s",
-  },
-
-  remindersList: { display: "flex", flexDirection: "column", gap: 6 },
-  reminderCard: {
-    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-    padding: "10px 12px", background: "var(--hover-overlay)", borderRadius: 10,
-    transition: "opacity 0.3s", border: "none",
-  },
-  reminderLeft: { display: "flex", gap: 10, alignItems: "flex-start", flex: 1 },
-  reminderIcon: { fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", flexShrink: 0, marginTop: 2 },
-  reminderLabel: { display: "block", fontSize: 13, fontWeight: 600, color: "var(--text)" },
-  reminderTime: { display: "block", fontSize: 11, color: "var(--text-muted)", marginTop: 1 },
-  reminderMsg: { display: "block", fontSize: 10, color: "var(--text-secondary)", marginTop: 2, fontStyle: "italic" },
-  reminderActions: { display: "flex", gap: 6, alignItems: "center", flexShrink: 0 },
-
-  miniToggle: {
-    width: 30, height: 16, borderRadius: 8, border: "none",
-    cursor: "pointer", transition: "background 0.3s", position: "relative",
-  },
-  miniToggleDot: {
-    width: 12, height: 12, borderRadius: "50%", background: "var(--bg-surface)",
-    position: "absolute", top: 2, transition: "transform 0.3s",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.12)",
-  },
-  deleteBtn: {
-    background: "none", border: "none", fontSize: 14, cursor: "pointer",
-    padding: 3, opacity: 0.5, transition: "opacity 0.2s", color: "var(--text-muted)",
-  },
-
-  emptyState: { textAlign: "center", padding: "20px 12px" },
-  emptyText: { fontSize: 13, color: "var(--text-muted)", margin: "6px 0 2px", fontWeight: 600 },
-  emptySubtext: { fontSize: 11, color: "var(--text-muted)", margin: 0 },
 
   aboutCard: { textAlign: "center", padding: "10px 0" },
   aboutLogo: {
