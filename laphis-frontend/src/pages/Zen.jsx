@@ -104,55 +104,69 @@ const MOODS = [
 
 const TIMER_PRESETS = [3, 5, 10, 15, 20];
 
+const AFFIRMATIONS_CATEGORIES = [
+  { key: "all", label: "Todas" },
+  { key: "forca", label: "Força" },
+  { key: "mente", label: "Mente" },
+  { key: "gratidao", label: "Gratidão" },
+  { key: "habitos", label: "Hábitos" },
+  { key: "confianca", label: "Confiança" },
+];
+
+const GRATITUDE_QUESTIONS = [
+  "Hoje, o que te fez sorrir?",
+  "Que pessoa merece um obrigado teu hoje?",
+  "Que coisa simples foi especial hoje?",
+  "Qual foi o teu pequeno progresso hoje?",
+  "O que aprendeste que não sabias ontem?",
+  "Que momento de hoje queres guardar?",
+  "O que te deu força hoje?",
+];
+
 const AFFIRMATIONS = [
-  // Força e corpo
-  "O meu corpo é forte, capaz e resiliente.",
-  "Cada treino torna-me mais forte do que ontem.",
-  "Cuido do meu corpo porque ele é o meu lar.",
-  "A minha força cresce a cada desafio que enfrento.",
-  "O meu corpo merece movimento, descanso e nutrição.",
-  "Estou a construir a melhor versão de mim, um dia de cada vez.",
-  "A consistência é o meu superpoder.",
-  "Cada repetição conta. Cada esforço importa.",
-  "O meu corpo adapta-se, melhora e surpreende-me.",
-  "Tenho energia para dar e receber.",
-  // Mente e foco
-  "A minha mente está calma, clara e focada.",
-  "Escolho pensamentos que me elevam e fortalecem.",
-  "Tenho controlo sobre as minhas reações e emoções.",
-  "A paz começa em mim e irradia para tudo à minha volta.",
-  "Cada respiração acalma o meu sistema nervoso.",
-  "Sou capaz de superar qualquer obstáculo com serenidade.",
-  "A minha mente é um aliado, não um inimigo.",
-  "Foco-me no que posso controlar e solto o resto.",
-  "Cada dia é uma nova oportunidade de recomeçar.",
-  "Sou presente. Estou aqui. Isto é suficiente.",
-  // Gratidão e abundância
-  "Sou grato(a) pelo progresso que faço todos os dias.",
-  "Reconheço e celebro as minhas conquistas, grandes e pequenas.",
-  "Há sempre algo pelo qual ser grato neste momento.",
-  "Atraio saúde, energia e bem-estar para a minha vida.",
-  "A minha vida está cheia de oportunidades para crescer.",
-  "Sou suficiente exatamente como sou, e continuo a evoluir.",
-  "Mereço saúde, felicidade e equilíbrio em todas as áreas da vida.",
-  "A abundância flui naturalmente para mim.",
-  // Hábitos e disciplina
-  "O descanso faz parte do meu treino e honro-o.",
-  "Honro o meu corpo com cada decisão que tomo.",
-  "A disciplina de hoje é a liberdade de amanhã.",
-  "Faço escolhas que o meu eu futuro vai agradecer.",
-  "Cada pequena ação positiva cria um grande impacto.",
-  "Não preciso de ser perfeito(a), só preciso de ser consistente.",
-  "O progresso, por mais pequeno que seja, é sempre progresso.",
-  "Começo hoje. Não amanhã. Hoje.",
-  // Autoconfiança
-  "Confio em mim e no processo da minha jornada.",
-  "Sou capaz de mais do que imagino.",
-  "Acredito no meu potencial ilimitado.",
-  "A minha confiança cresce a cada vez que me desafio.",
-  "Sou corajoso(a) o suficiente para começar e persistente o suficiente para continuar.",
-  "A minha opinião sobre mim próprio(a) é a única que realmente importa.",
-  "Sou o(a) arquiteto(a) da minha própria saúde e felicidade.",
+  { text: "O meu corpo é forte, capaz e resiliente.", cat: "forca" },
+  { text: "Cada treino torna-me mais forte do que ontem.", cat: "forca" },
+  { text: "Cuido do meu corpo porque ele é o meu lar.", cat: "forca" },
+  { text: "A minha força cresce a cada desafio que enfrento.", cat: "forca" },
+  { text: "O meu corpo merece movimento, descanso e nutrição.", cat: "forca" },
+  { text: "Estou a construir a melhor versão de mim, um dia de cada vez.", cat: "forca" },
+  { text: "A consistência é o meu superpoder.", cat: "forca" },
+  { text: "Cada repetição conta. Cada esforço importa.", cat: "forca" },
+  { text: "O meu corpo adapta-se, melhora e surpreende-me.", cat: "forca" },
+  { text: "Tenho energia para dar e receber.", cat: "forca" },
+  { text: "A minha mente está calma, clara e focada.", cat: "mente" },
+  { text: "Escolho pensamentos que me elevam e fortalecem.", cat: "mente" },
+  { text: "Tenho controlo sobre as minhas reações e emoções.", cat: "mente" },
+  { text: "A paz começa em mim e irradia para tudo à minha volta.", cat: "mente" },
+  { text: "Cada respiração acalma o meu sistema nervoso.", cat: "mente" },
+  { text: "Sou capaz de superar qualquer obstáculo com serenidade.", cat: "mente" },
+  { text: "A minha mente é um aliado, não um inimigo.", cat: "mente" },
+  { text: "Foco-me no que posso controlar e solto o resto.", cat: "mente" },
+  { text: "Cada dia é uma nova oportunidade de recomeçar.", cat: "mente" },
+  { text: "Sou presente. Estou aqui. Isto é suficiente.", cat: "mente" },
+  { text: "Sou grato(a) pelo progresso que faço todos os dias.", cat: "gratidao" },
+  { text: "Reconheço e celebro as minhas conquistas, grandes e pequenas.", cat: "gratidao" },
+  { text: "Há sempre algo pelo qual ser grato neste momento.", cat: "gratidao" },
+  { text: "Atraio saúde, energia e bem-estar para a minha vida.", cat: "gratidao" },
+  { text: "A minha vida está cheia de oportunidades para crescer.", cat: "gratidao" },
+  { text: "Sou suficiente exatamente como sou, e continuo a evoluir.", cat: "gratidao" },
+  { text: "Mereço saúde, felicidade e equilíbrio em todas as áreas da vida.", cat: "gratidao" },
+  { text: "A abundância flui naturalmente para mim.", cat: "gratidao" },
+  { text: "O descanso faz parte do meu treino e honro-o.", cat: "habitos" },
+  { text: "Honro o meu corpo com cada decisão que tomo.", cat: "habitos" },
+  { text: "A disciplina de hoje é a liberdade de amanhã.", cat: "habitos" },
+  { text: "Faço escolhas que o meu eu futuro vai agradecer.", cat: "habitos" },
+  { text: "Cada pequena ação positiva cria um grande impacto.", cat: "habitos" },
+  { text: "Não preciso de ser perfeito(a), só preciso de ser consistente.", cat: "habitos" },
+  { text: "O progresso, por mais pequeno que seja, é sempre progresso.", cat: "habitos" },
+  { text: "Começo hoje. Não amanhã. Hoje.", cat: "habitos" },
+  { text: "Confio em mim e no processo da minha jornada.", cat: "confianca" },
+  { text: "Sou capaz de mais do que imagino.", cat: "confianca" },
+  { text: "Acredito no meu potencial ilimitado.", cat: "confianca" },
+  { text: "A minha confiança cresce a cada vez que me desafio.", cat: "confianca" },
+  { text: "Sou corajoso(a) o suficiente para começar e persistente o suficiente para continuar.", cat: "confianca" },
+  { text: "A minha opinião sobre mim próprio(a) é a única que realmente importa.", cat: "confianca" },
+  { text: "Sou o(a) arquiteto(a) da minha própria saúde e felicidade.", cat: "confianca" },
 ];
 
 export default function Zen() {
@@ -177,10 +191,11 @@ export default function Zen() {
   const [affirmationIdx, setAffirmationIdx] = useState(
     () => Math.floor(Math.random() * AFFIRMATIONS.length)
   );
+  const [affirmationCategory, setAffirmationCategory] = useState("all");
   const [history, setHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [todayAffirmation] = useState(
-    AFFIRMATIONS[Math.floor(Date.now() / 86400000) % AFFIRMATIONS.length]
+    AFFIRMATIONS[Math.floor(Date.now() / 86400000) % AFFIRMATIONS.length].text
   );
 
   const timerRef = useRef(null);
@@ -609,76 +624,93 @@ export default function Zen() {
 
   // ===== GRATITUDE VIEW =====
   if (activeView === "gratitude") {
+    const todayQ = GRATITUDE_QUESTIONS[Math.floor(Date.now() / 86400000) % GRATITUDE_QUESTIONS.length];
+
+    const handleSaveGratitude = async () => {
+      if (!gratitudeText.trim()) return;
+      setSaving(true);
+      try {
+        await ApiService.saveZenSession({
+          type: "gratitude",
+          duration_min: 2,
+          mood_before: null,
+          mood_after: "happy",
+          notes: `${todayQ}\n\n${gratitudeText.trim()}`,
+        });
+        setGratitudeSaved(true);
+        setGratitudeText("");
+        loadHistory();
+      } catch (err) {
+        console.error("Erro ao guardar gratidão:", err);
+        toast.error("Erro ao guardar. Tenta novamente.");
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    const pastEntries = history.filter(h => h.type === "gratitude").slice(0, 3);
+
     return (
       <div style={s.page}>
-        <button style={s.backBtn} onClick={() => { setActiveView("home"); setGratitudeSaved(false); }}>
+        <button style={s.backBtn} onClick={() => { setActiveView("home"); setGratitudeSaved(false); setGratitudeText(""); }}>
           ← Voltar
         </button>
-        <div style={s.zenHeroBg}>
-          <h2 style={{ ...s.zenTitle, fontSize: 20 }}>Diário de Gratidão</h2>
-          <p style={s.zenSubtitle}>Escreve 3 coisas pelas quais és grato hoje</p>
-        </div>
-        <div style={{ marginTop: 20 }}>
-          <textarea
-            placeholder={"1. Sou grato por...\n2. Aprecio...\n3. Hoje foi especial porque..."}
-            value={gratitudeText}
-            onChange={(e) => setGratitudeText(e.target.value)}
-            rows={7}
-            style={{
-              width: "100%", padding: "14px 16px", borderRadius: 14,
-              border: "1px solid var(--border)", background: "var(--card-bg)",
-              color: "var(--text)", fontSize: 15, lineHeight: 1.7,
-              resize: "vertical", fontFamily: "inherit", boxSizing: "border-box",
-              outline: "none",
-            }}
-          />
-          {gratitudeSaved ? (
-            <div style={{ textAlign: "center", padding: "20px 0", color: "var(--primary)", fontWeight: 700, fontSize: 16 }}>
-              ✓ Guardado! Que o teu dia seja incrível.
-            </div>
-          ) : (
+
+        {!gratitudeSaved ? (
+          <div style={s.gratitudeCard}>
+            <span style={s.gratitudeLabel}>Pergunta do dia</span>
+            <p style={s.gratitudeQuestion}>{todayQ}</p>
+            <textarea
+              value={gratitudeText}
+              onChange={(e) => setGratitudeText(e.target.value)}
+              rows={4}
+              placeholder="A tua resposta..."
+              style={s.gratitudeInput}
+              autoFocus
+            />
             <button
               className="btn btn-primary btn-full"
-              style={{ marginTop: 14 }}
+              style={{ marginTop: 16 }}
               disabled={!gratitudeText.trim() || saving}
-              onClick={async () => {
-                if (!gratitudeText.trim()) return;
-                setSaving(true);
-                try {
-                  await ApiService.saveZenSession({
-                    type: "gratitude",
-                    duration_min: 2,
-                    mood_before: null,
-                    mood_after: "happy",
-                    notes: gratitudeText.trim(),
-                  });
-                  setGratitudeSaved(true);
-                  setGratitudeText("");
-                  loadHistory();
-                  toast.success("Gratidão guardada!");
-                } catch (err) {
-                  console.error("Erro ao guardar gratidão:", err);
-                  toast.error("Erro ao guardar. Tenta novamente.");
-                } finally {
-                  setSaving(false);
-                }
-              }}
+              onClick={handleSaveGratitude}
             >
-              {saving ? "A guardar..." : "Guardar Gratidão"}
+              {saving ? "A guardar..." : "Guardar"}
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={s.gratitudeSavedCard}>
+            <div style={{ fontSize: 44, marginBottom: 16 }}>🌱</div>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--text)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Guardado.</h3>
+            <p style={{ fontSize: 15, color: "var(--text-secondary)", margin: 0, lineHeight: 1.7 }}>
+              A gratidão transforma a perspetiva.<br />Que o teu dia seja leve.
+            </p>
+            <button
+              className="btn btn-ghost"
+              style={{ marginTop: 24 }}
+              onClick={() => setGratitudeSaved(false)}
+            >
+              Escrever mais
+            </button>
+          </div>
+        )}
 
-        {/* Past gratitude entries */}
-        {history.filter(h => h.type === "gratitude").length > 0 && (
-          <div style={{ marginTop: 28 }}>
+        {pastEntries.length > 0 && (
+          <div style={{ marginTop: 32 }}>
             <h4 style={s.sectionTitle}>Entradas Anteriores</h4>
-            {history.filter(h => h.type === "gratitude").slice(0, 3).map((h, i) => (
-              <div key={i} style={{ ...s.historyItem, flexDirection: "column", alignItems: "flex-start", marginBottom: 10 }}>
-                <span style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>{h.created_at?.split("T")[0]}</span>
-                <span style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.6, whiteSpace: "pre-line" }}>{h.notes}</span>
-              </div>
-            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {pastEntries.map((h, i) => {
+                const parts = h.notes?.split("\n\n");
+                const question = parts?.length > 1 ? parts[0] : null;
+                const answer = parts?.length > 1 ? parts[1] : h.notes;
+                return (
+                  <div key={i} style={s.gratitudeEntry}>
+                    <span style={s.gratitudeEntryDate}>{h.created_at?.split("T")[0]}</span>
+                    {question && <span style={s.gratitudeEntryQ}>{question}</span>}
+                    <span style={s.gratitudeEntryText}>{answer}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -687,7 +719,17 @@ export default function Zen() {
 
   // ===== AFFIRMATIONS VIEW =====
   if (activeView === "affirmations") {
-    const current = AFFIRMATIONS[affirmationIdx];
+    const filtered = affirmationCategory === "all"
+      ? AFFIRMATIONS
+      : AFFIRMATIONS.filter(a => a.cat === affirmationCategory);
+    const safeIdx = affirmationIdx % filtered.length;
+    const current = filtered[safeIdx]?.text || filtered[0]?.text;
+
+    const handleCategoryChange = (key) => {
+      setAffirmationCategory(key);
+      setAffirmationIdx(0);
+    };
+
     return (
       <div style={s.page}>
         <button style={s.backBtn} onClick={() => setActiveView("home")}>
@@ -697,23 +739,30 @@ export default function Zen() {
           <h2 style={{ ...s.zenTitle, fontSize: 20 }}>Afirmações Positivas</h2>
           <p style={s.zenSubtitle}>Repete em voz alta com convicção</p>
         </div>
-        <div style={{
-          marginTop: 32, padding: "40px 24px",
-          background: "var(--card-bg)", borderRadius: 20,
-          border: "1px solid var(--border)",
-          textAlign: "center", boxShadow: "var(--shadow-md)",
-        }}>
-          <div style={{ fontSize: 40, marginBottom: 20 }}>✨</div>
-          <p style={{
-            fontSize: 20, fontWeight: 700, color: "var(--text)",
-            lineHeight: 1.5, margin: "0 0 32px", fontStyle: "italic",
-          }}>
-            "{current}"
-          </p>
-          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+
+        {/* Category filter */}
+        <div style={s.catFilterRow}>
+          {AFFIRMATIONS_CATEGORIES.map(c => (
+            <button
+              key={c.key}
+              style={{
+                ...s.catChip,
+                ...(affirmationCategory === c.key ? s.catChipActive : {}),
+              }}
+              onClick={() => handleCategoryChange(c.key)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Affirmation card */}
+        <div style={s.affirmationDetailCard}>
+          <p style={s.affirmationDetailText}>"{current}"</p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 28 }}>
             <button
               className="btn btn-ghost"
-              onClick={() => setAffirmationIdx((affirmationIdx - 1 + AFFIRMATIONS.length) % AFFIRMATIONS.length)}
+              onClick={() => setAffirmationIdx((safeIdx - 1 + filtered.length) % filtered.length)}
             >
               ←
             </button>
@@ -721,23 +770,21 @@ export default function Zen() {
               className="btn btn-primary"
               onClick={() => {
                 let next;
-                do { next = Math.floor(Math.random() * AFFIRMATIONS.length); } while (next === affirmationIdx);
+                do { next = Math.floor(Math.random() * filtered.length); } while (next === safeIdx && filtered.length > 1);
                 setAffirmationIdx(next);
               }}
             >
-              Aleatória ✨
+              Aleatória
             </button>
             <button
               className="btn btn-ghost"
-              onClick={() => setAffirmationIdx((affirmationIdx + 1) % AFFIRMATIONS.length)}
+              onClick={() => setAffirmationIdx((safeIdx + 1) % filtered.length)}
             >
               →
             </button>
           </div>
-        </div>
-        <div style={{ marginTop: 16, padding: "16px", background: "var(--bg-tertiary)", borderRadius: 14, border: "1px solid var(--border)" }}>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0, lineHeight: 1.6 }}>
-            💡 <strong>Como usar:</strong> lê a afirmação em voz alta 3× com confiança. Visualiza-te a viver essa realidade. Repete diariamente para resultados.
+          <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "16px 0 0", textAlign: "center" }}>
+            {safeIdx + 1} / {filtered.length}
           </p>
         </div>
       </div>
@@ -757,6 +804,7 @@ export default function Zen() {
 
       {/* Daily Affirmation */}
       <div style={s.affirmationCard}>
+        <span style={s.affirmationDayLabel}>Afirmação do dia</span>
         <p style={s.affirmationText}>"{todayAffirmation}"</p>
       </div>
 
@@ -819,22 +867,18 @@ export default function Zen() {
           <div style={s.historyList}>
             {history.slice(0, 5).map((h, i) => {
               const moodObj = MOODS.find(m => m.value === h.mood_after);
+              const typeLabel = h.type === "breathing" ? "Respiração" : h.type === "gratitude" ? "Gratidão" : "Meditação";
+              const durationLabel = h.type === "gratitude" ? "" : ` — ${h.duration_min}min`;
               return (
                 <div key={i} style={s.historyItem}>
                   <div style={s.historyIcon}>
-                    {h.type === "breathing" ? <Wind size={16} strokeWidth={1.5} /> : <Zap size={16} strokeWidth={1.5} />}
+                    {h.type === "breathing" ? <Wind size={16} strokeWidth={1.5} /> : h.type === "gratitude" ? <BookOpen size={16} strokeWidth={1.5} /> : <Zap size={16} strokeWidth={1.5} />}
                   </div>
                   <div style={s.historyInfo}>
-                    <span style={s.historyTitle}>
-                      {h.type === "breathing" ? "Respiração" : "Meditação"} — {h.duration_min}min
-                    </span>
-                    <span style={s.historyDate}>
-                      {h.created_at?.split("T")[0] || "—"}
-                    </span>
+                    <span style={s.historyTitle}>{typeLabel}{durationLabel}</span>
+                    <span style={s.historyDate}>{h.created_at?.split("T")[0] || "—"}</span>
                   </div>
-                  <div style={s.historyMood}>
-                    {moodObj?.label || "—"}
-                  </div>
+                  <div style={s.historyMood}>{moodObj?.label || "—"}</div>
                 </div>
               );
             })}
@@ -869,16 +913,86 @@ const s = {
   zenTitle: { fontSize: "var(--text-h1)", fontWeight: 800, color: "white", margin: "0 0 6px", letterSpacing: "-0.03em" },
   zenSubtitle: { fontSize: "var(--text-body)", color: "rgba(255,255,255,0.8)", margin: 0, fontWeight: 500 },
 
-  /* Affirmation */
+  /* Affirmation — home card */
   affirmationCard: {
-    display: "flex", alignItems: "flex-start", gap: 12,
-    padding: "18px 20px", background: gl.bg, borderRadius: "var(--radius-sm)",
-    boxShadow: gl.shadow, marginBottom: 20, borderLeft: "3px solid var(--accent)",
-    border: gl.border, borderLeftWidth: "3px", borderLeftColor: "var(--accent)",
+    padding: "20px 20px 18px", background: gl.bg, borderRadius: "var(--radius-sm)",
+    boxShadow: gl.shadow, marginBottom: 20,
+    border: gl.border, borderLeft: "3px solid var(--accent)",
+  },
+  affirmationDayLabel: {
+    display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+    textTransform: "uppercase", color: "var(--accent)", marginBottom: 8,
   },
   affirmationText: {
-    fontSize: 14, color: "var(--text-secondary)", fontStyle: "italic",
-    lineHeight: 1.6, margin: 0, fontWeight: 500,
+    fontSize: 15, color: "var(--text)", fontStyle: "italic",
+    lineHeight: 1.65, margin: 0, fontWeight: 600,
+  },
+
+  /* Affirmation — detail view */
+  affirmationDetailCard: {
+    marginTop: 24, padding: "36px 24px 28px",
+    background: gl.bg, borderRadius: 20,
+    border: gl.border, boxShadow: "var(--shadow-md)",
+    textAlign: "center",
+  },
+  affirmationDetailText: {
+    fontSize: 20, fontWeight: 700, color: "var(--text)",
+    lineHeight: 1.55, margin: 0, fontStyle: "italic",
+  },
+
+  /* Category filter */
+  catFilterRow: {
+    display: "flex", gap: 8, flexWrap: "wrap", marginTop: 20, marginBottom: 4,
+  },
+  catChip: {
+    padding: "7px 14px", borderRadius: 999, fontSize: 13, fontWeight: 600,
+    border: "1px solid var(--border)", background: "var(--card-bg)",
+    color: "var(--text-secondary)", cursor: "pointer", transition: "all 0.2s",
+  },
+  catChipActive: {
+    background: "var(--primary)", color: "#fff", borderColor: "var(--primary)",
+  },
+
+  /* Gratitude */
+  gratitudeCard: {
+    marginTop: 8, padding: "28px 24px",
+    background: gl.bg, borderRadius: 20,
+    border: gl.border, boxShadow: "var(--shadow-md)",
+  },
+  gratitudeLabel: {
+    display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em",
+    textTransform: "uppercase", color: "var(--primary)", marginBottom: 12,
+  },
+  gratitudeQuestion: {
+    fontSize: 20, fontWeight: 700, color: "var(--text)",
+    lineHeight: 1.45, margin: "0 0 24px", letterSpacing: "-0.01em",
+  },
+  gratitudeInput: {
+    width: "100%", padding: "14px 16px", borderRadius: 12,
+    border: "1px solid var(--border)", background: "var(--bg-tertiary)",
+    color: "var(--text)", fontSize: 15, lineHeight: 1.7,
+    resize: "none", fontFamily: "inherit", boxSizing: "border-box",
+    outline: "none",
+  },
+  gratitudeSavedCard: {
+    marginTop: 8, padding: "48px 24px",
+    background: gl.bg, borderRadius: 20,
+    border: gl.border, boxShadow: "var(--shadow-md)",
+    textAlign: "center",
+  },
+  gratitudeEntry: {
+    padding: "16px 18px", background: gl.bg, borderRadius: 14,
+    border: gl.border, boxShadow: gl.shadow,
+    display: "flex", flexDirection: "column", gap: 6,
+  },
+  gratitudeEntryDate: {
+    fontSize: 11, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.04em",
+  },
+  gratitudeEntryQ: {
+    fontSize: 13, fontWeight: 700, color: "var(--primary)", fontStyle: "italic",
+  },
+  gratitudeEntryText: {
+    fontSize: 14, color: "var(--text)", lineHeight: 1.65,
   },
 
   /* Zen Stats */
