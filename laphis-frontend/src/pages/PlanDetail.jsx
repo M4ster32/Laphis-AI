@@ -6,6 +6,7 @@ import ExerciseCard from "../components/ExerciseCard";
 import { hasExerciseImage } from "../utils/exerciseImages";
 import { SkeletonCard, SkeletonLine } from "../components/Skeleton";
 import jsPDF from "jspdf";
+import { PDF, stripEmojis, pdfHeader, pdfFooter } from "../utils/pdf";
 import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
 
 /**
@@ -429,45 +430,32 @@ export default function PlanDetail() {
       }
     };
 
-    // Header
-    doc.setFillColor(155, 106, 74);
-    doc.rect(0, 0, pageW, 40, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("LAPHIS", margin, 18);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("O teu assistente pessoal de treino e nutricao", margin, 28);
-    y = 50;
+    // Header (cores do site + sem emojis)
+    y = pdfHeader(doc, { subtitle: "O teu assistente pessoal de treino e nutricao" }) + 2;
 
     // Plan title
-    doc.setTextColor(74, 52, 39);
+    doc.setTextColor(...PDF.ink);
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    const titleLines = doc.splitTextToSize(plan.title || "Plano sem titulo", maxW);
+    const titleLines = doc.splitTextToSize(stripEmojis(plan.title || "Plano sem titulo"), maxW);
     doc.text(titleLines, margin, y);
     y += titleLines.length * 8 + 4;
 
     // Meta info
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(125, 107, 96);
+    doc.setTextColor(...PDF.muted);
     const typeLabels = { training: "Treino", nutrition: "Nutricao", combined: "Combinado" };
     const metaText = `${typeLabels[plan.type] || plan.type || ""} | ${plan.created_at ? new Date(plan.created_at).toLocaleDateString("pt-PT") : ""} | ${plan.status === "active" ? "Ativo" : "Arquivado"}`;
     doc.text(metaText, margin, y);
     y += 10;
 
     // Divider
-    doc.setDrawColor(216, 201, 188);
+    doc.setDrawColor(...PDF.divider);
     doc.line(margin, y, pageW - margin, y);
     y += 8;
 
-    // Strip emojis from text
-    const stripEmojis = (str) =>
-      str.replace(/[\u{1F000}-\u{1FFFF}]|[\u{2600}-\u{27FF}]|[\u{2300}-\u{23FF}]|[\u{FE00}-\u{FEFF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA9F}]|\p{Emoji_Presentation}|\p{Extended_Pictographic}/gu, "").replace(/\s{2,}/g, " ").trim();
-
-    // Content
+    // Content (stripEmojis vem do util partilhado)
     const renderPDFContent = (raw) => {
       if (!raw) return;
       let text = "";
@@ -492,7 +480,7 @@ export default function PlanDetail() {
           const hText = stripEmojis(trimmed.replace(/^#{1,3}\s*/, ""));
           doc.setFontSize(hLevel === 1 ? 16 : hLevel === 2 ? 14 : 12);
           doc.setFont("helvetica", "bold");
-          doc.setTextColor(74, 52, 39);
+          doc.setTextColor(...PDF.ink);
           const wrapped = doc.splitTextToSize(hText, maxW);
           checkPage(wrapped.length * 7 + 6);
           doc.text(wrapped, margin, y);
@@ -500,7 +488,7 @@ export default function PlanDetail() {
         } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ") || trimmed.startsWith("• ")) {
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
-          doc.setTextColor(74, 52, 39);
+          doc.setTextColor(...PDF.ink);
           const itemText = stripEmojis(trimmed.replace(/^[-*•]\s*/, ""));
           const wrapped = doc.splitTextToSize(itemText, maxW - 8);
           checkPage(wrapped.length * 5 + 2);
@@ -510,7 +498,7 @@ export default function PlanDetail() {
         } else {
           doc.setFontSize(10);
           doc.setFont("helvetica", "normal");
-          doc.setTextColor(74, 52, 39);
+          doc.setTextColor(...PDF.ink);
           const wrapped = doc.splitTextToSize(stripEmojis(trimmed), maxW);
           checkPage(wrapped.length * 5 + 2);
           doc.text(wrapped, margin, y);
@@ -553,14 +541,8 @@ export default function PlanDetail() {
 
     renderPDFContent(plan.content_json);
 
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(168, 152, 136);
-      doc.text(`LAPHIS - Pagina ${i}/${pageCount}`, pageW / 2, doc.internal.pageSize.getHeight() - 10, { align: "center" });
-    }
+    // Footer (assinatura + numeração, cores do site)
+    pdfFooter(doc);
 
     const fileName = `LAPHIS_${(plan.title || "plano").replace(/\s+/g, "_").substring(0, 30)}.pdf`;
     doc.save(fileName);

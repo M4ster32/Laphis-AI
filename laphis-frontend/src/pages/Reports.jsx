@@ -5,6 +5,7 @@ import { useToast } from "../components/Toast";
 import EmptyState from "../components/EmptyState";
 import { SkeletonReports } from "../components/Skeleton";
 import jsPDF from "jspdf";
+import { PDF, stripEmojis, pdfHeader, pdfFooter } from "../utils/pdf";
 import { BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, Zap, PieChart as PieChartIcon, Dumbbell, UtensilsCrossed, Droplets, Wind, Clock, Flame, ClipboardList, FileText, Activity, Download, Scale, Plus, Trash2 } from "lucide-react";
 
@@ -68,11 +69,7 @@ export default function Reports() {
     if (!report) return;
     try {
       // jsPDF nao suporta emojis — remove-os de qualquer string dinamica
-      const clean = (str) =>
-        String(str || "")
-          .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20D0}-\u{20FF}]/gu, "")
-          .replace(/\s{2,}/g, " ")
-          .trim();
+      const clean = stripEmojis;
 
       const doc = new jsPDF({ unit: "mm", format: "a4" });
       const W = doc.internal.pageSize.getWidth();
@@ -82,23 +79,13 @@ export default function Reports() {
       let y = 0;
       const checkPage = (need = 20) => { if (y + need > H - 20) { doc.addPage(); y = 16; } };
 
-      // Header
-      doc.setFillColor(155, 106, 74);
-      doc.rect(0, 0, W, 38, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(255, 255, 255);
-      doc.text("LAPHIS", m, 18);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text("Relat\u00f3rio Completo", m, 28);
-      doc.setFontSize(9);
-      doc.text(new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }), W - m, 28, { align: "right" });
-      if (profile?.name) {
-        doc.text(clean(profile.name), W - m, 18, { align: "right" });
-      }
-      y = 48;
-      doc.setTextColor(60, 60, 60);
+      // Header (cores do site + sem emojis)
+      y = pdfHeader(doc, {
+        subtitle: "Relat\u00f3rio Completo",
+        rightTop: profile?.name ? clean(profile.name) : "",
+        rightBottom: new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }),
+      });
+      doc.setTextColor(...PDF.ink);
 
       // Stats summary
       doc.setFontSize(12); doc.setFont("helvetica", "bold");
@@ -168,10 +155,8 @@ export default function Reports() {
         });
       }
 
-      // Footer
-      y = H - 12;
-      doc.setFontSize(8); doc.setTextColor(160, 160, 160);
-      doc.text("Gerado por LAPHIS \u2014 o teu assistente de sa\u00fade inteligente", m, y);
+      // Footer (assinatura + numera\u00e7\u00e3o, cores do site)
+      pdfFooter(doc);
 
       doc.save(`LAPHIS_Relatorio_${new Date().toISOString().split("T")[0]}.pdf`);
       toast.success("PDF guardado!");

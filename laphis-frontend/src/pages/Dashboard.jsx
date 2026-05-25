@@ -6,6 +6,7 @@ import { useToast } from "../components/Toast";
 import { SkeletonDashboard } from "../components/Skeleton";
 import { AvatarDisplay } from "../components/AvatarPicker";
 import jsPDF from "jspdf";
+import { PDF, stripEmojis, pdfHeader, pdfFooter } from "../utils/pdf";
 import { TrendingUp, TrendingDown, Activity, Sparkles, Lightbulb, Dumbbell, UtensilsCrossed, Plus, Minus, Flame, Download, RefreshCw, CalendarClock, ChevronRight, ChevronDown, ChevronUp, Droplets } from "lucide-react";
 import {
  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -153,21 +154,12 @@ export default function Dashboard() {
 
  const checkPage = (need = 20) => { if (y + need > H - 20) { doc.addPage(); y = 16; } };
 
- // — Header bar
- doc.setFillColor(155, 106, 74);
- doc.rect(0, 0, W, 38, "F");
- doc.setFont("helvetica", "bold");
- doc.setFontSize(22);
- doc.setTextColor(255, 255, 255);
- doc.text("LAPHIS", margin, 18);
- doc.setFontSize(11);
- doc.setFont("helvetica", "normal");
- doc.text("Resumo Semanal", margin, 28);
- doc.setFontSize(9);
- doc.text(new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }), W - margin, 28, { align: "right" });
- y = 48;
-
- doc.setTextColor(60, 60, 60);
+ // — Header bar (cores do site + sem emojis)
+ y = pdfHeader(doc, {
+   subtitle: "Resumo Semanal",
+   rightTop: profile?.name ? stripEmojis(profile.name) : "",
+   rightBottom: new Date().toLocaleDateString("pt-PT", { day: "numeric", month: "long", year: "numeric" }),
+ });
 
  // — Stats
  if (weeklySummary?.stats) {
@@ -180,11 +172,13 @@ export default function Dashboard() {
  if (parts.length) {
    doc.setFontSize(11);
    doc.setFont("helvetica", "bold");
+   doc.setTextColor(...PDF.ink);
    doc.text("Estatísticas", margin, y);
    y += 7;
    doc.setFont("helvetica", "normal");
    doc.setFontSize(10);
-   doc.text(parts.join("  •  "), margin, y);
+   doc.setTextColor(...PDF.body);
+   doc.text(stripEmojis(parts.join("  •  ")), margin, y);
    y += 12;
  }
  }
@@ -194,11 +188,13 @@ export default function Dashboard() {
  checkPage(30);
  doc.setFontSize(11);
  doc.setFont("helvetica", "bold");
+ doc.setTextColor(...PDF.ink);
  doc.text("Resumo AI", margin, y);
  y += 7;
  doc.setFont("helvetica", "normal");
  doc.setFontSize(10);
- const lines = doc.splitTextToSize(weeklySummary.summary_text, maxW);
+ doc.setTextColor(...PDF.body);
+ const lines = doc.splitTextToSize(stripEmojis(weeklySummary.summary_text), maxW);
  lines.forEach((line) => { checkPage(6); doc.text(line, margin, y); y += 5.5; });
  y += 8;
  }
@@ -209,8 +205,9 @@ export default function Dashboard() {
    checkPage(12);
    doc.setFontSize(11);
    doc.setFont("helvetica", "bold");
-   const trendLabel = insights.trend_direction === "improving" ? "📈 A melhorar"
-     : insights.trend_direction === "declining" ? "📉 Em queda" : "➡️ Estável";
+   doc.setTextColor(...PDF.ink);
+   const trendLabel = insights.trend_direction === "improving" ? "A melhorar"
+     : insights.trend_direction === "declining" ? "Em queda" : "Estável";
    doc.text(`Progresso: ${trendLabel}`, margin, y);
    y += 8;
  }
@@ -218,12 +215,14 @@ export default function Dashboard() {
    checkPage(10);
    doc.setFontSize(10);
    doc.setFont("helvetica", "bold");
+   doc.setTextColor(...PDF.ink);
    doc.text("Destaques", margin, y);
    y += 6;
    doc.setFont("helvetica", "normal");
+   doc.setTextColor(...PDF.body);
    insights.highlights.forEach((h) => {
      checkPage(7);
-     const hl = doc.splitTextToSize(`• ${h}`, maxW - 4);
+     const hl = doc.splitTextToSize(stripEmojis(`• ${h}`), maxW - 4);
      hl.forEach((l) => { doc.text(l, margin + 2, y); y += 5.5; });
    });
    y += 6;
@@ -232,22 +231,21 @@ export default function Dashboard() {
    checkPage(10);
    doc.setFontSize(10);
    doc.setFont("helvetica", "bold");
+   doc.setTextColor(...PDF.ink);
    doc.text("Sugestões", margin, y);
    y += 6;
    doc.setFont("helvetica", "normal");
+   doc.setTextColor(...PDF.body);
    insights.suggestions.forEach((sg) => {
      checkPage(7);
-     const sl = doc.splitTextToSize(`💡 ${sg}`, maxW - 4);
+     const sl = doc.splitTextToSize(stripEmojis(`• ${sg}`), maxW - 4);
      sl.forEach((l) => { doc.text(l, margin + 2, y); y += 5.5; });
    });
  }
  }
 
- // — Footer
- y = H - 12;
- doc.setFontSize(8);
- doc.setTextColor(160, 160, 160);
- doc.text("Gerado por LAPHIS — o teu assistente de saúde inteligente", margin, y);
+ // — Footer (assinatura + numeração, cores do site)
+ pdfFooter(doc);
 
  doc.save(`LAPHIS_Resumo_${new Date().toISOString().split("T")[0]}.pdf`);
  toast.success("PDF guardado!");
