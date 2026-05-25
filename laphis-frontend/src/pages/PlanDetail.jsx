@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import ApiService from "../services/api";
 import Modal from "../components/Modal";
 import ExerciseCard from "../components/ExerciseCard";
+import { hasExerciseImage } from "../utils/exerciseImages";
 import { SkeletonCard, SkeletonLine } from "../components/Skeleton";
 import jsPDF from "jspdf";
 import { Edit2, Trash2, Download, ArrowLeft, Star, ThumbsUp, ThumbsDown, MessageSquare, Dumbbell, UtensilsCrossed, Lightbulb, Check, X, RefreshCw, Calendar } from "lucide-react";
@@ -153,11 +154,15 @@ export default function PlanDetail() {
     // (cada string que pareça "Nome: 3x10" ou "1. Nome 4x12" entra) e
     // depois faz fallback ao parsing linha-a-linha do texto bruto.
     const candidateLines = collectStringItems(plan.content_json);
-    const extractedNames = extractExerciseNames(candidateLines.join("\n")).slice(0, 12);
+    // Só mostramos exercícios com imagem (2 frames) — sem imagem, fora.
+    const extractedNames = extractExerciseNames(candidateLines.join("\n"))
+      .filter((name) => hasExerciseImage(name))
+      .slice(0, 12);
 
     ApiService.listExercises({ category, limit: 6 })
       .then(items => {
-        const list = Array.isArray(items) ? items : (items?.items || []);
+        const raw = Array.isArray(items) ? items : (items?.items || []);
+        const list = raw.filter((ex) => hasExerciseImage(ex.name));
         if (list.length === 0 && extractedNames.length > 0) {
           const synthetic = extractedNames.map((name, idx) => ({
             id: `synthetic-${planId}-${idx}`,

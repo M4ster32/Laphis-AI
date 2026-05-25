@@ -6,6 +6,7 @@ import MuscleHighlighter from "./MuscleHighlighter";
 import ExerciseGif from "./ExerciseGif";
 import Modal from "./Modal";
 import ExerciseCard from "./ExerciseCard";
+import { hasExerciseImage } from "../utils/exerciseImages";
 
 /* ──────────────────────────────────────────────────────────────────────
  * PARSING
@@ -112,7 +113,9 @@ function parsePlanDays({ rawText, contentJson }) {
       .map((sec) => {
         const exercises = (sec.items || [])
           .map(parseExerciseLine)
-          .filter(Boolean);
+          .filter(Boolean)
+          // Só mostramos exercícios com imagem (2 frames) — sem imagem, fora.
+          .filter((ex) => hasExerciseImage(ex.name));
         return { header: sec.header || "Treino", exercises };
       })
       .filter((day) => day.exercises.length > 0);
@@ -142,7 +145,8 @@ function parsePlanDays({ rawText, contentJson }) {
     }
 
     const ex = parseExerciseLine(line);
-    if (ex) cur.exercises.push(ex);
+    // Só mostramos exercícios com imagem (2 frames) — sem imagem, fora.
+    if (ex && hasExerciseImage(ex.name)) cur.exercises.push(ex);
   }
   if (cur.exercises.length) days.push(cur);
 

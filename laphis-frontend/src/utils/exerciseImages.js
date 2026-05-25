@@ -143,3 +143,9 @@ export function findExerciseImageBase(name) {
 
   return null;
 }
+
+// Um exercício só é mostrado na app se tiver imagem (2 frames: /0.jpg e /1.jpg)
+// no free-exercise-db. A presença no EXERCISE_IMAGE_MAP é essa garantia.
+export function hasExerciseImage(name) {
+  return findExerciseImageBase(name) !== null;
+}

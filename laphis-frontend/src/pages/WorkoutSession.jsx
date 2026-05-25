@@ -8,6 +8,7 @@ import ApiService from "../services/api";
 import ExerciseImage from "../components/ExerciseImage";
 import MuscleHighlighter from "../components/MuscleHighlighter";
 import Modal from "../components/Modal";
+import { hasExerciseImage } from "../utils/exerciseImages";
 
 /**
  * WorkoutSession — Sessão de treino em curso.
@@ -59,6 +60,8 @@ export default function WorkoutSession() {
             const rest = restMatch ? parseInt(restMatch[1], 10) : 60;
             const name = item.slice(0, sxr.index).trim().replace(/[:\-–—]+\s*$/, "");
             if (!name) continue;
+            // Só treinamos exercícios com imagem (2 frames).
+            if (!hasExerciseImage(name)) continue;
             parsed.push({
               id: `db-${idx++}`,
               name,
