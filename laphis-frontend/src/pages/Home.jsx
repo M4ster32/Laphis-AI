@@ -60,9 +60,8 @@ export default function Home() {
 const s = {
   page: {
     height: "100dvh",
-    minHeight: "100dvh",
-    overflowY: "auto",
-    WebkitOverflowScrolling: "touch",
+    maxHeight: "100dvh",
+    overflow: "hidden",
     display: "flex", flexDirection: "column",
     background: "var(--bg)",
     animation: "fadeUp 0.4s ease",
@@ -71,17 +70,17 @@ const s = {
   inner: {
     margin: "auto",
     width: "100%", maxWidth: 440,
-    padding: "32px 24px",
+    padding: "24px 24px",
     boxSizing: "border-box",
   },
-  hero: { textAlign: "center", marginBottom: 32 },
+  hero: { textAlign: "center", marginBottom: 22 },
   brand: {
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginBottom: 14,
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 12,
   },
   logoCircle: {
-    width: 64, height: 64, borderRadius: 18,
+    width: 56, height: 56, borderRadius: 16,
     background: "var(--gradient-primary)", color: "#FFFFFF",
-    fontSize: 26, fontWeight: 700,
+    fontSize: 24, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center",
     boxShadow: "var(--btn-primary-shadow)",
   },
@@ -92,18 +91,18 @@ const s = {
   },
   tagline: {
     fontSize: "var(--text-body)", color: "var(--text-secondary)", fontWeight: 500,
-    lineHeight: 1.55, maxWidth: 300, margin: "0 auto",
+    lineHeight: 1.5, maxWidth: 300, margin: "0 auto",
   },
 
-  features: { display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 },
+  features: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 },
   featureCard: {
-    display: "flex", alignItems: "center", gap: 18,
-    padding: "20px 22px", background: "var(--card-bg)",
-    borderRadius: 20, boxShadow: "var(--shadow)",
+    display: "flex", alignItems: "center", gap: 14,
+    padding: "14px 16px", background: "var(--card-bg)",
+    borderRadius: 16, boxShadow: "var(--shadow)",
     border: "1px solid var(--border)",
   },
   featureIconWrap: {
-    width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
     display: "flex", alignItems: "center", justifyContent: "center",
   },
   featureIcon: { fontSize: 14, fontWeight: 700, color: "var(--primary)", flexShrink: 0,
@@ -117,6 +116,6 @@ const s = {
 
   footer: {
     textAlign: "center", fontSize: "var(--text-caption)", color: "var(--text-muted)",
-    marginTop: 24, fontWeight: 500,
+    marginTop: 16, fontWeight: 500,
   },
 };
