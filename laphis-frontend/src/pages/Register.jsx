@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
 import { useToast } from "../components/Toast";
+import { useApp } from "../contexts/AppContext";
 import PasswordInput from "../components/PasswordInput";
 import { Mail, Leaf } from "lucide-react";
 
 export default function Register() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { loadMyProfile } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -26,6 +28,9 @@ export default function Register() {
       const result = await ApiService.register(email.trim(), password);
       localStorage.setItem('authToken', result.access_token);
       localStorage.setItem('userEmail', result.email);
+      // Refrescar o contexto com a conta nova (perfil ainda não existe → null),
+      // senão fica em memória o perfil do utilizador anterior.
+      await loadMyProfile();
       toast.success("Conta criada! Verifica o teu email");
       navigate("/verify-email", { state: { email: email.trim() } });
     } catch (err) {
